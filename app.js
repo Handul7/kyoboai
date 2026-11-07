@@ -21,7 +21,7 @@ function readStoredState() {
   } catch { return {saved:[],interests:["strategy","risk"],collected:false}; }
 }
 const stored = readStoredState();
-const state = {view:"news",reportId:REPORTS[0].id,archiveMonth:"",archiveFrom:"",archiveTo:"",publicationId:null,department:"all",briefDepartment:stored.interests[0] || "strategy",query:"",sort:"latest",mode:"list",limit:6,...stored};
+const state = {view:"news",reportId:REPORTS[0].id,archiveMonth:"",archiveFrom:"",archiveTo:"",publicationId:null,briefDepartment:stored.interests[0] || "strategy",query:"",sort:"latest",mode:"list",limit:6,...stored};
 const SESSION_KEY = "kyobo-demo-session-v1";
 function readSession() {
   try { return normalizeDemoSession(JSON.parse(sessionStorage.getItem(SESSION_KEY))); }
@@ -44,7 +44,6 @@ function setSession(session) {
     else sessionStorage.removeItem(SESSION_KEY);
   } catch { /* The selected team still works for this page when storage is unavailable. */ }
   $$("dialog[open]").forEach(dialog => dialog.close());
-  state.department = "all";
   state.query = "";
   $("#news-search").value = "";
   navigate(state.session ? "today" : "news");
@@ -115,22 +114,17 @@ function renderSidebar() {
   $(".mobile-saved-count").textContent = state.saved.length;
   $(".mobile-saved-count").hidden = !state.saved.length;
 }
-function renderTabs() {
-  const counts = Object.fromEntries(DEPARTMENTS.map(d => [d.id,reportArticles().filter(a => a.depts.includes(d.id)).length]));
-  $("#department-tabs").innerHTML = `<button class="department-tab ${state.department === "all" ? "active" : ""}" data-dept="all" aria-pressed="${state.department === "all"}">전체 <span>${reportArticles().length}</span></button>` + DEPARTMENTS.map(d => `<button class="department-tab ${state.department === d.id ? "active" : ""}" data-dept="${d.id}" aria-pressed="${state.department === d.id}">${d.name} <span>${counts[d.id]}</span></button>`).join("");
-}
 function filteredArticles() {
-  let articles = reportArticles().filter(a => state.department === "all" || a.depts.includes(state.department));
+  let articles = reportArticles();
   const query = state.query.trim().toLocaleLowerCase();
   if (query) articles = articles.filter(a => [a.title,a.summary,a.company,a.source,...a.keywords,...a.depts.map(id => departmentById(id).name),...(a.body || [])].join(" ").toLocaleLowerCase().includes(query));
   return [...articles].sort((a,b) => state.sort === "priority" ? b.priority - a.priority || b.date.localeCompare(a.date) || b.time.localeCompare(a.time) : b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
 }
 function renderFeed() {
   const articles = filteredArticles();
-  const title = state.department === "all" ? "모든 뉴스" : `${departmentById(state.department).name} 뉴스`;
-  $("#feed-heading").innerHTML = `${title} <span class="count-label">${articles.length}</span>`;
+  $("#feed-heading").innerHTML = `모든 뉴스 <span class="count-label">${articles.length}</span>`;
   $("#article-list").classList.toggle("grid-mode",state.mode === "grid");
-  $("#article-list").innerHTML = articles.length ? articles.slice(0,state.limit).map(articleRow).join("") : `<div class="empty-state">${icon("search")}<h3>검색 결과가 없습니다.</h3><p>다른 키워드로 검색하거나<br>전체 부서에서 다시 찾아보세요.</p><button class="outline-button" id="reset-filters">검색과 필터 초기화</button></div>`;
+  $("#article-list").innerHTML = articles.length ? articles.slice(0,state.limit).map(articleRow).join("") : `<div class="empty-state">${icon("search")}<h3>검색 결과가 없습니다.</h3><p>다른 키워드로 다시 검색해 보세요.</p><button class="outline-button" id="reset-filters">검색 초기화</button></div>`;
   if (!state.reportId) {
     $("#article-list").innerHTML = '<div class="empty-state"><h3>해당 기간의 뉴스가 없습니다.</h3><p>발행 월이나 날짜를 바꿔보세요.</p><button class="outline-button" id="reset-news-archive">전체 기간 보기</button></div>';
   }
@@ -147,7 +141,7 @@ function renderRail() {
   $(".insight-rail").hidden = !showBrief;
   $(".feed-layout").classList.toggle("without-brief", !showBrief);
   if (!showBrief) { $("#rail-brief").innerHTML = ""; return; }
-  const id = state.session.role === "team" ? state.session.departmentId : state.department === "all" ? state.interests[0] || "strategy" : state.department;
+  const id = state.session.role === "team" ? state.session.departmentId : state.interests[0] || "strategy";
   const d = departmentById(id), brief = getReportBrief(id,state.reportId);
   const count = reportArticles().filter(a => a.depts.includes(id)).length;
   $("#rail-brief").innerHTML = `<div class="rail-dept">${d.name}<small>관련 기사 ${count}건</small></div><h3 class="rail-title">${brief.short}</h3><p class="rail-summary">${brief.lead}</p><div class="rail-implication"><span>${icon("bulb")}업무에 연결해 보면</span><p>${brief.implication}</p></div>`;
@@ -260,7 +254,7 @@ function renderHeading() {
 }
 
 function renderAll() {
-  renderHeading(); renderSidebar(); renderTabs(); renderReportSelector(); renderOverview();
+  renderHeading(); renderSidebar(); renderReportSelector(); renderOverview();
   $$("main>.view").forEach(el => el.hidden = el.id !== `${state.view}-view`);
   $("#stat-total").textContent = reportArticles().length;
   $("#featured-news").innerHTML = reportArticles().slice(0,3).map(featuredCard).join("");
@@ -403,16 +397,6 @@ document.addEventListener("click",event => {
   if (button.dataset.publication) {openPublication(button.dataset.publication); return;}
   if (button.dataset.brief) {openDepartmentReport(button.dataset.brief); return;}
   if (button.dataset.source) {const source=document.getElementById(`source-${button.dataset.source}`);if(source){source.scrollIntoView({behavior:"smooth",block:"center"});$(".source-title",source).focus({preventScroll:true});}return;}
-  if (button.dataset.dept) {
-    state.department = button.dataset.dept; state.limit=6;
-    renderTabs(); renderFeed(); renderRail();
-    const replacement = $(`[data-dept="${state.department}"]`);
-    replacement.focus({preventScroll:true});
-    const tabs = $("#department-tabs");
-    const offset = replacement.offsetLeft - tabs.offsetLeft - (tabs.clientWidth - replacement.clientWidth)/2;
-    tabs.scrollTo({left:offset,behavior:"smooth"});
-    return;
-  }
   if (button.dataset.report) {setReport(button.dataset.report); return;}
   if (button.classList.contains("settings-trigger")) {openSettings(); return;}
   switch(button.id) {
@@ -429,10 +413,10 @@ document.addEventListener("click",event => {
       break;
     case "save-settings": saveSettings(); break;
     case "collect-trigger": collectSample(); break;
-    case "collection-done": $("#collection-dialog").close(); state.department="all"; state.query=""; state.limit=6; $("#news-search").value=""; navigate("today"); toast("수집·분류·분석이 완료된 부서별 요약을 확인하세요."); break;
+    case "collection-done": $("#collection-dialog").close(); state.query=""; state.limit=6; $("#news-search").value=""; navigate("today"); toast("수집·분류·분석이 완료된 부서별 요약을 확인하세요."); break;
     case "show-more": state.limit+=6; renderFeed(); break;
     case "export-saved": exportSaved(); break;
-    case "reset-filters": state.query=""; state.department="all"; state.limit=6; $("#news-search").value=""; renderTabs();renderFeed();renderRail();$("#news-search").focus();break;
+    case "reset-filters": state.query=""; state.limit=6; $("#news-search").value=""; renderFeed();$("#news-search").focus();break;
     case "grid-mode": state.mode="grid"; renderFeed(); updateViewButtons(); break;
     case "list-mode": state.mode="list"; renderFeed(); updateViewButtons(); break;
   }
