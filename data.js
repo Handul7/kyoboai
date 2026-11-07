@@ -99,19 +99,48 @@ HISTORY_DAYS.forEach(day => day.stories.forEach((story,index) => {
   ARTICLE_SAMPLES.push({id:`d${day.date.slice(-2)}-${index+1}`,date:day.date,time:`06:${String(50-index*10).padStart(2,"0")}`,title,summary,depts,source:["경영전략 인사이트","보험산업 리포트","영업채널 인사이트","자산운용 브리핑","금융정책 브리핑","디지털금융 브리핑"][index],company:["경영·전략","상품·서비스","영업 채널","투자·시장","회계·제도","디지털 전환"][index],keywords,priority:9-Math.floor(index/2),image:["architecture.jpg","planning.jpg","data.jpg"][index%3],pick:["STRATEGY & PEOPLE","PRODUCT & CUSTOMER","INDUSTRY INSIGHT"][index%3],reason:`제목과 본문에서 ${keywords.join(", ")}에 관한 업무를 다루고 있어 ${depts.map(id=>departmentById(id).name).join(", ")} 부서와 관련된 기사로 분류했습니다.`});
 }));
 const REPORTS=[
-  {id:"monday",name:"월요일 아침 브리핑",shortName:"월요일 보고",period:"목·금·토·일",periodShort:"목–일",schedule:"월요일 오전 7시",dates:["2026-11-05","2026-11-06","2026-11-07","2026-11-08"],label:"목–일 주요 보험 뉴스"},
-  {id:"thursday",name:"목요일 브리핑",shortName:"목요일 보고",period:"월·화·수",periodShort:"월–수",schedule:"목요일 오전 7시",dates:["2026-11-02","2026-11-03","2026-11-04"],label:"월–수 주요 보험 뉴스"}
+  {id:"thursday",templateId:"thursday",publishedAt:"2026-11-05",sequence:2,period:"월·화·수",periodShort:"월–수",schedule:"목요일 오전 7시",dates:["2026-11-02","2026-11-03","2026-11-04"]},
+  {id:"monday",templateId:"monday",publishedAt:"2026-11-02",sequence:1,period:"목·금·토·일",periodShort:"목–일",schedule:"월요일 오전 7시",dates:["2026-10-29","2026-10-30","2026-10-31","2026-11-01"]}
 ];
+function shiftSampleDate(date,days){
+  const value=new Date(`${date}T12:00:00Z`);
+  value.setUTCDate(value.getUTCDate()+days);
+  return value.toISOString().slice(0,10);
+}
+// Two weeks of authored fixtures make historical browsing demonstrable.
+ARTICLE_SAMPLES.forEach(article=>{
+  if(article.date>="2026-11-05") article.date=shiftSampleDate(article.date,-7);
+});
+for(const current of [...REPORTS]){
+  const articlePrefix=`archive-${current.id}-`;
+  const previous={...current,id:`archive-${current.id}`,articlePrefix,publishedAt:shiftSampleDate(current.publishedAt,-7),dates:current.dates.map(date=>shiftSampleDate(date,-7))};
+  const copies=ARTICLE_SAMPLES.filter(article=>current.dates.includes(article.date)).map(article=>({
+    ...article,id:articlePrefix+article.id,date:shiftSampleDate(article.date,-7),
+    title:`지난주 점검 · ${article.title}`
+  }));
+  ARTICLE_SAMPLES.push(...copies);
+  REPORTS.push(previous);
+}
+REPORTS.forEach(report=>{
+  const weekStart=report.sequence===1?report.publishedAt:shiftSampleDate(report.publishedAt,-3);
+  const [year,month,day]=weekStart.split("-").map(Number);
+  report.weekId=`${year}-${String(month).padStart(2,"0")}-w${Math.ceil(day/7)}`;
+  report.weekLabel=`${month}월 ${Math.ceil(day/7)}주차`;
+  report.name=report.shortName=`${report.weekLabel} · ${report.sequence}회`;
+  report.label=`${report.period} 주요 보험 뉴스`;
+});
+REPORTS.sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt));
 const reportById=id=>REPORTS.find(report=>report.id===id)||REPORTS[0];
 function getReportArticles(reportId){return ARTICLE_SAMPLES.filter(article=>reportById(reportId).dates.includes(article.date)).sort((a,b)=>b.date.localeCompare(a.date)||b.time.localeCompare(a.time));}
 function getReportBrief(deptId,reportId){
   const report=reportById(reportId);
   const articles=getReportArticles(reportId).filter(article=>article.depts.includes(deptId));
-  const base=reportId==="thursday"?THURSDAY_BRIEFS[deptId]:BRIEFS[deptId];
+  const base=report.templateId==="thursday"?THURSDAY_BRIEFS[deptId]:BRIEFS[deptId];
   const keywords=[...new Set(articles.flatMap(article=>article.keywords))].slice(0,4);
   const lead=base.lead.replaceAll("오늘의 샘플 기사들은","이번 보고의 주요 기사들은").replaceAll("샘플 기사의","관련 기사의").replaceAll("오늘의","이번 보고의").replaceAll("이번 샘플 브리핑의","이번 브리핑의");
   const analysis=`${report.period} 수집한 관련 기사 ${articles.length}건에서는 ${keywords.join(", ")} 등의 주제가 나타납니다. ${base.analysis.replaceAll("샘플 기사들은","관련 기사들은").replaceAll("샘플 기사들이","관련 기사들이")}`;
-  return {...base,lead,analysis,evidence:REPORT_EVIDENCE[reportId][deptId],sourceIds:articles.map(article=>article.id),reportId,departmentId:deptId};
+  const evidence=REPORT_EVIDENCE[report.templateId][deptId].map(ids=>ids.map(id=>(report.articlePrefix||"")+id));
+  return {...base,lead,analysis,evidence,sourceIds:articles.map(article=>article.id),reportId,departmentId:deptId};
 }
 
 // Audited examples for Monday–Wednesday coverage. These contain no API output.
@@ -130,19 +159,31 @@ const REPORT_EVIDENCE={
   thursday:{strategy:[["d04-1","d02-1"],["d03-1"],["d02-5"]],product:[["d04-2"],["d03-2"],["d02-2"]],sales:[["d04-3"],["d03-3","d04-2"],["d02-3","d03-5"]],asset:[["d04-4"],["d03-4"],["d02-4"]],risk:[["d04-4","d03-4","d02-5"],["d03-5"],["d04-5"]],digital:[["d04-5","d03-6"],["d04-6"],["d02-3","d02-6"]]}
 };
 
-// Future authorization attaches to these stable department/publication records.
-// It is metadata only: this static prototype does not enforce login or permissions.
+// Client-side demo scopes. Server authorization will be required for private data.
 const REPORT_PUBLICATIONS=DEPARTMENTS.flatMap(department=>REPORTS.map(collection=>({
   id:`sample-week-01-${department.id}-${collection.id}`,
   departmentId:department.id,
   collectionId:collection.id,
-  weekId:"sample-week-01",
-  title:`${collection.shortName.replace(" 보고","")} 정기 보고서`,
+  weekId:collection.weekId,
+  publishedAt:collection.publishedAt,
+  title:collection.shortName,
   status:"published",
-  access:{audienceDepartmentIds:[department.id],enforcement:"not_implemented"}
+  access:{audienceDepartmentIds:[department.id],enforcement:"client_demo"}
 })));
 const publicationById=id=>REPORT_PUBLICATIONS.find(publication=>publication.id===id)||null;
 const departmentPublications=departmentId=>REPORT_PUBLICATIONS.filter(publication=>publication.departmentId===departmentId);
+
+function normalizeDemoSession(value){
+  if(value?.role==="admin") return {role:"admin"};
+  if(value?.role==="team"&&DEPARTMENTS.some(department=>department.id===value.departmentId)){
+    return {role:"team",departmentId:value.departmentId};
+  }
+  return null;
+}
+function canViewDepartment(session,departmentId){
+  return DEPARTMENTS.some(department=>department.id===departmentId)&&
+    (session?.role==="admin"||session?.role==="team"&&session.departmentId===departmentId);
+}
 
 // Include the sample article text in the data contract; never invent a real URL.
 ARTICLE_SAMPLES.forEach(article=>{
@@ -150,4 +191,4 @@ ARTICLE_SAMPLES.forEach(article=>{
   article.sourceUrl=null;
   article.classification={mode:"fixture",provider:"TypeSafe Jev",apiInvoked:false,departmentIds:[...article.depts],rationale:article.reason,rationaleSource:"authored_sample"};
 });
-const PIPELINE_METADATA={mode:"fixture",collection:{mode:"fixture",cadence:"twice_weekly",scraperImplemented:false},classification:{mode:"fixture",provider:"TypeSafe Jev",apiInvoked:false},analysis:{mode:"fixture",provider:"LLM",apiInvoked:false},authorization:{mode:"not_implemented",loginButton:"announcement_only"}};
+const PIPELINE_METADATA={mode:"fixture",collection:{mode:"fixture",cadence:"twice_weekly",scraperImplemented:false},classification:{mode:"fixture",provider:"TypeSafe Jev",apiInvoked:false},analysis:{mode:"fixture",provider:"LLM",apiInvoked:false},authorization:{mode:"client_demo",serverEnforced:false,loginButton:"team_selection"}};
