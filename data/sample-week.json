@@ -1,0 +1,2669 @@
+{
+  "sample": true,
+  "pipeline": {
+    "mode": "fixture",
+    "collection": {
+      "mode": "fixture",
+      "cadence": "twice_weekly",
+      "scraperImplemented": false
+    },
+    "classification": {
+      "mode": "fixture",
+      "provider": "TypeSafe Jev",
+      "apiInvoked": false
+    },
+    "analysis": {
+      "mode": "fixture",
+      "provider": "LLM",
+      "apiInvoked": false
+    },
+    "authorization": {
+      "mode": "not_implemented",
+      "loginButton": "announcement_only"
+    }
+  },
+  "departments": [
+    {
+      "id": "strategy",
+      "name": "경영전략",
+      "icon": "chart",
+      "color": "#abc5b1",
+      "text": "#4f7054",
+      "bg": "#edf4eb",
+      "description": "경영 실적, 산업 변화, 사업 전략, ESG 및 인수합병"
+    },
+    {
+      "id": "product",
+      "name": "상품개발",
+      "icon": "bulb",
+      "color": "#d6c293",
+      "text": "#8e6e33",
+      "bg": "#f7f2e6",
+      "description": "보장 설계, 신상품, 보험료, 언더라이팅 및 연금"
+    },
+    {
+      "id": "sales",
+      "name": "영업마케팅",
+      "icon": "people",
+      "color": "#b3bccf",
+      "text": "#687599",
+      "bg": "#f0f1f7",
+      "description": "영업 채널, GA, 설계사, 고객 캠페인 및 판매 전략"
+    },
+    {
+      "id": "asset",
+      "name": "자산운용",
+      "icon": "chart",
+      "color": "#b6c9c5",
+      "text": "#537d73",
+      "bg": "#edf4f1",
+      "description": "채권, 금리, 대체투자, ALM 및 투자 포트폴리오"
+    },
+    {
+      "id": "risk",
+      "name": "리스크관리",
+      "icon": "shield",
+      "color": "#c8b4ba",
+      "text": "#8f6170",
+      "bg": "#f7eff1",
+      "description": "K-ICS, 지급여력, 보험부채, IFRS17 및 내부통제"
+    },
+    {
+      "id": "digital",
+      "name": "디지털·IT",
+      "icon": "flow",
+      "color": "#a9bbcd",
+      "text": "#4d7595",
+      "bg": "#edf2f7",
+      "description": "AI, 데이터, 보안, 디지털 고객 경험 및 업무 자동화"
+    }
+  ],
+  "articles": [
+    {
+      "id": "n01",
+      "date": "2026-11-07",
+      "time": "06:50",
+      "title": "생보업계, 자본 건전성 관리 강화…장기 부채 대응 전략 재정비",
+      "summary": "지급여력과 자산·부채의 만기 구조를 함께 점검하며 중장기 자본 관리의 중요성이 커지는 상황을 다룹니다.",
+      "depts": [
+        "risk",
+        "strategy"
+      ],
+      "source": "금융정책 브리핑",
+      "company": "생보업계",
+      "keywords": [
+        "K-ICS",
+        "자본 건전성",
+        "ALM"
+      ],
+      "priority": 10,
+      "image": "architecture.jpg",
+      "pick": "POLICY & STRATEGY",
+      "reason": "제목과 본문의 중심이 지급여력 및 자본 관리에 있으므로 리스크관리와 관련됩니다. 중장기 경영 계획에 미치는 영향도 함께 다루어 경영전략을 추가했습니다.",
+      "body": [
+        "이 예시 기사에서는 생명보험회사가 장기 보험부채에 대응하기 위해 자본 적정성과 자산·부채의 만기 구조를 함께 점검하는 상황을 가정합니다. 단기적인 지표 개선과 지속 가능한 경영 전략을 연결하는 것이 핵심 주제입니다.",
+        "리스크관리 부서는 금리와 해지율 등 주요 가정 변화에 따른 영향을 살펴볼 수 있습니다. 경영전략 부서는 자본 계획과 상품 포트폴리오의 방향을 함께 검토할 수 있습니다.",
+        "자본과 상품, 운용의 관점을 함께 놓고 읽으면 각 부서에서 확인할 의제를 구체화할 수 있습니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "risk",
+          "strategy"
+        ],
+        "rationale": "제목과 본문의 중심이 지급여력 및 자본 관리에 있으므로 리스크관리와 관련됩니다. 중장기 경영 계획에 미치는 영향도 함께 다루어 경영전략을 추가했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n02",
+      "date": "2026-11-07",
+      "time": "06:40",
+      "title": "보장을 넘어 건강관리까지, 생명보험 상품의 새로운 경쟁력",
+      "summary": "예방과 건강관리 서비스를 결합한 보장 설계 사례를 통해 고객 가치와 상품 차별화 방향을 살펴봅니다.",
+      "depts": [
+        "product",
+        "sales"
+      ],
+      "source": "보험산업 리포트",
+      "company": "상품·서비스",
+      "keywords": [
+        "건강보험",
+        "상품 경쟁력",
+        "고객 경험"
+      ],
+      "priority": 9,
+      "image": "planning.jpg",
+      "pick": "PRODUCT & CUSTOMER",
+      "reason": "건강관리와 결합한 보장 설계가 핵심이므로 상품개발로 분류했습니다. 고객에게 전달할 가치 제안과 판매 전략을 함께 다루므로 영업마케팅에도 연결됩니다.",
+      "body": [
+        "예방과 건강관리 서비스를 결합한 보장 설계 사례를 통해 고객 가치와 상품 차별화 방향을 살펴봅니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "product",
+          "sales"
+        ],
+        "rationale": "건강관리와 결합한 보장 설계가 핵심이므로 상품개발로 분류했습니다. 고객에게 전달할 가치 제안과 판매 전략을 함께 다루므로 영업마케팅에도 연결됩니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n03",
+      "date": "2026-11-07",
+      "time": "06:30",
+      "title": "보험 업무에 스며드는 생성형 AI…상담부터 심사 지원까지",
+      "summary": "상담 지원과 심사 보조 등 업무별 활용 사례, 데이터 품질과 검증 체계의 필요성을 함께 짚습니다.",
+      "depts": [
+        "digital",
+        "risk"
+      ],
+      "source": "디지털금융 브리핑",
+      "company": "디지털 전환",
+      "keywords": [
+        "생성형 AI",
+        "업무 자동화",
+        "내부통제"
+      ],
+      "priority": 9,
+      "image": "data.jpg",
+      "pick": "DIGITAL & INNOVATION",
+      "reason": "AI 기반 업무 지원 시스템 구축과 데이터 운영이 중심이므로 디지털·IT와 관련됩니다. 결과 검증과 내부통제 요구도 있어 리스크관리를 함께 지정했습니다.",
+      "body": [
+        "상담 지원과 심사 보조 등 업무별 활용 사례, 데이터 품질과 검증 체계의 필요성을 함께 짚습니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "digital",
+          "risk"
+        ],
+        "rationale": "AI 기반 업무 지원 시스템 구축과 데이터 운영이 중심이므로 디지털·IT와 관련됩니다. 결과 검증과 내부통제 요구도 있어 리스크관리를 함께 지정했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n04",
+      "date": "2026-11-07",
+      "time": "06:20",
+      "title": "생명보험사, 수익의 질에 주목…보장성 중심 포트폴리오 점검",
+      "summary": "보험계약마진과 신계약 구성을 살피며 단기 실적을 넘어 수익의 지속 가능성을 검토하는 사례입니다.",
+      "depts": [
+        "strategy",
+        "product"
+      ],
+      "source": "보험산업 리포트",
+      "company": "경영·실적",
+      "keywords": [
+        "CSM",
+        "상품 경쟁력",
+        "수익성"
+      ],
+      "priority": 8,
+      "reason": "수익 구조와 상품 포트폴리오에 대한 경영 판단이 핵심이므로 경영전략을, 상품 구성의 변화도 포함하므로 상품개발을 지정했습니다.",
+      "body": [
+        "보험계약마진과 신계약 구성을 살피며 단기 실적을 넘어 수익의 지속 가능성을 검토하는 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "strategy",
+          "product"
+        ],
+        "rationale": "수익 구조와 상품 포트폴리오에 대한 경영 판단이 핵심이므로 경영전략을, 상품 구성의 변화도 포함하므로 상품개발을 지정했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n05",
+      "date": "2026-11-07",
+      "time": "06:10",
+      "title": "GA 채널 경쟁의 다음 과제, 판매 품질과 고객 유지율",
+      "summary": "외형 확대와 함께 완전판매, 유지율, 설계사 교육을 점검해야 하는 영업 현장의 이슈를 정리합니다.",
+      "depts": [
+        "sales",
+        "risk"
+      ],
+      "source": "영업채널 인사이트",
+      "company": "영업 채널",
+      "keywords": [
+        "GA 채널",
+        "내부통제",
+        "고객 경험"
+      ],
+      "priority": 8,
+      "reason": "GA의 영업 운영과 판매 품질 관리가 중심이므로 영업마케팅에 해당합니다. 불완전판매 예방과 통제 항목이 있어 리스크관리도 관련 부서입니다.",
+      "body": [
+        "외형 확대와 함께 완전판매, 유지율, 설계사 교육을 점검해야 하는 영업 현장의 이슈를 정리합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "sales",
+          "risk"
+        ],
+        "rationale": "GA의 영업 운영과 판매 품질 관리가 중심이므로 영업마케팅에 해당합니다. 불완전판매 예방과 통제 항목이 있어 리스크관리도 관련 부서입니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n06",
+      "date": "2026-11-07",
+      "time": "06:00",
+      "title": "금리 변동기에 다시 보는 ALM, 자산과 부채의 균형 찾기",
+      "summary": "장기 부채의 특성을 고려한 채권 운용과 듀레이션 관리의 연결 지점을 설명합니다.",
+      "depts": [
+        "asset",
+        "risk"
+      ],
+      "source": "자산운용 브리핑",
+      "company": "투자·시장",
+      "keywords": [
+        "ALM",
+        "금리",
+        "K-ICS"
+      ],
+      "priority": 8,
+      "reason": "금리와 채권 운용 및 듀레이션 전략은 자산운용의 업무입니다. 보험부채 민감도와 지급여력에 미치는 영향도 있어 리스크관리와 함께 분류했습니다.",
+      "body": [
+        "장기 부채의 특성을 고려한 채권 운용과 듀레이션 관리의 연결 지점을 설명합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "asset",
+          "risk"
+        ],
+        "rationale": "금리와 채권 운용 및 듀레이션 전략은 자산운용의 업무입니다. 보험부채 민감도와 지급여력에 미치는 영향도 있어 리스크관리와 함께 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n07",
+      "date": "2026-11-07",
+      "time": "05:50",
+      "title": "초고령사회, 연금 상품에 필요한 것은 수익률 그 이상의 경험",
+      "summary": "노후 소득의 지속성과 가입 이후의 관리 경험을 중심으로 연금 상품 설계 관점을 제안합니다.",
+      "depts": [
+        "product",
+        "sales"
+      ],
+      "source": "보험산업 리포트",
+      "company": "연금·은퇴",
+      "keywords": [
+        "연금",
+        "고객 경험",
+        "상품 경쟁력"
+      ],
+      "priority": 7,
+      "reason": "연금의 보장 구조와 서비스 설계가 중심이므로 상품개발에 해당합니다. 은퇴 고객과의 상담 및 관계 관리도 포함하므로 영업마케팅에 연결됩니다.",
+      "body": [
+        "노후 소득의 지속성과 가입 이후의 관리 경험을 중심으로 연금 상품 설계 관점을 제안합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "product",
+          "sales"
+        ],
+        "rationale": "연금의 보장 구조와 서비스 설계가 중심이므로 상품개발에 해당합니다. 은퇴 고객과의 상담 및 관계 관리도 포함하므로 영업마케팅에 연결됩니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n08",
+      "date": "2026-11-07",
+      "time": "05:40",
+      "title": "IFRS17 결산, 숫자 뒤의 가정 변화까지 읽어야",
+      "summary": "계리 가정과 손익 변동 요인을 부서 간에 공유하고 해석하는 내부 보고 사례를 다룹니다.",
+      "depts": [
+        "risk",
+        "strategy"
+      ],
+      "source": "금융정책 브리핑",
+      "company": "회계·제도",
+      "keywords": [
+        "IFRS17",
+        "자본 건전성",
+        "CSM"
+      ],
+      "priority": 7,
+      "reason": "계리 가정과 회계상 손익 변동을 점검하는 내용은 리스크관리에 해당하며, 경영 보고와 실적 해석에도 직접 연결되어 경영전략을 추가했습니다.",
+      "body": [
+        "계리 가정과 손익 변동 요인을 부서 간에 공유하고 해석하는 내부 보고 사례를 다룹니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "risk",
+          "strategy"
+        ],
+        "rationale": "계리 가정과 회계상 손익 변동을 점검하는 내용은 리스크관리에 해당하며, 경영 보고와 실적 해석에도 직접 연결되어 경영전략을 추가했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n09",
+      "date": "2026-11-07",
+      "time": "05:30",
+      "title": "보험 데이터 활용의 출발점, 고객 동의와 안전한 운영 체계",
+      "summary": "개인화 서비스 확대에 앞서 데이터 접근 권한과 활용 이력을 관리하는 운영 원칙을 살펴봅니다.",
+      "depts": [
+        "digital",
+        "risk"
+      ],
+      "source": "디지털금융 브리핑",
+      "company": "데이터·보안",
+      "keywords": [
+        "데이터",
+        "내부통제",
+        "고객 경험"
+      ],
+      "priority": 7,
+      "reason": "데이터 활용 시스템과 접근 권한 관리는 디지털·IT 업무이며, 고객 동의 및 내부통제의 검토가 필요해 리스크관리를 함께 연결했습니다.",
+      "body": [
+        "개인화 서비스 확대에 앞서 데이터 접근 권한과 활용 이력을 관리하는 운영 원칙을 살펴봅니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "digital",
+          "risk"
+        ],
+        "rationale": "데이터 활용 시스템과 접근 권한 관리는 디지털·IT 업무이며, 고객 동의 및 내부통제의 검토가 필요해 리스크관리를 함께 연결했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n10",
+      "date": "2026-11-07",
+      "time": "05:20",
+      "title": "설계사 교육, 상품 설명에서 생애주기 재무상담으로",
+      "summary": "고객의 생애 단계에 맞춘 상담 역량과 디지털 도구 활용을 결합한 교육 방식을 제시합니다.",
+      "depts": [
+        "sales"
+      ],
+      "source": "영업채널 인사이트",
+      "company": "설계사·교육",
+      "keywords": [
+        "GA 채널",
+        "연금",
+        "고객 경험"
+      ],
+      "priority": 6,
+      "reason": "설계사의 상담 역량과 교육 운영이 핵심이므로 영업마케팅으로 분류했습니다.",
+      "body": [
+        "고객의 생애 단계에 맞춘 상담 역량과 디지털 도구 활용을 결합한 교육 방식을 제시합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "sales"
+        ],
+        "rationale": "설계사의 상담 역량과 교육 운영이 핵심이므로 영업마케팅으로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n11",
+      "date": "2026-11-07",
+      "time": "05:10",
+      "title": "보험사의 신사업 검토, 기존 고객 기반과의 연결성이 관건",
+      "summary": "새로운 사업 기회를 기존 상품과 고객 접점에 연결하는 경영 의사결정의 기준을 다룹니다.",
+      "depts": [
+        "strategy"
+      ],
+      "source": "경영전략 인사이트",
+      "company": "경영·전략",
+      "keywords": [
+        "신사업",
+        "수익성",
+        "고객 경험"
+      ],
+      "priority": 6,
+      "reason": "신사업의 진입 기준과 기존 사업 간 연결성에 대한 경영 판단이므로 경영전략으로 분류했습니다.",
+      "body": [
+        "새로운 사업 기회를 기존 상품과 고객 접점에 연결하는 경영 의사결정의 기준을 다룹니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "strategy"
+        ],
+        "rationale": "신사업의 진입 기준과 기존 사업 간 연결성에 대한 경영 판단이므로 경영전략으로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n12",
+      "date": "2026-11-07",
+      "time": "05:00",
+      "title": "더 빠른 가입 심사, 자동화와 정교한 인수 기준을 함께",
+      "summary": "가입 심사 지원 시스템과 상품별 인수 기준을 함께 개선하는 협업 사례를 소개합니다.",
+      "depts": [
+        "product",
+        "digital"
+      ],
+      "source": "디지털금융 브리핑",
+      "company": "심사·가입",
+      "keywords": [
+        "업무 자동화",
+        "데이터",
+        "상품 경쟁력"
+      ],
+      "priority": 7,
+      "reason": "인수 기준의 설계는 상품개발과 관련되고, 이를 지원하는 심사 자동화 시스템은 디지털·IT의 업무이므로 두 부서를 연결했습니다.",
+      "body": [
+        "가입 심사 지원 시스템과 상품별 인수 기준을 함께 개선하는 협업 사례를 소개합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "product",
+          "digital"
+        ],
+        "rationale": "인수 기준의 설계는 상품개발과 관련되고, 이를 지원하는 심사 자동화 시스템은 디지털·IT의 업무이므로 두 부서를 연결했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n13",
+      "date": "2026-11-07",
+      "time": "04:50",
+      "title": "장기 채권 운용, 안정적인 현금흐름과 재투자 위험의 균형",
+      "summary": "보험부채의 지급 일정에 맞춰 현금흐름을 관리하는 채권 포트폴리오의 점검 항목을 정리합니다.",
+      "depts": [
+        "asset"
+      ],
+      "source": "자산운용 브리핑",
+      "company": "투자·시장",
+      "keywords": [
+        "ALM",
+        "금리",
+        "채권"
+      ],
+      "priority": 6,
+      "reason": "현금흐름과 재투자 위험을 고려한 채권 포트폴리오 운영이 주제이므로 자산운용으로 분류했습니다.",
+      "body": [
+        "보험부채의 지급 일정에 맞춰 현금흐름을 관리하는 채권 포트폴리오의 점검 항목을 정리합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "asset"
+        ],
+        "rationale": "현금흐름과 재투자 위험을 고려한 채권 포트폴리오 운영이 주제이므로 자산운용으로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n14",
+      "date": "2026-11-07",
+      "time": "04:40",
+      "title": "보험금 지급 과정의 신뢰, 명확한 기준과 고객 설명에서",
+      "summary": "보험금 지급 심사 기준의 일관성과 고객에게 제공하는 설명 품질을 개선하는 사례입니다.",
+      "depts": [
+        "risk",
+        "sales"
+      ],
+      "source": "보험산업 리포트",
+      "company": "고객·보상",
+      "keywords": [
+        "내부통제",
+        "고객 경험",
+        "심사"
+      ],
+      "priority": 6,
+      "reason": "보험금 지급 기준의 일관성과 통제는 리스크관리의 주제이고, 고객 커뮤니케이션 개선은 영업마케팅에도 관련됩니다.",
+      "body": [
+        "보험금 지급 심사 기준의 일관성과 고객에게 제공하는 설명 품질을 개선하는 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "risk",
+          "sales"
+        ],
+        "rationale": "보험금 지급 기준의 일관성과 통제는 리스크관리의 주제이고, 고객 커뮤니케이션 개선은 영업마케팅에도 관련됩니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n15",
+      "date": "2026-11-07",
+      "time": "04:30",
+      "title": "ESG를 사업 계획으로, 생보사 지속가능경영의 실무 과제",
+      "summary": "공시와 캠페인을 넘어 상품, 투자, 조직 운영에 지속가능성 목표를 반영하는 접근입니다.",
+      "depts": [
+        "strategy",
+        "asset"
+      ],
+      "source": "경영전략 인사이트",
+      "company": "ESG·경영",
+      "keywords": [
+        "ESG",
+        "신사업",
+        "채권"
+      ],
+      "priority": 5,
+      "reason": "ESG를 전사 사업 계획에 반영하는 내용은 경영전략에, 투자 원칙에 반영하는 부분은 자산운용에 관련됩니다.",
+      "body": [
+        "공시와 캠페인을 넘어 상품, 투자, 조직 운영에 지속가능성 목표를 반영하는 접근입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "strategy",
+          "asset"
+        ],
+        "rationale": "ESG를 전사 사업 계획에 반영하는 내용은 경영전략에, 투자 원칙에 반영하는 부분은 자산운용에 관련됩니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n16",
+      "date": "2026-11-07",
+      "time": "04:20",
+      "title": "은퇴 고객과 오래 연결되는 콘텐츠, 연금 커뮤니케이션의 변화",
+      "summary": "상품 가입 이후에도 필요한 정보를 제공하며 고객의 노후 준비를 돕는 콘텐츠 운영 예시입니다.",
+      "depts": [
+        "sales",
+        "product"
+      ],
+      "source": "영업채널 인사이트",
+      "company": "연금·은퇴",
+      "keywords": [
+        "연금",
+        "고객 경험",
+        "콘텐츠"
+      ],
+      "priority": 5,
+      "reason": "고객 대상 콘텐츠 운영과 관계 관리는 영업마케팅 업무이며, 연금 상품의 사후 서비스 구성은 상품개발에도 연결됩니다.",
+      "body": [
+        "상품 가입 이후에도 필요한 정보를 제공하며 고객의 노후 준비를 돕는 콘텐츠 운영 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "sales",
+          "product"
+        ],
+        "rationale": "고객 대상 콘텐츠 운영과 관계 관리는 영업마케팅 업무이며, 연금 상품의 사후 서비스 구성은 상품개발에도 연결됩니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n17",
+      "date": "2026-11-07",
+      "time": "04:10",
+      "title": "모바일 보험금 청구, 화면 하나 줄이기보다 전체 여정을 짧게",
+      "summary": "청구 서류 안내부터 처리 결과 확인까지 고객이 실제로 겪는 과정을 개선하는 방향을 제시합니다.",
+      "depts": [
+        "digital"
+      ],
+      "source": "디지털금융 브리핑",
+      "company": "디지털 전환",
+      "keywords": [
+        "업무 자동화",
+        "고객 경험",
+        "데이터"
+      ],
+      "priority": 6,
+      "reason": "모바일 청구의 인터페이스와 시스템 흐름 개선을 다루므로 디지털·IT로 분류했습니다.",
+      "body": [
+        "청구 서류 안내부터 처리 결과 확인까지 고객이 실제로 겪는 과정을 개선하는 방향을 제시합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "digital"
+        ],
+        "rationale": "모바일 청구의 인터페이스와 시스템 흐름 개선을 다루므로 디지털·IT로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "n18",
+      "date": "2026-11-07",
+      "time": "04:00",
+      "title": "대체투자 점검, 기대 수익과 유동성을 함께 살피는 포트폴리오",
+      "summary": "투자 자산의 장기 수익성뿐 아니라 자금 회수 시점과 유동성 시나리오를 검토하는 사례입니다.",
+      "depts": [
+        "asset",
+        "risk"
+      ],
+      "source": "자산운용 브리핑",
+      "company": "투자·시장",
+      "keywords": [
+        "대체투자",
+        "ALM",
+        "자본 건전성"
+      ],
+      "priority": 5,
+      "reason": "대체투자 포트폴리오와 수익성은 자산운용의 영역이며, 유동성 시나리오와 위험 점검은 리스크관리와도 관련됩니다.",
+      "body": [
+        "투자 자산의 장기 수익성뿐 아니라 자금 회수 시점과 유동성 시나리오를 검토하는 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "asset",
+          "risk"
+        ],
+        "rationale": "대체투자 포트폴리오와 수익성은 자산운용의 영역이며, 유동성 시나리오와 위험 점검은 리스크관리와도 관련됩니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "p01",
+      "date": "2026-11-06",
+      "time": "06:50",
+      "title": "변화하는 보험시장, 부서 간 정보를 연결하는 경영 관리",
+      "summary": "부서마다 다른 지표와 시장 정보를 하나의 경영 관점으로 연결하는 방안을 살펴봅니다.",
+      "depts": [
+        "strategy"
+      ],
+      "source": "경영전략 인사이트",
+      "company": "경영·전략",
+      "keywords": [
+        "경영 지표",
+        "수익성"
+      ],
+      "priority": 9,
+      "image": "architecture.jpg",
+      "pick": "STRATEGY",
+      "reason": "전사 정보 공유와 경영 관리 체계가 핵심이므로 경영전략으로 분류했습니다.",
+      "body": [
+        "부서마다 다른 지표와 시장 정보를 하나의 경영 관점으로 연결하는 방안을 살펴봅니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "strategy"
+        ],
+        "rationale": "전사 정보 공유와 경영 관리 체계가 핵심이므로 경영전략으로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "p02",
+      "date": "2026-11-06",
+      "time": "06:40",
+      "title": "고객이 이해하는 보장, 상품 설명의 명료함부터 시작",
+      "summary": "복잡한 보장 구조를 고객의 언어로 전달하는 상품 설계와 안내 방식의 예시입니다.",
+      "depts": [
+        "product",
+        "sales"
+      ],
+      "source": "보험산업 리포트",
+      "company": "상품·서비스",
+      "keywords": [
+        "상품 경쟁력",
+        "고객 경험"
+      ],
+      "priority": 8,
+      "image": "planning.jpg",
+      "pick": "PRODUCT",
+      "reason": "보장 구조와 설명 방식은 상품개발에, 고객에게 전달하는 상담 내용은 영업마케팅에 관련됩니다.",
+      "body": [
+        "복잡한 보장 구조를 고객의 언어로 전달하는 상품 설계와 안내 방식의 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "product",
+          "sales"
+        ],
+        "rationale": "보장 구조와 설명 방식은 상품개발에, 고객에게 전달하는 상담 내용은 영업마케팅에 관련됩니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "p03",
+      "date": "2026-11-06",
+      "time": "06:30",
+      "title": "보험사 데이터 플랫폼, 활용에 앞서 품질을 설계하다",
+      "summary": "데이터 정의와 검증 체계를 마련해 여러 부서가 같은 기준으로 정보를 활용하는 접근입니다.",
+      "depts": [
+        "digital"
+      ],
+      "source": "디지털금융 브리핑",
+      "company": "데이터·보안",
+      "keywords": [
+        "데이터",
+        "업무 자동화"
+      ],
+      "priority": 8,
+      "image": "data.jpg",
+      "pick": "DIGITAL",
+      "reason": "데이터 품질과 플랫폼 구축은 디지털·IT의 주요 업무이므로 해당 부서에 분류했습니다.",
+      "body": [
+        "데이터 정의와 검증 체계를 마련해 여러 부서가 같은 기준으로 정보를 활용하는 접근입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "digital"
+        ],
+        "rationale": "데이터 품질과 플랫폼 구축은 디지털·IT의 주요 업무이므로 해당 부서에 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "p04",
+      "date": "2026-11-06",
+      "time": "06:10",
+      "title": "금리 시나리오별 채권 운용, 포트폴리오 점검의 출발점",
+      "summary": "금리 변화의 방향보다 여러 상황에 견딜 수 있는 자산 구성에 초점을 맞춘 운용 사례입니다.",
+      "depts": [
+        "asset",
+        "risk"
+      ],
+      "source": "자산운용 브리핑",
+      "company": "투자·시장",
+      "keywords": [
+        "금리",
+        "ALM"
+      ],
+      "priority": 7,
+      "reason": "금리 시나리오에 따른 포트폴리오 운영과 위험 점검이므로 자산운용과 리스크관리로 분류했습니다.",
+      "body": [
+        "금리 변화의 방향보다 여러 상황에 견딜 수 있는 자산 구성에 초점을 맞춘 운용 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "asset",
+          "risk"
+        ],
+        "rationale": "금리 시나리오에 따른 포트폴리오 운영과 위험 점검이므로 자산운용과 리스크관리로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "p05",
+      "date": "2026-11-06",
+      "time": "05:50",
+      "title": "판매 현장의 질문을 상품 개선으로 잇는 피드백 체계",
+      "summary": "상담 중 반복되는 질문을 상품 설명과 서비스 개선으로 연결하는 내부 협업 예시입니다.",
+      "depts": [
+        "sales",
+        "product"
+      ],
+      "source": "영업채널 인사이트",
+      "company": "영업 채널",
+      "keywords": [
+        "GA 채널",
+        "고객 경험"
+      ],
+      "priority": 6,
+      "reason": "현장의 상담 피드백과 교육은 영업마케팅에, 상품과 서비스 개선은 상품개발에 관련됩니다.",
+      "body": [
+        "상담 중 반복되는 질문을 상품 설명과 서비스 개선으로 연결하는 내부 협업 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "sales",
+          "product"
+        ],
+        "rationale": "현장의 상담 피드백과 교육은 영업마케팅에, 상품과 서비스 개선은 상품개발에 관련됩니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "p06",
+      "date": "2026-11-06",
+      "time": "05:30",
+      "title": "새로운 업무 도구 도입, 내부통제도 같은 속도로",
+      "summary": "자동화 도구의 활용 범위와 책임을 명확히 하고 도입 효과를 점검하는 사례입니다.",
+      "depts": [
+        "risk",
+        "digital"
+      ],
+      "source": "금융정책 브리핑",
+      "company": "데이터·보안",
+      "keywords": [
+        "내부통제",
+        "업무 자동화"
+      ],
+      "priority": 6,
+      "reason": "도구 도입의 책임과 검증 기준은 리스크관리의 영역이며, 운영 시스템은 디지털·IT와 관련됩니다.",
+      "body": [
+        "자동화 도구의 활용 범위와 책임을 명확히 하고 도입 효과를 점검하는 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "risk",
+          "digital"
+        ],
+        "rationale": "도구 도입의 책임과 검증 기준은 리스크관리의 영역이며, 운영 시스템은 디지털·IT와 관련됩니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d05-1",
+      "date": "2026-11-05",
+      "time": "06:50",
+      "title": "고객의 생애주기와 함께 가는 생명보험, 장기 전략의 새로운 관점",
+      "summary": "상품별 성과와 고객 생애주기별 필요를 함께 검토하는 경영 전략 사례입니다.",
+      "depts": [
+        "strategy"
+      ],
+      "source": "경영전략 인사이트",
+      "company": "경영·전략",
+      "keywords": [
+        "고객 경험",
+        "경영 전략"
+      ],
+      "priority": 9,
+      "image": "architecture.jpg",
+      "pick": "STRATEGY & PEOPLE",
+      "reason": "제목과 본문에서 고객 경험, 경영 전략에 관한 업무를 다루고 있어 경영전략 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "상품별 성과와 고객 생애주기별 필요를 함께 검토하는 경영 전략 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "strategy"
+        ],
+        "rationale": "제목과 본문에서 고객 경험, 경영 전략에 관한 업무를 다루고 있어 경영전략 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d05-2",
+      "date": "2026-11-05",
+      "time": "06:40",
+      "title": "건강보험 상품 점검, 보장 범위와 설명의 균형을 살피다",
+      "summary": "보장 항목의 차별화와 고객이 이해하기 쉬운 설명을 함께 설계하는 예시입니다.",
+      "depts": [
+        "product",
+        "sales"
+      ],
+      "source": "보험산업 리포트",
+      "company": "상품·서비스",
+      "keywords": [
+        "건강보험",
+        "상품 경쟁력"
+      ],
+      "priority": 9,
+      "image": "planning.jpg",
+      "pick": "PRODUCT & CUSTOMER",
+      "reason": "제목과 본문에서 건강보험, 상품 경쟁력에 관한 업무를 다루고 있어 상품개발, 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "보장 항목의 차별화와 고객이 이해하기 쉬운 설명을 함께 설계하는 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "product",
+          "sales"
+        ],
+        "rationale": "제목과 본문에서 건강보험, 상품 경쟁력에 관한 업무를 다루고 있어 상품개발, 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d05-3",
+      "date": "2026-11-05",
+      "time": "06:30",
+      "title": "고객 문의가 쌓이면 인사이트가 된다, 상담 데이터 활용법",
+      "summary": "반복 문의를 분류해 상담 교육과 디지털 서비스 개선으로 연결하는 예시입니다.",
+      "depts": [
+        "sales",
+        "digital"
+      ],
+      "source": "영업채널 인사이트",
+      "company": "영업 채널",
+      "keywords": [
+        "고객 경험",
+        "데이터"
+      ],
+      "priority": 8,
+      "image": "data.jpg",
+      "pick": "INDUSTRY INSIGHT",
+      "reason": "제목과 본문에서 고객 경험, 데이터에 관한 업무를 다루고 있어 영업마케팅, 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "반복 문의를 분류해 상담 교육과 디지털 서비스 개선으로 연결하는 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "sales",
+          "digital"
+        ],
+        "rationale": "제목과 본문에서 고객 경험, 데이터에 관한 업무를 다루고 있어 영업마케팅, 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d05-4",
+      "date": "2026-11-05",
+      "time": "06:20",
+      "title": "채권 포트폴리오의 만기 분산, 재투자 시점까지 고려하는 운용",
+      "summary": "투자 수익과 자금 회수 시기를 함께 검토하며 장기 운용의 안정성을 살펴봅니다.",
+      "depts": [
+        "asset"
+      ],
+      "source": "자산운용 브리핑",
+      "company": "투자·시장",
+      "keywords": [
+        "채권",
+        "ALM"
+      ],
+      "priority": 8,
+      "image": "architecture.jpg",
+      "pick": "STRATEGY & PEOPLE",
+      "reason": "제목과 본문에서 채권, ALM에 관한 업무를 다루고 있어 자산운용 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "투자 수익과 자금 회수 시기를 함께 검토하며 장기 운용의 안정성을 살펴봅니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "asset"
+        ],
+        "rationale": "제목과 본문에서 채권, ALM에 관한 업무를 다루고 있어 자산운용 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d05-5",
+      "date": "2026-11-05",
+      "time": "06:10",
+      "title": "부서마다 다른 위험 지표, 공통 시나리오로 함께 읽기",
+      "summary": "자본·손익·유동성 지표를 같은 시나리오 아래 검토하는 내부 보고 사례입니다.",
+      "depts": [
+        "risk",
+        "strategy"
+      ],
+      "source": "금융정책 브리핑",
+      "company": "회계·제도",
+      "keywords": [
+        "자본 건전성",
+        "내부통제"
+      ],
+      "priority": 7,
+      "image": "planning.jpg",
+      "pick": "PRODUCT & CUSTOMER",
+      "reason": "제목과 본문에서 자본 건전성, 내부통제에 관한 업무를 다루고 있어 리스크관리, 경영전략 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "자본·손익·유동성 지표를 같은 시나리오 아래 검토하는 내부 보고 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "risk",
+          "strategy"
+        ],
+        "rationale": "제목과 본문에서 자본 건전성, 내부통제에 관한 업무를 다루고 있어 리스크관리, 경영전략 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d05-6",
+      "date": "2026-11-05",
+      "time": "06:00",
+      "title": "고객 여정을 잇는 보험 앱, 작은 불편에서 개선의 실마리를",
+      "summary": "가입과 계약 조회, 청구 과정의 반복 입력을 줄이는 모바일 서비스 예시입니다.",
+      "depts": [
+        "digital"
+      ],
+      "source": "디지털금융 브리핑",
+      "company": "디지털 전환",
+      "keywords": [
+        "고객 경험",
+        "업무 자동화"
+      ],
+      "priority": 7,
+      "image": "data.jpg",
+      "pick": "INDUSTRY INSIGHT",
+      "reason": "제목과 본문에서 고객 경험, 업무 자동화에 관한 업무를 다루고 있어 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "가입과 계약 조회, 청구 과정의 반복 입력을 줄이는 모바일 서비스 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "digital"
+        ],
+        "rationale": "제목과 본문에서 고객 경험, 업무 자동화에 관한 업무를 다루고 있어 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d04-1",
+      "date": "2026-11-04",
+      "time": "06:50",
+      "title": "시장 변화에 대한 빠른 공유, 뉴스와 경영 지표를 연결하다",
+      "summary": "외부의 산업 이슈를 내부 지표와 함께 읽는 경영 관리 사례를 살펴봅니다.",
+      "depts": [
+        "strategy"
+      ],
+      "source": "경영전략 인사이트",
+      "company": "경영·전략",
+      "keywords": [
+        "경영 전략",
+        "데이터"
+      ],
+      "priority": 9,
+      "image": "architecture.jpg",
+      "pick": "STRATEGY & PEOPLE",
+      "reason": "제목과 본문에서 경영 전략, 데이터에 관한 업무를 다루고 있어 경영전략 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "외부의 산업 이슈를 내부 지표와 함께 읽는 경영 관리 사례를 살펴봅니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "strategy"
+        ],
+        "rationale": "제목과 본문에서 경영 전략, 데이터에 관한 업무를 다루고 있어 경영전략 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d04-2",
+      "date": "2026-11-04",
+      "time": "06:40",
+      "title": "연금 상품의 사후 관리, 가입 이후에도 필요한 안내를 설계하다",
+      "summary": "연금 수령과 운용 선택에 필요한 안내를 상품 서비스에 포함하는 예시입니다.",
+      "depts": [
+        "product",
+        "sales"
+      ],
+      "source": "보험산업 리포트",
+      "company": "상품·서비스",
+      "keywords": [
+        "연금",
+        "상품 경쟁력"
+      ],
+      "priority": 9,
+      "image": "planning.jpg",
+      "pick": "PRODUCT & CUSTOMER",
+      "reason": "제목과 본문에서 연금, 상품 경쟁력에 관한 업무를 다루고 있어 상품개발, 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "연금 수령과 운용 선택에 필요한 안내를 상품 서비스에 포함하는 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "product",
+          "sales"
+        ],
+        "rationale": "제목과 본문에서 연금, 상품 경쟁력에 관한 업무를 다루고 있어 상품개발, 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d04-3",
+      "date": "2026-11-04",
+      "time": "06:30",
+      "title": "GA 현장의 피드백, 교육과 상품 설명의 다음 개선점으로",
+      "summary": "설계사의 반복 질문을 수집해 교육 자료와 고객 안내를 개선하는 사례입니다.",
+      "depts": [
+        "sales"
+      ],
+      "source": "영업채널 인사이트",
+      "company": "영업 채널",
+      "keywords": [
+        "GA 채널",
+        "고객 경험"
+      ],
+      "priority": 8,
+      "image": "data.jpg",
+      "pick": "INDUSTRY INSIGHT",
+      "reason": "제목과 본문에서 GA 채널, 고객 경험에 관한 업무를 다루고 있어 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "설계사의 반복 질문을 수집해 교육 자료와 고객 안내를 개선하는 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "sales"
+        ],
+        "rationale": "제목과 본문에서 GA 채널, 고객 경험에 관한 업무를 다루고 있어 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d04-4",
+      "date": "2026-11-04",
+      "time": "06:20",
+      "title": "장기 부채를 고려한 투자 점검, 수익성과 현금흐름의 두 관점",
+      "summary": "개별 투자 판단과 보험부채의 지급 일정을 연결하는 운용 관점을 설명합니다.",
+      "depts": [
+        "asset",
+        "risk"
+      ],
+      "source": "자산운용 브리핑",
+      "company": "투자·시장",
+      "keywords": [
+        "ALM",
+        "금리"
+      ],
+      "priority": 8,
+      "image": "architecture.jpg",
+      "pick": "STRATEGY & PEOPLE",
+      "reason": "제목과 본문에서 ALM, 금리에 관한 업무를 다루고 있어 자산운용, 리스크관리 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "개별 투자 판단과 보험부채의 지급 일정을 연결하는 운용 관점을 설명합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "asset",
+          "risk"
+        ],
+        "rationale": "제목과 본문에서 ALM, 금리에 관한 업무를 다루고 있어 자산운용, 리스크관리 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d04-5",
+      "date": "2026-11-04",
+      "time": "06:10",
+      "title": "AI 지원 업무의 검증, 예외 상황과 책임 기준부터",
+      "summary": "AI 결과의 활용 범위와 사람이 확인해야 할 상황을 사전에 정의하는 사례입니다.",
+      "depts": [
+        "risk",
+        "digital"
+      ],
+      "source": "금융정책 브리핑",
+      "company": "회계·제도",
+      "keywords": [
+        "생성형 AI",
+        "내부통제"
+      ],
+      "priority": 7,
+      "image": "planning.jpg",
+      "pick": "PRODUCT & CUSTOMER",
+      "reason": "제목과 본문에서 생성형 AI, 내부통제에 관한 업무를 다루고 있어 리스크관리, 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "AI 결과의 활용 범위와 사람이 확인해야 할 상황을 사전에 정의하는 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "risk",
+          "digital"
+        ],
+        "rationale": "제목과 본문에서 생성형 AI, 내부통제에 관한 업무를 다루고 있어 리스크관리, 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d04-6",
+      "date": "2026-11-04",
+      "time": "06:00",
+      "title": "부서별 데이터 정의를 하나로, 보험사 데이터 품질 관리",
+      "summary": "같은 지표를 일관되게 해석할 수 있도록 데이터 정의와 이력을 관리하는 예시입니다.",
+      "depts": [
+        "digital"
+      ],
+      "source": "디지털금융 브리핑",
+      "company": "디지털 전환",
+      "keywords": [
+        "데이터",
+        "업무 자동화"
+      ],
+      "priority": 7,
+      "image": "data.jpg",
+      "pick": "INDUSTRY INSIGHT",
+      "reason": "제목과 본문에서 데이터, 업무 자동화에 관한 업무를 다루고 있어 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "같은 지표를 일관되게 해석할 수 있도록 데이터 정의와 이력을 관리하는 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "digital"
+        ],
+        "rationale": "제목과 본문에서 데이터, 업무 자동화에 관한 업무를 다루고 있어 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d03-1",
+      "date": "2026-11-03",
+      "time": "06:50",
+      "title": "외형 성장과 지속 가능성, 경영 회의에서 함께 볼 지표들",
+      "summary": "판매 규모와 유지율, 자본 소요를 함께 검토하는 보고 구성을 설명합니다.",
+      "depts": [
+        "strategy"
+      ],
+      "source": "경영전략 인사이트",
+      "company": "경영·전략",
+      "keywords": [
+        "수익성",
+        "자본 건전성"
+      ],
+      "priority": 9,
+      "image": "architecture.jpg",
+      "pick": "STRATEGY & PEOPLE",
+      "reason": "제목과 본문에서 수익성, 자본 건전성에 관한 업무를 다루고 있어 경영전략 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "판매 규모와 유지율, 자본 소요를 함께 검토하는 보고 구성을 설명합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "strategy"
+        ],
+        "rationale": "제목과 본문에서 수익성, 자본 건전성에 관한 업무를 다루고 있어 경영전략 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d03-2",
+      "date": "2026-11-03",
+      "time": "06:40",
+      "title": "생애 단계별 보장의 공백, 상품 구성에서 살펴볼 질문들",
+      "summary": "고객의 가족 구성과 건강 변화에 따른 보장 필요를 검토하는 예시입니다.",
+      "depts": [
+        "product"
+      ],
+      "source": "보험산업 리포트",
+      "company": "상품·서비스",
+      "keywords": [
+        "건강보험",
+        "상품 경쟁력"
+      ],
+      "priority": 9,
+      "image": "planning.jpg",
+      "pick": "PRODUCT & CUSTOMER",
+      "reason": "제목과 본문에서 건강보험, 상품 경쟁력에 관한 업무를 다루고 있어 상품개발 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "고객의 가족 구성과 건강 변화에 따른 보장 필요를 검토하는 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "product"
+        ],
+        "rationale": "제목과 본문에서 건강보험, 상품 경쟁력에 관한 업무를 다루고 있어 상품개발 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d03-3",
+      "date": "2026-11-03",
+      "time": "06:30",
+      "title": "한 번의 판매보다 오래가는 상담, 고객 관계 관리의 기본",
+      "summary": "가입 이후의 안내와 상담 기록을 통해 관계의 연속성을 높이는 사례입니다.",
+      "depts": [
+        "sales"
+      ],
+      "source": "영업채널 인사이트",
+      "company": "영업 채널",
+      "keywords": [
+        "고객 경험",
+        "GA 채널"
+      ],
+      "priority": 8,
+      "image": "data.jpg",
+      "pick": "INDUSTRY INSIGHT",
+      "reason": "제목과 본문에서 고객 경험, GA 채널에 관한 업무를 다루고 있어 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "가입 이후의 안내와 상담 기록을 통해 관계의 연속성을 높이는 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "sales"
+        ],
+        "rationale": "제목과 본문에서 고객 경험, GA 채널에 관한 업무를 다루고 있어 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d03-4",
+      "date": "2026-11-03",
+      "time": "06:20",
+      "title": "대체투자 자산의 정기 점검, 회수 일정과 유동성을 함께",
+      "summary": "자산군별 현금흐름과 스트레스 상황을 비교하는 포트폴리오 점검 예시입니다.",
+      "depts": [
+        "asset",
+        "risk"
+      ],
+      "source": "자산운용 브리핑",
+      "company": "투자·시장",
+      "keywords": [
+        "대체투자",
+        "ALM"
+      ],
+      "priority": 8,
+      "image": "architecture.jpg",
+      "pick": "STRATEGY & PEOPLE",
+      "reason": "제목과 본문에서 대체투자, ALM에 관한 업무를 다루고 있어 자산운용, 리스크관리 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "자산군별 현금흐름과 스트레스 상황을 비교하는 포트폴리오 점검 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "asset",
+          "risk"
+        ],
+        "rationale": "제목과 본문에서 대체투자, ALM에 관한 업무를 다루고 있어 자산운용, 리스크관리 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d03-5",
+      "date": "2026-11-03",
+      "time": "06:10",
+      "title": "보험금 지급 기준의 일관성, 고객 신뢰와 연결되는 내부통제",
+      "summary": "심사 기준과 고객 안내 내용이 일치하도록 확인하는 운영 사례를 다룹니다.",
+      "depts": [
+        "risk",
+        "sales"
+      ],
+      "source": "금융정책 브리핑",
+      "company": "회계·제도",
+      "keywords": [
+        "내부통제",
+        "고객 경험"
+      ],
+      "priority": 7,
+      "image": "planning.jpg",
+      "pick": "PRODUCT & CUSTOMER",
+      "reason": "제목과 본문에서 내부통제, 고객 경험에 관한 업무를 다루고 있어 리스크관리, 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "심사 기준과 고객 안내 내용이 일치하도록 확인하는 운영 사례를 다룹니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "risk",
+          "sales"
+        ],
+        "rationale": "제목과 본문에서 내부통제, 고객 경험에 관한 업무를 다루고 있어 리스크관리, 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d03-6",
+      "date": "2026-11-03",
+      "time": "06:00",
+      "title": "반복 업무를 줄이는 자동화, 현장의 예외 처리까지 설계하기",
+      "summary": "업무 자동화 이후에도 필요한 확인과 예외 처리 흐름을 정리하는 사례입니다.",
+      "depts": [
+        "digital"
+      ],
+      "source": "디지털금융 브리핑",
+      "company": "디지털 전환",
+      "keywords": [
+        "업무 자동화",
+        "데이터"
+      ],
+      "priority": 7,
+      "image": "data.jpg",
+      "pick": "INDUSTRY INSIGHT",
+      "reason": "제목과 본문에서 업무 자동화, 데이터에 관한 업무를 다루고 있어 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "업무 자동화 이후에도 필요한 확인과 예외 처리 흐름을 정리하는 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "digital"
+        ],
+        "rationale": "제목과 본문에서 업무 자동화, 데이터에 관한 업무를 다루고 있어 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d02-1",
+      "date": "2026-11-02",
+      "time": "06:50",
+      "title": "한 주의 산업 흐름을 한 장으로, 경영 브리핑의 새로운 방식",
+      "summary": "분산된 시장 뉴스를 전략 주제별로 묶어 내부에 공유하는 상황을 가정합니다.",
+      "depts": [
+        "strategy"
+      ],
+      "source": "경영전략 인사이트",
+      "company": "경영·전략",
+      "keywords": [
+        "경영 전략",
+        "수익성"
+      ],
+      "priority": 9,
+      "image": "architecture.jpg",
+      "pick": "STRATEGY & PEOPLE",
+      "reason": "제목과 본문에서 경영 전략, 수익성에 관한 업무를 다루고 있어 경영전략 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "분산된 시장 뉴스를 전략 주제별로 묶어 내부에 공유하는 상황을 가정합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "strategy"
+        ],
+        "rationale": "제목과 본문에서 경영 전략, 수익성에 관한 업무를 다루고 있어 경영전략 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d02-2",
+      "date": "2026-11-02",
+      "time": "06:40",
+      "title": "새로운 보장 아이디어, 고객의 실제 질문에서 찾다",
+      "summary": "상품 개발 과정에서 고객 문의와 현장 피드백을 활용하는 예시입니다.",
+      "depts": [
+        "product",
+        "sales"
+      ],
+      "source": "보험산업 리포트",
+      "company": "상품·서비스",
+      "keywords": [
+        "상품 경쟁력",
+        "고객 경험"
+      ],
+      "priority": 9,
+      "image": "planning.jpg",
+      "pick": "PRODUCT & CUSTOMER",
+      "reason": "제목과 본문에서 상품 경쟁력, 고객 경험에 관한 업무를 다루고 있어 상품개발, 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "상품 개발 과정에서 고객 문의와 현장 피드백을 활용하는 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "product",
+          "sales"
+        ],
+        "rationale": "제목과 본문에서 상품 경쟁력, 고객 경험에 관한 업무를 다루고 있어 상품개발, 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d02-3",
+      "date": "2026-11-02",
+      "time": "06:30",
+      "title": "설계사 상담 도구 점검, 일관된 설명과 쉬운 활용을 위해",
+      "summary": "상품 설명 자료와 디지털 상담 도구의 연결을 개선하는 사례입니다.",
+      "depts": [
+        "sales",
+        "digital"
+      ],
+      "source": "영업채널 인사이트",
+      "company": "영업 채널",
+      "keywords": [
+        "GA 채널",
+        "업무 자동화"
+      ],
+      "priority": 8,
+      "image": "data.jpg",
+      "pick": "INDUSTRY INSIGHT",
+      "reason": "제목과 본문에서 GA 채널, 업무 자동화에 관한 업무를 다루고 있어 영업마케팅, 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "상품 설명 자료와 디지털 상담 도구의 연결을 개선하는 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "sales",
+          "digital"
+        ],
+        "rationale": "제목과 본문에서 GA 채널, 업무 자동화에 관한 업무를 다루고 있어 영업마케팅, 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d02-4",
+      "date": "2026-11-02",
+      "time": "06:20",
+      "title": "금리 변화에 대비하는 장기 투자, 시나리오별로 나눠 보기",
+      "summary": "단일 금리 전망보다 여러 변화에 따른 현금흐름을 검토하는 운용 예시입니다.",
+      "depts": [
+        "asset"
+      ],
+      "source": "자산운용 브리핑",
+      "company": "투자·시장",
+      "keywords": [
+        "금리",
+        "채권"
+      ],
+      "priority": 8,
+      "image": "architecture.jpg",
+      "pick": "STRATEGY & PEOPLE",
+      "reason": "제목과 본문에서 금리, 채권에 관한 업무를 다루고 있어 자산운용 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "단일 금리 전망보다 여러 변화에 따른 현금흐름을 검토하는 운용 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "asset"
+        ],
+        "rationale": "제목과 본문에서 금리, 채권에 관한 업무를 다루고 있어 자산운용 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d02-5",
+      "date": "2026-11-02",
+      "time": "06:10",
+      "title": "계리 가정의 변화, 부서 간 공유가 필요한 이유",
+      "summary": "보험부채와 손익에 영향을 주는 가정의 변화를 함께 해석하는 사례입니다.",
+      "depts": [
+        "risk",
+        "strategy"
+      ],
+      "source": "금융정책 브리핑",
+      "company": "회계·제도",
+      "keywords": [
+        "IFRS17",
+        "CSM"
+      ],
+      "priority": 7,
+      "image": "planning.jpg",
+      "pick": "PRODUCT & CUSTOMER",
+      "reason": "제목과 본문에서 IFRS17, CSM에 관한 업무를 다루고 있어 리스크관리, 경영전략 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "보험부채와 손익에 영향을 주는 가정의 변화를 함께 해석하는 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "risk",
+          "strategy"
+        ],
+        "rationale": "제목과 본문에서 IFRS17, CSM에 관한 업무를 다루고 있어 리스크관리, 경영전략 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d02-6",
+      "date": "2026-11-02",
+      "time": "06:00",
+      "title": "보험 앱의 접근성, 누구나 편리하게 쓰는 화면의 조건",
+      "summary": "명확한 글자와 일관된 탐색으로 모바일 서비스의 사용성을 높이는 예시입니다.",
+      "depts": [
+        "digital"
+      ],
+      "source": "디지털금융 브리핑",
+      "company": "디지털 전환",
+      "keywords": [
+        "고객 경험",
+        "데이터"
+      ],
+      "priority": 7,
+      "image": "data.jpg",
+      "pick": "INDUSTRY INSIGHT",
+      "reason": "제목과 본문에서 고객 경험, 데이터에 관한 업무를 다루고 있어 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "명확한 글자와 일관된 탐색으로 모바일 서비스의 사용성을 높이는 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "digital"
+        ],
+        "rationale": "제목과 본문에서 고객 경험, 데이터에 관한 업무를 다루고 있어 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d08-1",
+      "date": "2026-11-08",
+      "time": "06:50",
+      "title": "생명보험의 장기 가치, 월간 사업 계획에서 다시 확인하기",
+      "summary": "상품과 서비스, 자본 계획의 연결성을 살펴보는 월간 경영 점검 예시입니다.",
+      "depts": [
+        "strategy"
+      ],
+      "source": "경영전략 인사이트",
+      "company": "경영·전략",
+      "keywords": [
+        "경영 전략",
+        "자본 건전성"
+      ],
+      "priority": 9,
+      "image": "architecture.jpg",
+      "pick": "STRATEGY & PEOPLE",
+      "reason": "제목과 본문에서 경영 전략, 자본 건전성에 관한 업무를 다루고 있어 경영전략 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "상품과 서비스, 자본 계획의 연결성을 살펴보는 월간 경영 점검 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "strategy"
+        ],
+        "rationale": "제목과 본문에서 경영 전략, 자본 건전성에 관한 업무를 다루고 있어 경영전략 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d08-2",
+      "date": "2026-11-08",
+      "time": "06:40",
+      "title": "건강과 노후를 잇는 보장 설계, 고객의 시간에서 출발하다",
+      "summary": "건강 보장과 노후 소득 준비를 함께 검토하는 상품 관점을 소개합니다.",
+      "depts": [
+        "product"
+      ],
+      "source": "보험산업 리포트",
+      "company": "상품·서비스",
+      "keywords": [
+        "건강보험",
+        "연금"
+      ],
+      "priority": 9,
+      "image": "planning.jpg",
+      "pick": "PRODUCT & CUSTOMER",
+      "reason": "제목과 본문에서 건강보험, 연금에 관한 업무를 다루고 있어 상품개발 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "건강 보장과 노후 소득 준비를 함께 검토하는 상품 관점을 소개합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "product"
+        ],
+        "rationale": "제목과 본문에서 건강보험, 연금에 관한 업무를 다루고 있어 상품개발 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d08-3",
+      "date": "2026-11-08",
+      "time": "06:30",
+      "title": "고객에게 먼저 닿는 안내, 보험 콘텐츠의 역할을 다시 보다",
+      "summary": "고객이 자주 묻는 질문을 이해하기 쉬운 정보로 전달하는 사례입니다.",
+      "depts": [
+        "sales"
+      ],
+      "source": "영업채널 인사이트",
+      "company": "영업 채널",
+      "keywords": [
+        "고객 경험",
+        "콘텐츠"
+      ],
+      "priority": 8,
+      "image": "data.jpg",
+      "pick": "INDUSTRY INSIGHT",
+      "reason": "제목과 본문에서 고객 경험, 콘텐츠에 관한 업무를 다루고 있어 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "고객이 자주 묻는 질문을 이해하기 쉬운 정보로 전달하는 사례입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "sales"
+        ],
+        "rationale": "제목과 본문에서 고객 경험, 콘텐츠에 관한 업무를 다루고 있어 영업마케팅 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d08-4",
+      "date": "2026-11-08",
+      "time": "06:20",
+      "title": "보험 자산운용의 긴 호흡, 현금흐름을 중심으로 점검하기",
+      "summary": "월간 투자 검토에서 자산과 부채의 지급 일정을 비교하는 예시입니다.",
+      "depts": [
+        "asset",
+        "risk"
+      ],
+      "source": "자산운용 브리핑",
+      "company": "투자·시장",
+      "keywords": [
+        "ALM",
+        "채권"
+      ],
+      "priority": 8,
+      "image": "architecture.jpg",
+      "pick": "STRATEGY & PEOPLE",
+      "reason": "제목과 본문에서 ALM, 채권에 관한 업무를 다루고 있어 자산운용, 리스크관리 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "월간 투자 검토에서 자산과 부채의 지급 일정을 비교하는 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "asset",
+          "risk"
+        ],
+        "rationale": "제목과 본문에서 ALM, 채권에 관한 업무를 다루고 있어 자산운용, 리스크관리 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d08-5",
+      "date": "2026-11-08",
+      "time": "06:10",
+      "title": "자본과 운영 위험을 함께 살피는 월간 리스크 점검",
+      "summary": "정량 지표와 업무 과정의 통제를 함께 검토하는 내부 보고 예시입니다.",
+      "depts": [
+        "risk"
+      ],
+      "source": "금융정책 브리핑",
+      "company": "회계·제도",
+      "keywords": [
+        "자본 건전성",
+        "내부통제"
+      ],
+      "priority": 7,
+      "image": "planning.jpg",
+      "pick": "PRODUCT & CUSTOMER",
+      "reason": "제목과 본문에서 자본 건전성, 내부통제에 관한 업무를 다루고 있어 리스크관리 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "정량 지표와 업무 과정의 통제를 함께 검토하는 내부 보고 예시입니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "risk"
+        ],
+        "rationale": "제목과 본문에서 자본 건전성, 내부통제에 관한 업무를 다루고 있어 리스크관리 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    },
+    {
+      "id": "d08-6",
+      "date": "2026-11-08",
+      "time": "06:00",
+      "title": "AI 도입의 첫 단계, 작은 업무에서 검증 가능한 성과 찾기",
+      "summary": "적용 범위를 정하고 오류와 개선 효과를 측정하는 시범 운영을 가정합니다.",
+      "depts": [
+        "digital"
+      ],
+      "source": "디지털금융 브리핑",
+      "company": "디지털 전환",
+      "keywords": [
+        "생성형 AI",
+        "업무 자동화"
+      ],
+      "priority": 7,
+      "image": "data.jpg",
+      "pick": "INDUSTRY INSIGHT",
+      "reason": "제목과 본문에서 생성형 AI, 업무 자동화에 관한 업무를 다루고 있어 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+      "body": [
+        "적용 범위를 정하고 오류와 개선 효과를 측정하는 시범 운영을 가정합니다."
+      ],
+      "sourceUrl": null,
+      "classification": {
+        "mode": "fixture",
+        "provider": "TypeSafe Jev",
+        "apiInvoked": false,
+        "departmentIds": [
+          "digital"
+        ],
+        "rationale": "제목과 본문에서 생성형 AI, 업무 자동화에 관한 업무를 다루고 있어 디지털·IT 부서와 관련된 기사로 분류했습니다.",
+        "rationaleSource": "authored_sample"
+      }
+    }
+  ],
+  "reports": [
+    {
+      "id": "monday",
+      "name": "월요일 아침 브리핑",
+      "shortName": "월요일 보고",
+      "period": "목·금·토·일",
+      "periodShort": "목–일",
+      "schedule": "월요일 오전 7시",
+      "dates": [
+        "2026-11-05",
+        "2026-11-06",
+        "2026-11-07",
+        "2026-11-08"
+      ],
+      "label": "목–일 주요 보험 뉴스",
+      "articleIds": [
+        "d08-1",
+        "d08-2",
+        "d08-3",
+        "d08-4",
+        "d08-5",
+        "d08-6",
+        "n01",
+        "n02",
+        "n03",
+        "n04",
+        "n05",
+        "n06",
+        "n07",
+        "n08",
+        "n09",
+        "n10",
+        "n11",
+        "n12",
+        "n13",
+        "n14",
+        "n15",
+        "n16",
+        "n17",
+        "n18",
+        "p01",
+        "p02",
+        "p03",
+        "p04",
+        "p05",
+        "p06",
+        "d05-1",
+        "d05-2",
+        "d05-3",
+        "d05-4",
+        "d05-5",
+        "d05-6"
+      ],
+      "briefings": {
+        "strategy": {
+          "title": "지속 가능한 성장,\n수익의 질과 자본에서 시작하다",
+          "short": "자본과 수익의 균형을 다시 볼 시간",
+          "lead": "이번 보고의 주요 기사들은 자본 건전성과 상품 포트폴리오의 연결성을 공통 주제로 다룹니다. 단기 실적뿐 아니라 수익의 지속 가능성을 함께 읽는 관점이 필요합니다.",
+          "takeaways": [
+            "자본 계획과 상품 포트폴리오를 하나의 관점에서 점검하기",
+            "외형 지표와 함께 수익의 질을 설명할 수 있는 자료 준비하기",
+            "신사업은 기존 고객 기반과의 연결성을 먼저 살피기"
+          ],
+          "implication": "실적·자본·상품 구성을 연결한 전사 공통 점검표를 검토해 볼 수 있습니다.",
+          "analysis": "목·금·토·일 수집한 관련 기사 9건에서는 경영 전략, 자본 건전성, K-ICS, ALM 등의 주제가 나타납니다. 자본 관리, 수익 구조, 신사업을 다루는 기사는 서로 다른 주제처럼 보이지만 장기적인 경영 지속 가능성으로 연결됩니다. 부서별 지표를 따로 읽기보다 동일한 가정 아래 함께 해석하면 의사결정에 필요한 맥락을 얻을 수 있습니다.",
+          "action": "다음 경영 회의에서 보험계약마진, 신계약 구성, 지급여력의 변동 요인을 함께 확인할 수 있도록 자료를 구성합니다. 신사업 검토에는 기존 고객 가치와 자본 소요를 확인하는 항목을 추가할 수 있습니다.",
+          "evidence": [
+            [
+              "n01",
+              "n04",
+              "n08"
+            ],
+            [
+              "n04"
+            ],
+            [
+              "n11"
+            ]
+          ],
+          "sourceIds": [
+            "d08-1",
+            "n01",
+            "n04",
+            "n08",
+            "n11",
+            "n15",
+            "p01",
+            "d05-1",
+            "d05-5"
+          ],
+          "reportId": "monday",
+          "departmentId": "strategy"
+        },
+        "product": {
+          "title": "보장의 설계에서\n고객 생애의 설계로",
+          "short": "건강과 노후를 잇는 상품의 다음 장",
+          "lead": "건강관리 서비스와 연금의 사후 관리가 관련 기사의 공통 주제입니다. 보장 내용과 가격뿐 아니라 가입부터 유지까지 고객이 경험하는 가치를 함께 설계하는 흐름을 보여줍니다.",
+          "takeaways": [
+            "건강관리 서비스와 핵심 보장의 연결성 점검하기",
+            "연금의 지속적인 소득과 가입 이후 관리 경험 살피기",
+            "현장 피드백을 상품 설명과 심사 기준 개선에 반영하기"
+          ],
+          "implication": "신상품 검토표에 가입 이후의 서비스와 고객 이해도를 함께 반영할 수 있습니다.",
+          "analysis": "목·금·토·일 수집한 관련 기사 9건에서는 건강보험, 연금, 상품 경쟁력, 고객 경험 등의 주제가 나타납니다. 건강관리와 연금은 서로 다른 상품군이지만 장기간 고객과 관계를 유지해야 한다는 공통점이 있습니다. 실제로 제공할 서비스와 고객이 이해하는 보장 범위를 맞추는 일이 상품 차별화의 검토 지점이 될 수 있습니다.",
+          "action": "보장 구조, 설명 문구, 심사 절차, 가입 후 관리로 이어지는 고객 여정을 점검합니다. 영업 현장의 반복 질문과 고객 문의를 모아 상품 설명의 개선 항목을 도출할 수 있습니다.",
+          "evidence": [
+            [
+              "n02",
+              "d05-2"
+            ],
+            [
+              "n07",
+              "n16"
+            ],
+            [
+              "p05",
+              "n12"
+            ]
+          ],
+          "sourceIds": [
+            "d08-2",
+            "n02",
+            "n04",
+            "n07",
+            "n12",
+            "n16",
+            "p02",
+            "p05",
+            "d05-2"
+          ],
+          "reportId": "monday",
+          "departmentId": "product"
+        },
+        "sales": {
+          "title": "더 많이 판매하는 것을 넘어,\n더 오래 신뢰받는 관계로",
+          "short": "영업의 다음 지표는 고객과의 관계",
+          "lead": "GA 채널 운영과 설계사 교육, 은퇴 고객 커뮤니케이션이 주요 주제입니다. 판매 시점의 성과와 가입 이후의 신뢰를 함께 관리하는 관점을 제안합니다.",
+          "takeaways": [
+            "판매량과 유지율·완전판매 지표를 함께 읽기",
+            "생애주기 상담을 지원할 교육과 콘텐츠 점검하기",
+            "보험금 청구 이후까지 고객 커뮤니케이션 이어가기"
+          ],
+          "implication": "영업 보고에 판매 품질과 장기 고객 관계를 보여주는 항목을 추가할 수 있습니다.",
+          "analysis": "목·금·토·일 수집한 관련 기사 11건에서는 고객 경험, 콘텐츠, 건강보험, 상품 경쟁력 등의 주제가 나타납니다. 채널 경쟁력은 단순히 규모를 늘리는 방식만으로 설명하기 어렵습니다. 관련 기사들은 고객의 상황을 이해하는 상담 역량과 사후 서비스의 일관성이 장기 관계를 만드는 기반이라는 관점으로 연결됩니다.",
+          "action": "설계사 교육에 상품 구조와 함께 고객 상황별 질문 사례를 포함합니다. 유지율과 반복 문의를 함께 분석하고, 연금과 은퇴 관련 콘텐츠는 가입 이후에도 활용할 수 있도록 구성할 수 있습니다.",
+          "evidence": [
+            [
+              "n05"
+            ],
+            [
+              "n10",
+              "n07"
+            ],
+            [
+              "n14",
+              "n16"
+            ]
+          ],
+          "sourceIds": [
+            "d08-3",
+            "n02",
+            "n05",
+            "n07",
+            "n10",
+            "n14",
+            "n16",
+            "p02",
+            "p05",
+            "d05-2",
+            "d05-3"
+          ],
+          "reportId": "monday",
+          "departmentId": "sales"
+        },
+        "asset": {
+          "title": "장기 부채의 시간에 맞춰,\n포트폴리오의 균형을 읽다",
+          "short": "수익률과 함께 확인할 자산의 시간표",
+          "lead": "채권 운용과 ALM, 대체투자의 유동성이 이번 보고의 공통 주제입니다. 개별 투자 수익뿐 아니라 보험부채와 연결된 현금흐름을 함께 점검하는 접근을 보여줍니다.",
+          "takeaways": [
+            "채권 포트폴리오와 보험부채의 현금흐름 비교하기",
+            "금리 시나리오별 듀레이션과 재투자 위험 점검하기",
+            "대체투자의 회수 일정과 유동성 가정을 함께 검토하기"
+          ],
+          "implication": "운용 성과 검토 자료에 부채 지급 일정과 유동성 시나리오를 함께 제시할 수 있습니다.",
+          "analysis": "목·금·토·일 수집한 관련 기사 7건에서는 ALM, 채권, 금리, K-ICS 등의 주제가 나타납니다. 개별 자산의 수익성이 양호하더라도 자금 회수 시점이 부채 지급 일정과 맞지 않으면 별도의 관리가 필요합니다. 장기 채권과 대체투자 기사를 같은 시간 축으로 읽으면 자산 구성의 검토 지점을 찾을 수 있습니다.",
+          "action": "자산군별 현금 유입과 보험부채의 지급 예정을 비교하는 자료를 준비합니다. 금리와 자산 회수 시점의 변화가 포트폴리오에 미치는 영향을 리스크관리 부서와 함께 점검할 수 있습니다.",
+          "evidence": [
+            [
+              "n06",
+              "n13"
+            ],
+            [
+              "n06",
+              "p04"
+            ],
+            [
+              "n18"
+            ]
+          ],
+          "sourceIds": [
+            "d08-4",
+            "n06",
+            "n13",
+            "n15",
+            "n18",
+            "p04",
+            "d05-4"
+          ],
+          "reportId": "monday",
+          "departmentId": "asset"
+        },
+        "risk": {
+          "title": "자본 건전성부터 AI까지,\n변화를 견디는 기준 만들기",
+          "short": "새로운 변화에도 흔들리지 않는 기준",
+          "lead": "자본 적정성과 회계 가정, 판매 품질, AI의 통제가 함께 등장합니다. 개별 위험을 관리하면서 부서 간에 동일한 기준을 공유하는 것이 이번 브리핑의 핵심입니다.",
+          "takeaways": [
+            "금리·계리 가정 변화와 자본 지표의 연결 살피기",
+            "판매와 보험금 심사 기준의 일관성 점검하기",
+            "AI 활용 범위와 사람의 검토가 필요한 지점 구분하기"
+          ],
+          "implication": "신규 업무나 AI 도구를 검토할 때 책임 부서와 검증 기준을 함께 정할 수 있습니다.",
+          "analysis": "목·금·토·일 수집한 관련 기사 13건에서는 ALM, 채권, 자본 건전성, 내부통제 등의 주제가 나타납니다. 리스크는 자본 수치에만 나타나지 않습니다. 고객 설명, 지급 심사, 데이터 활용 같은 일상 업무에도 기준과 책임이 필요합니다. 관련 기사들은 변화의 속도에 맞춰 검증 방식과 보고 체계를 함께 개선해야 한다는 관점으로 읽을 수 있습니다.",
+          "action": "자본 민감도 점검과 더불어 업무별 검증 항목을 정리합니다. AI와 자동화의 경우 적용 가능한 업무, 예외 상황, 최종 검토 주체를 문서화하고 관련 부서와 공유할 수 있습니다.",
+          "evidence": [
+            [
+              "n01",
+              "n06",
+              "n08"
+            ],
+            [
+              "n05",
+              "n14"
+            ],
+            [
+              "n03",
+              "p06"
+            ]
+          ],
+          "sourceIds": [
+            "d08-4",
+            "d08-5",
+            "n01",
+            "n03",
+            "n05",
+            "n06",
+            "n08",
+            "n09",
+            "n14",
+            "n18",
+            "p04",
+            "p06",
+            "d05-5"
+          ],
+          "reportId": "monday",
+          "departmentId": "risk"
+        },
+        "digital": {
+          "title": "AI 도입의 성과는,\n현장의 경험으로 완성된다",
+          "short": "AI와 데이터, 실제 업무에 닿도록",
+          "lead": "생성형 AI, 심사 자동화, 데이터 품질과 모바일 청구가 주요 주제입니다. 기술 도입 자체보다 업무 흐름과 고객 경험을 얼마나 개선하는지 살피는 관점을 제안합니다.",
+          "takeaways": [
+            "반복 업무와 판단 지원 업무를 구분해 적용하기",
+            "데이터 품질·고객 동의·접근 권한을 함께 설계하기",
+            "모바일 고객 여정 전체의 대기와 반복 작업 줄이기"
+          ],
+          "implication": "AI 시범 적용은 한 가지 업무부터 시작하고 처리 시간과 검토 품질을 함께 측정할 수 있습니다.",
+          "analysis": "목·금·토·일 수집한 관련 기사 9건에서는 생성형 AI, 업무 자동화, 내부통제, 데이터 등의 주제가 나타납니다. 관련 기사들은 자동화의 속도와 신뢰성을 함께 다룹니다. 시스템의 정확도가 충분하더라도 현장의 입력 데이터나 예외 처리 방식이 갖춰지지 않으면 기대한 효과를 얻기 어렵습니다. 업무의 시작부터 완료까지 이어지는 경험이 중요한 평가 기준입니다.",
+          "action": "상담이나 심사 지원 등 범위가 분명한 업무를 선정합니다. 입력 데이터, 오류 시 동작, 검토자, 효과 지표를 함께 정의하고, 고객 화면의 단계 수뿐 아니라 전체 처리 시간을 확인할 수 있습니다.",
+          "evidence": [
+            [
+              "n03",
+              "n12"
+            ],
+            [
+              "n09",
+              "p03"
+            ],
+            [
+              "n17",
+              "d05-6"
+            ]
+          ],
+          "sourceIds": [
+            "d08-6",
+            "n03",
+            "n09",
+            "n12",
+            "n17",
+            "p03",
+            "p06",
+            "d05-3",
+            "d05-6"
+          ],
+          "reportId": "monday",
+          "departmentId": "digital"
+        }
+      }
+    },
+    {
+      "id": "thursday",
+      "name": "목요일 브리핑",
+      "shortName": "목요일 보고",
+      "period": "월·화·수",
+      "periodShort": "월–수",
+      "schedule": "목요일 오전 7시",
+      "dates": [
+        "2026-11-02",
+        "2026-11-03",
+        "2026-11-04"
+      ],
+      "label": "월–수 주요 보험 뉴스",
+      "articleIds": [
+        "d04-1",
+        "d04-2",
+        "d04-3",
+        "d04-4",
+        "d04-5",
+        "d04-6",
+        "d03-1",
+        "d03-2",
+        "d03-3",
+        "d03-4",
+        "d03-5",
+        "d03-6",
+        "d02-1",
+        "d02-2",
+        "d02-3",
+        "d02-4",
+        "d02-5",
+        "d02-6"
+      ],
+      "briefings": {
+        "strategy": {
+          "title": "시장 정보와 경영 지표를,\n같은 기준으로 읽다",
+          "short": "시장 뉴스와 경영 지표의 연결",
+          "lead": "외부 시장 정보, 판매 규모와 유지율, 자본 소요, 계리 가정의 변화를 함께 읽는 것이 이번 회차의 공통 주제입니다.",
+          "takeaways": [
+            "시장 뉴스를 내부 경영 지표와 함께 공유하기",
+            "판매 규모와 유지율·자본 소요를 함께 점검하기",
+            "계리 가정의 변화가 손익에 미치는 영향을 공유하기"
+          ],
+          "implication": "시장 뉴스와 경영 지표를 같은 기준으로 확인하는 보고 구성을 검토할 수 있습니다.",
+          "analysis": "월·화·수 수집한 관련 기사 4건에서는 경영 전략, 데이터, 수익성, 자본 건전성 등의 주제가 나타납니다. 관련 기사는 분산된 시장 정보와 내부 지표를 연결하는 필요성을 다룹니다. 판매량만으로 성과를 설명하기보다 유지율과 자본 소요를 함께 보고, 계리 가정의 변화도 공유하면 부서 간 해석 차이를 줄이는 데 도움이 될 수 있습니다.",
+          "action": "경영 회의 자료에 외부 이슈와 관련 내부 지표를 나란히 배치합니다. 지표의 정의와 기준 시점을 맞추고, 가정 변화에 대한 설명을 함께 준비할 수 있습니다.",
+          "evidence": [
+            [
+              "d04-1",
+              "d02-1"
+            ],
+            [
+              "d03-1"
+            ],
+            [
+              "d02-5"
+            ]
+          ],
+          "sourceIds": [
+            "d04-1",
+            "d03-1",
+            "d02-1",
+            "d02-5"
+          ],
+          "reportId": "thursday",
+          "departmentId": "strategy"
+        },
+        "product": {
+          "title": "가입 이후의 경험까지,\n고객의 시간으로 설계하다",
+          "short": "보장의 공백과 가입 이후 안내",
+          "lead": "연금 상품의 사후 안내, 고객 생애 단계별 보장 필요, 고객 질문을 활용한 상품 개선이 주요 주제입니다.",
+          "takeaways": [
+            "연금 가입 이후 필요한 안내를 서비스에 포함하기",
+            "생애 단계에 따른 보장의 공백을 확인하기",
+            "고객의 실제 질문을 상품 개선에 반영하기"
+          ],
+          "implication": "상품 검토에 보장 내용과 가입 이후 안내를 함께 포함할 수 있습니다.",
+          "analysis": "월·화·수 수집한 관련 기사 3건에서는 연금, 상품 경쟁력, 건강보험, 고객 경험 등의 주제가 나타납니다. 세 기사는 상품을 판매 시점에만 한정하지 않고 고객이 이용하는 시간 전체로 살펴보는 관점으로 연결됩니다. 고객의 생활 변화와 반복 질문을 반영하면 설명과 서비스에서 보완할 지점을 찾을 수 있습니다.",
+          "action": "상품별로 고객이 가입 전후에 묻는 질문을 정리합니다. 연금 수령 안내와 생애 단계별 보장 점검 항목을 영업 부서와 함께 검토할 수 있습니다.",
+          "evidence": [
+            [
+              "d04-2"
+            ],
+            [
+              "d03-2"
+            ],
+            [
+              "d02-2"
+            ]
+          ],
+          "sourceIds": [
+            "d04-2",
+            "d03-2",
+            "d02-2"
+          ],
+          "reportId": "thursday",
+          "departmentId": "product"
+        },
+        "sales": {
+          "title": "상담과 사후 안내를,\n하나의 관계로 연결하다",
+          "short": "현장 피드백과 일관된 고객 안내",
+          "lead": "GA 현장의 질문, 가입 이후 상담, 연금 사후 안내와 디지털 상담 도구가 함께 등장합니다. 고객에게 일관된 설명을 제공하는 관점이 필요합니다.",
+          "takeaways": [
+            "GA 현장의 반복 질문을 교육에 반영하기",
+            "가입 이후 상담과 연금 안내를 이어가기",
+            "상담 도구와 보험금 안내의 설명을 일관되게 맞추기"
+          ],
+          "implication": "상담 교육과 가입 이후 안내 자료를 같은 기준으로 점검할 수 있습니다.",
+          "analysis": "월·화·수 수집한 관련 기사 6건에서는 연금, 상품 경쟁력, GA 채널, 고객 경험 등의 주제가 나타납니다. 현장 피드백은 교육 자료와 상품 설명의 개선에 활용할 수 있습니다. 고객 관계를 가입 이후까지 이어가려면 연금 안내, 보험금 설명, 디지털 상담 도구가 같은 기준으로 정보를 전달하는지 함께 살펴볼 필요가 있습니다.",
+          "action": "반복 질문과 상담 기록을 묶어 교육 주제를 정리합니다. 보험금 안내와 상담 도구의 문구를 점검하고, 연금 고객의 사후 안내 항목을 검토할 수 있습니다.",
+          "evidence": [
+            [
+              "d04-3"
+            ],
+            [
+              "d03-3",
+              "d04-2"
+            ],
+            [
+              "d02-3",
+              "d03-5"
+            ]
+          ],
+          "sourceIds": [
+            "d04-2",
+            "d04-3",
+            "d03-3",
+            "d03-5",
+            "d02-2",
+            "d02-3"
+          ],
+          "reportId": "thursday",
+          "departmentId": "sales"
+        },
+        "asset": {
+          "title": "장기 투자와 보험부채를,\n같은 시간표에 놓다",
+          "short": "현금흐름과 유동성의 동시 점검",
+          "lead": "장기 부채를 고려한 투자 점검, 대체투자 회수 일정, 금리 시나리오별 현금흐름이 이번 회차의 핵심입니다.",
+          "takeaways": [
+            "자산 운용과 보험부채의 지급 일정 비교하기",
+            "대체투자의 회수 일정과 유동성 점검하기",
+            "금리 시나리오별 현금흐름 살펴보기"
+          ],
+          "implication": "투자 검토 자료에 회수 일정과 부채 지급 예정을 함께 제시할 수 있습니다.",
+          "analysis": "월·화·수 수집한 관련 기사 3건에서는 ALM, 금리, 대체투자, 채권 등의 주제가 나타납니다. 세 기사는 개별 자산의 수익성과 함께 현금이 들어오고 나가는 시점을 검토하는 관점으로 연결됩니다. 금리 변화와 자산 회수 지연을 나누어 살펴보면 유동성 점검 항목을 구체화할 수 있습니다.",
+          "action": "자산과 부채의 예정 현금흐름을 비교하는 자료를 준비합니다. 대체투자의 회수 시점과 금리 변화 시나리오를 리스크관리 부서와 함께 점검할 수 있습니다.",
+          "evidence": [
+            [
+              "d04-4"
+            ],
+            [
+              "d03-4"
+            ],
+            [
+              "d02-4"
+            ]
+          ],
+          "sourceIds": [
+            "d04-4",
+            "d03-4",
+            "d02-4"
+          ],
+          "reportId": "thursday",
+          "departmentId": "asset"
+        },
+        "risk": {
+          "title": "재무 가정과 업무 기준을,\n함께 점검하는 리스크 관리",
+          "short": "현금흐름·계리 가정·업무 검증",
+          "lead": "장기 자산의 유동성, 계리 가정의 변화, 보험금 지급 기준과 AI 업무의 검증이 주요 주제입니다.",
+          "takeaways": [
+            "자산·부채의 현금흐름과 계리 가정 변화를 함께 읽기",
+            "보험금 심사 기준과 고객 안내의 일관성 점검하기",
+            "AI 결과의 활용 범위와 예외 검토 기준 정하기"
+          ],
+          "implication": "재무 위험과 업무별 검증 항목을 같은 점검 체계에서 살펴볼 수 있습니다.",
+          "analysis": "월·화·수 수집한 관련 기사 5건에서는 ALM, 금리, 생성형 AI, 내부통제 등의 주제가 나타납니다. 유동성과 계리 가정은 재무 지표에, 지급 기준과 AI 예외 처리는 업무 과정에 영향을 줍니다. 각 위험에 맞는 확인 기준을 정하고 관련 부서와 공유하는 방식이 공통적인 검토 과제입니다.",
+          "action": "가정 변화와 자금 회수 시점의 영향을 점검하고, 보험금 설명과 심사 기준의 일관성을 확인합니다. AI 업무는 예외 상황과 최종 검토 주체를 먼저 정할 수 있습니다.",
+          "evidence": [
+            [
+              "d04-4",
+              "d03-4",
+              "d02-5"
+            ],
+            [
+              "d03-5"
+            ],
+            [
+              "d04-5"
+            ]
+          ],
+          "sourceIds": [
+            "d04-4",
+            "d04-5",
+            "d03-4",
+            "d03-5",
+            "d02-5"
+          ],
+          "reportId": "thursday",
+          "departmentId": "risk"
+        },
+        "digital": {
+          "title": "자동화의 다음 단계,\n데이터와 예외 처리의 품질",
+          "short": "데이터 품질과 현장의 사용성",
+          "lead": "AI 예외 검토, 데이터 정의, 반복 업무 자동화, 상담 도구와 모바일 접근성을 함께 다룹니다.",
+          "takeaways": [
+            "AI와 자동화의 예외 처리·검토 주체 정하기",
+            "부서 간 데이터 정의와 검증 기준 맞추기",
+            "상담 도구와 보험 앱의 사용성·접근성 살피기"
+          ],
+          "implication": "시범 도입의 평가에 오류 처리와 실제 사용 경험을 함께 포함할 수 있습니다.",
+          "analysis": "월·화·수 수집한 관련 기사 5건에서는 생성형 AI, 내부통제, 데이터, 업무 자동화 등의 주제가 나타납니다. 자동화 도구를 운영하려면 입력 데이터의 품질뿐 아니라 오류나 예외를 처리하는 흐름도 필요합니다. 현장의 상담 도구와 고객 앱에서 정보를 쉽게 이해하고 사용할 수 있는지도 함께 확인할 수 있습니다.",
+          "action": "자동화 업무별 예외 처리 흐름을 정리하고, 부서별 데이터 정의를 비교합니다. 상담 도구의 설명 일관성과 모바일 앱의 접근성을 점검 항목에 포함할 수 있습니다.",
+          "evidence": [
+            [
+              "d04-5",
+              "d03-6"
+            ],
+            [
+              "d04-6"
+            ],
+            [
+              "d02-3",
+              "d02-6"
+            ]
+          ],
+          "sourceIds": [
+            "d04-5",
+            "d04-6",
+            "d03-6",
+            "d02-3",
+            "d02-6"
+          ],
+          "reportId": "thursday",
+          "departmentId": "digital"
+        }
+      }
+    }
+  ],
+  "publications": [
+    {
+      "id": "sample-week-01-strategy-monday",
+      "departmentId": "strategy",
+      "collectionId": "monday",
+      "weekId": "sample-week-01",
+      "title": "월요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "strategy"
+        ],
+        "enforcement": "not_implemented"
+      }
+    },
+    {
+      "id": "sample-week-01-strategy-thursday",
+      "departmentId": "strategy",
+      "collectionId": "thursday",
+      "weekId": "sample-week-01",
+      "title": "목요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "strategy"
+        ],
+        "enforcement": "not_implemented"
+      }
+    },
+    {
+      "id": "sample-week-01-product-monday",
+      "departmentId": "product",
+      "collectionId": "monday",
+      "weekId": "sample-week-01",
+      "title": "월요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "product"
+        ],
+        "enforcement": "not_implemented"
+      }
+    },
+    {
+      "id": "sample-week-01-product-thursday",
+      "departmentId": "product",
+      "collectionId": "thursday",
+      "weekId": "sample-week-01",
+      "title": "목요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "product"
+        ],
+        "enforcement": "not_implemented"
+      }
+    },
+    {
+      "id": "sample-week-01-sales-monday",
+      "departmentId": "sales",
+      "collectionId": "monday",
+      "weekId": "sample-week-01",
+      "title": "월요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "sales"
+        ],
+        "enforcement": "not_implemented"
+      }
+    },
+    {
+      "id": "sample-week-01-sales-thursday",
+      "departmentId": "sales",
+      "collectionId": "thursday",
+      "weekId": "sample-week-01",
+      "title": "목요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "sales"
+        ],
+        "enforcement": "not_implemented"
+      }
+    },
+    {
+      "id": "sample-week-01-asset-monday",
+      "departmentId": "asset",
+      "collectionId": "monday",
+      "weekId": "sample-week-01",
+      "title": "월요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "asset"
+        ],
+        "enforcement": "not_implemented"
+      }
+    },
+    {
+      "id": "sample-week-01-asset-thursday",
+      "departmentId": "asset",
+      "collectionId": "thursday",
+      "weekId": "sample-week-01",
+      "title": "목요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "asset"
+        ],
+        "enforcement": "not_implemented"
+      }
+    },
+    {
+      "id": "sample-week-01-risk-monday",
+      "departmentId": "risk",
+      "collectionId": "monday",
+      "weekId": "sample-week-01",
+      "title": "월요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "risk"
+        ],
+        "enforcement": "not_implemented"
+      }
+    },
+    {
+      "id": "sample-week-01-risk-thursday",
+      "departmentId": "risk",
+      "collectionId": "thursday",
+      "weekId": "sample-week-01",
+      "title": "목요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "risk"
+        ],
+        "enforcement": "not_implemented"
+      }
+    },
+    {
+      "id": "sample-week-01-digital-monday",
+      "departmentId": "digital",
+      "collectionId": "monday",
+      "weekId": "sample-week-01",
+      "title": "월요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "digital"
+        ],
+        "enforcement": "not_implemented"
+      }
+    },
+    {
+      "id": "sample-week-01-digital-thursday",
+      "departmentId": "digital",
+      "collectionId": "thursday",
+      "weekId": "sample-week-01",
+      "title": "목요일 정기 보고서",
+      "status": "published",
+      "access": {
+        "audienceDepartmentIds": [
+          "digital"
+        ],
+        "enforcement": "not_implemented"
+      }
+    }
+  ]
+}

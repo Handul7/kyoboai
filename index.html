@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#121c72">
+  <meta name="description" content="생명보험 뉴스를 모으고, 부서의 인사이트로. Jev 분류와 LLM 부서별 브리핑을 제안하는 대학원 과제용 인터랙티브 샘플.">
+  <link rel="canonical" href="https://kyoboai.handul.dev/">
+  <title>교보 뉴스브리핑 — 보험 뉴스 부서별 요약</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-subset.css">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./data.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-paper" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v15a2 2 0 0 0 4 0V9h-4"/><path d="M7 7h8M7 15h8M7 18h5M7 11h8"/></symbol>
+    <symbol id="i-brief" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M3 12a20 20 0 0 0 18 0M10 13h4"/></symbol>
+    <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="m6 21 6-4 6 4V5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2Z"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4M17 3v4M3 11h18M7 15h2M13 15h2"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 6.1a8 8 0 0 1 13.3 3M4.6 14.9a8 8 0 0 0 13.3 3"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5ZM20 2v4M18 4h4"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 3v17h17M8 15l4-5 4 2 5-7"/></symbol>
+    <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 4a3 3 0 0 1 0 6M18 15a5 5 0 0 1 3 5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M8 16a7 7 0 1 1 8 0v3H8ZM9 22h6M12 9v5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-flow" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M17.5 14V6.5H10M6.5 10v7.5H14"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 .1l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7-.1l-3 3a5 5 0 0 0 7 7l2-2"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+  </defs></svg>
+
+  <aside class="sidebar" aria-label="주 메뉴">
+    <a class="brand" href="#today" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="KYOBO 교보생명" width="150" height="44"></a><div class="service-brand">뉴스브리핑<small>NEWS & INSIGHTS</small></div>
+    <div class="workspace"><span class="workspace-icon">K</span><span>교보생명 뉴스룸<small>대학원 프로젝트</small></span><span class="sample-mini">SAMPLE</span></div>
+    <div class="nav-label">WORKSPACE</div>
+    <nav class="primary-nav">
+      <button class="nav-item active" data-view="today"><svg><use href="#i-grid"/></svg><span>부서</span><span class="nav-dot"></span></button>
+      <button class="nav-item" data-view="news"><svg><use href="#i-paper"/></svg><span>전체 뉴스</span></button>
+      <button class="nav-item" data-view="saved"><svg><use href="#i-bookmark"/></svg><span>나의 스크랩</span><span class="saved-count">0</span></button>
+    </nav>
+    <div class="nav-label department-label">DEPARTMENTS <span>6</span></div>
+    <nav class="department-nav" id="sidebar-departments" aria-label="부서 바로가기"></nav>
+    <div class="sidebar-bottom">
+      <div class="daily-note"><svg><use href="#i-clock"/></svg><span>월·목요일, 준비된 인사이트<strong>AM 07:00 <span>주 2회 보고</span></strong></span><span class="status-dot"></span></div>
+      <button class="nav-item" data-view="process"><svg><use href="#i-flow"/></svg><span>서비스 소개</span></button>
+      <button class="nav-item settings-trigger"><svg><use href="#i-settings"/></svg><span>관심 부서 설정</span></button>
+      <div class="profile"><span class="avatar">K</span><span>프로젝트 워크스페이스<small>Sample experience</small></span><span class="profile-status"></span></div>
+    </div>
+  </aside>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="mobile-identity"><a class="mobile-brand" href="#today" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="KYOBO 교보생명" width="150" height="44"></a><span class="mobile-service-name">뉴스브리핑</span></div>
+      <div class="breadcrumb"><span>뉴스룸</span><svg><use href="#i-chevron"/></svg><strong id="breadcrumb-current">부서 선택</strong></div>
+      <div class="topbar-right"><span class="demo-badge"><span></span>과제용 샘플</span><span class="topbar-divider"></span><button class="icon-button settings-trigger" aria-label="관심 부서 설정"><svg><use href="#i-settings"/></svg></button><button class="login-button" id="login-trigger">로그인</button></div>
+    </header>
+
+    <main id="main-content" tabindex="-1">
+      <section class="page-heading">
+        <div><div class="eyebrow" id="page-eyebrow">DEPARTMENT REPORTS</div><h1 id="page-title">우리 부서의<br class="mobile-break"> 뉴스 브리핑<span>.</span></h1><p id="page-description">부서를 선택하고, 월·목요일 보고서를 확인하세요.</p></div>
+        <span class="report-frequency"><svg><use href="#i-clock"/></svg> 주 2회 · 월·목요일 브리핑</span>
+      </section>
+
+      <div class="sample-notice"><svg><use href="#i-info"/></svg><span><strong>과제용 샘플 보고서입니다.</strong><span class="notice-detail"> 기사와 AI 분석은 과제용 샘플 데이터입니다.</span></span><button data-view="process">서비스 소개 <svg><use href="#i-arrow"/></svg></button></div>
+      <section class="report-selector" id="report-selector" aria-label="보고 회차 선택"></section>
+
+      <section id="today-view" class="view"><div class="directory-heading"><h2>부서를 선택하세요</h2><span>6개 부서</span></div><div class="department-directory" id="department-overview"></div><div class="directory-footer"><span><svg><use href="#i-clock"/></svg>월·목요일, 주 2회 발행</span><button class="text-button" data-view="news">전체 뉴스 보기 <svg><use href="#i-arrow"/></svg></button></div></section>
+
+      <div id="news-view" class="view" hidden>
+        <section class="stats-strip" aria-label="브리핑 현황">
+          <div class="stat"><span class="stat-icon mint"><svg><use href="#i-paper"/></svg></span><div><span class="stat-label">수집한 주요 뉴스</span><strong><span id="stat-total">18</span><small>건</small></strong></div><span class="stat-note">샘플 데이터</span></div>
+          <div class="stat"><span class="stat-icon blue"><svg><use href="#i-brief"/></svg></span><div><span class="stat-label">부서별 분류</span><strong>6<small>개 부서</small></strong></div><span class="stat-note">Jev 분류 완료</span></div>
+          <div class="stat"><span class="stat-icon beige"><svg><use href="#i-spark"/></svg></span><div><span class="stat-label">부서별 인사이트</span><strong>6<small>개 브리핑</small></strong></div><span class="stat-note">LLM 분석 완료</span></div>
+          <div class="stat collection-stat"><span class="stat-icon gray"><svg><use href="#i-clock"/></svg></span><div><span class="stat-label">정기 수집 시간</span><strong class="stat-time">07:00<small>KST</small></strong></div><span class="stat-note"><span class="status-dot"></span> 주 2회</span></div>
+        </section>
+
+        <section class="featured-section" aria-label="주요 이슈">
+          <div class="section-heading"><h2>주요 보험 이슈 <span class="section-label">REPORT HIGHLIGHTS</span></h2><span class="muted small-text">업무와 연결되는 세 가지 흐름</span></div>
+          <div class="featured-grid" id="featured-news"></div>
+        </section>
+
+        <section class="news-section" id="news-section">
+          <div class="section-heading"><h2 id="feed-heading">모든 뉴스 <span class="count-label" id="feed-total">18</span></h2><button class="text-button" id="collect-trigger"><svg><use href="#i-refresh"/></svg><span>수집 체험</span></button></div>
+          <div class="department-tabs" id="department-tabs" role="group" aria-label="뉴스 부서 필터"></div>
+          <div class="feed-layout">
+            <div class="news-feed">
+              <div class="filter-toolbar"><div class="search-field"><svg><use href="#i-search"/></svg><input id="news-search" type="search" placeholder="기사 제목, 키워드 검색" aria-label="뉴스 검색"><kbd>⌘ K</kbd></div><div class="sort-controls"><select id="news-sort" aria-label="기사 정렬"><option value="latest">최신순</option><option value="priority">주요 이슈순</option></select><div class="view-switch" aria-label="기사 보기 방식"><button class="active" id="list-mode" aria-label="목록으로 보기" aria-pressed="true"><svg><use href="#i-list"/></svg></button><button id="grid-mode" aria-label="카드로 보기" aria-pressed="false"><svg><use href="#i-grid"/></svg></button></div></div></div>
+              <div class="active-filter-info" id="active-filter-info" hidden></div>
+              <div class="article-list" id="article-list" aria-live="polite"></div>
+              <div class="feed-footer"><span id="result-count">18개의 기사</span><button id="show-more" class="load-more">기사 더 보기 <svg><use href="#i-down"/></svg></button><span class="feed-footer-note">중복 기사 제외 · 분류 결과 예시</span></div>
+            </div>
+            <aside class="insight-rail" aria-label="부서별 AI 요약 및 키워드">
+              <div class="insight-card"><div class="insight-top"><span class="ai-symbol"><svg><use href="#i-spark"/></svg></span><span>한발 앞서 읽는<br><strong>부서별 AI 브리핑</strong></span><span class="example-label">예시</span></div><div id="rail-brief"></div><button class="brief-link" id="open-brief">전체 분석 읽기 <svg><use href="#i-arrow"/></svg></button><div class="insight-disclaimer">분류는 Jev, 요약과 분석은 LLM으로</div></div>
+              <div class="keyword-card"><h3><svg><use href="#i-chart"/></svg>주요 키워드<span>TOP 5</span></h3><div id="keyword-list"></div><p>샘플 기사에 등장하는 주제 기준</p></div>
+              <div class="pipeline-mini"><span>COLLECT. UNDERSTAND. ACT.</span><h3>보험 뉴스를,<br>부서의 인사이트로.</h3><button data-view="process">뉴스브리핑의 작동 방식 <svg><use href="#i-arrow"/></svg></button><div class="pipeline-art" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
+            </aside>
+          </div>
+        </section>
+      </div>
+
+      <section id="departments-view" class="view" hidden><div id="department-report-list"></div></section>
+      <section id="report-view" class="view" hidden><div id="department-content"></div></section>
+      <section id="saved-view" class="view" hidden><div class="section-heading"><h2>저장한 기사 <span id="saved-total" class="count-label">0</span></h2><button class="outline-button" id="export-saved"><svg><use href="#i-download"/></svg>텍스트로 내보내기</button></div><p class="saved-description">다시 읽고 싶은 뉴스를 한곳에. 스크랩은 이 브라우저에 저장됩니다.</p><div id="saved-list" class="article-list saved-articles"></div></section>
+      <section id="process-view" class="view" hidden>
+        <div class="process-intro"><span class="pill">PROJECT OVERVIEW</span><h2>흩어진 뉴스가<br>부서의 인사이트가 되기까지.</h2><p>주요 보험 뉴스를 수집·분류하고, 부서별 보고서로 요약과 인사이트를 제공합니다.<br>부서별 요약본이 중심이 되는 주 2회 보험 뉴스 브리핑 서비스입니다.</p></div>
+        <div class="process-steps"><article><span class="step-number">01</span><span class="step-icon"><svg><use href="#i-paper"/></svg></span><span class="eyebrow">COLLECT</span><h3>주요 기사 수집</h3><p>목·금·토·일 주요 보험 뉴스는 월요일 아침에, 월·화·수 뉴스는 목요일에 수집·보고합니다. 제목·본문·원문 URL·발행 시각을 정리하고 중복 기사를 제외합니다.</p><span class="step-tool">스크래핑 · 주 2회</span></article><article><span class="step-number">02</span><span class="step-icon"><svg><use href="#i-flow"/></svg></span><span class="eyebrow">CLASSIFY</span><h3>Jev로 부서 분류</h3><p>기사 제목과 본문을 함께 읽고 업무 관련성을 판단합니다. 관련 부서는 복수로 지정하고, 판단이 불확실한 기사는 검토 대상으로 남깁니다.</p><span class="step-tool">TypeSafe Jev · 의미 판단</span></article><article><span class="step-number">03</span><span class="step-icon"><svg><use href="#i-spark"/></svg></span><span class="eyebrow">UNDERSTAND</span><h3>LLM 요약·분석</h3><p>부서별로 모인 기사에서 핵심 주제와 변화를 요약합니다. 근거 기사를 연결하고, 해당 부서가 검토할 업무 시사점을 제안합니다.</p><span class="step-tool">LLM · 부서별 브리핑</span></article></div>
+        <div class="process-details"><article><h3>읽는 사람의 업무를 중심으로</h3><p>경영전략, 상품개발, 영업마케팅, 자산운용, 리스크관리, 디지털·IT. 하나의 기사도 부서에 따라 필요한 관점이 달라집니다. 분류 결과와 근거 기사를 함께 보여주어 원문까지 확인할 수 있도록 설계했습니다.</p></article><article><h3>프로토타입에서 경험할 수 있는 것</h3><p>부서 선택, 주 2회 보고서 목록, 보고서별 요약·분석과 뉴스 출처를 제공합니다. 기사 검색과 스크랩도 체험할 수 있습니다. 실제 스크래핑이나 AI 호출, 자동 수집은 실행하지 않습니다. 설정과 스크랩은 현재 브라우저에만 저장됩니다.</p></article></div>
+      </section>
+
+      <footer class="page-footer"><span class="footer-brand">교보 뉴스브리핑<span>오늘의 뉴스, 내일의 인사이트.</span></span><span>대학원 과제용 인터랙티브 샘플 <i>·</i> November 2026</span><button data-view="process">서비스 소개 <svg><use href="#i-arrow"/></svg></button></footer>
+    </main>
+  </div>
+
+  <nav class="mobile-nav" aria-label="모바일 메뉴"><button data-view="today" class="active"><svg><use href="#i-spark"/></svg><span>부서</span></button><button data-view="news"><svg><use href="#i-paper"/></svg><span>전체 뉴스</span></button><button data-view="saved"><span class="mobile-save-icon"><svg><use href="#i-bookmark"/></svg><span class="mobile-saved-count" hidden>0</span></span><span>나의 스크랩</span></button><button data-view="process"><svg><use href="#i-flow"/></svg><span>서비스 소개</span></button></nav>
+
+  <dialog id="article-dialog" class="article-dialog"><div id="article-detail"></div></dialog>
+  <dialog id="settings-dialog" class="small-dialog"><div class="dialog-header"><span class="dialog-eyebrow">MAKE IT YOURS</span><button class="icon-button" data-close="settings-dialog" aria-label="설정 닫기"><svg><use href="#i-close"/></svg></button></div><h2>나의 관심 부서</h2><p class="dialog-description">관심 부서를 부서 선택 화면에서 먼저 보여드립니다.</p><div id="department-settings" class="department-settings"></div><div class="settings-schedule"><svg><use href="#i-clock"/></svg><div><strong>월·목요일 오전 7:00</strong><span>목–일 → 월요일 / 월–수 → 목요일</span></div><span class="example-label">설계 예시</span></div><p class="settings-hint">이 샘플에서는 자동 수집이 실행되지 않습니다.<br>관심 부서는 현재 브라우저에 저장됩니다.</p><button class="primary-button" id="save-settings">설정 저장 <svg><use href="#i-check"/></svg></button></dialog>
+
+  <dialog id="collection-dialog" class="small-dialog collection-dialog"><span class="collection-animation"><svg><use href="#i-refresh"/></svg></span><span class="dialog-eyebrow">SAMPLE COLLECTION</span><h2>부서별 요약을 준비합니다.</h2><p class="dialog-description">수집부터 부서별 분석까지, 처리 흐름을 체험해 보세요.</p><div class="collection-steps"><div id="collect-step-0"><span>1</span>주요 기사 수집<small>샘플 기사 불러오기</small></div><div id="collect-step-1"><span>2</span>Jev 부서 분류<small>예시 분류 결과 적용</small></div><div id="collect-step-2"><span>3</span>LLM 요약·분석<small>예시 브리핑 준비</small></div></div><p class="settings-hint">실제 스크래핑이나 AI 호출은 실행하지 않습니다.</p><button class="primary-button" id="collection-done" hidden>브리핑 확인하기 <svg><use href="#i-arrow"/></svg></button></dialog>
+  <dialog id="login-dialog" class="small-dialog login-dialog" aria-labelledby="login-title"><div class="dialog-header"><span class="dialog-eyebrow">LOGIN</span><button class="icon-button" data-close="login-dialog" aria-label="로그인 안내 닫기"><svg><use href="#i-close"/></svg></button></div><span class="login-dialog-icon"><svg><use href="#i-shield"/></svg></span><h2 id="login-title">아직 기능 개선 중입니다.</h2><p class="dialog-description">로그인과 사용자별 보고서 열람 권한은<br>추후 제공할 예정입니다.</p><button class="primary-button" data-close="login-dialog">확인</button></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

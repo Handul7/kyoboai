@@ -1,0 +1,12 @@
+{
+  "name": "kyobo-news-brief-prototype",
+  "version": "1.0.0",
+  "private": true,
+  "description": "교보생명 디자인을 참고한 모바일 뉴스 브리핑 대학원 과제용 프로토타입",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-static.mjs",
+    "verify": "node scripts/verify-prototype.mjs",
+    "dev": "python3 -m http.server 4173 --bind 127.0.0.1"
+  }
+}
