@@ -13,4 +13,4 @@ await mkdir(resolve(root,"dist"),{recursive:true});
 for (const file of ["index.html","styles.css","data.js","app.js","assets","data",".nojekyll","CNAME"]) {
   await cp(resolve(root,file),resolve(root,"dist",file),{recursive:true});
 }
-console.log(`Static build ready: ${data.articles.length} articles, ${data.reports.length} reporting periods, ${data.reports.length*data.departments.length} department reports. No dependencies or API keys required.`);
+console.log(`Static build ready: ${data.articles.length} articles, ${data.reports.length} reporting periods, ${data.publications.length} period reports, ${data.monthlyPublications.length} monthly reports. No dependencies or API keys required.`);

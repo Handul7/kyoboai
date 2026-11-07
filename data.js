@@ -140,7 +140,8 @@ function getReportBrief(deptId,reportId){
   const lead=base.lead.replaceAll("오늘의 샘플 기사들은","이번 보고의 주요 기사들은").replaceAll("샘플 기사의","관련 기사의").replaceAll("오늘의","이번 보고의").replaceAll("이번 샘플 브리핑의","이번 브리핑의");
   const analysis=`${report.period} 수집한 관련 기사 ${articles.length}건에서는 ${keywords.join(", ")} 등의 주제가 나타납니다. ${base.analysis.replaceAll("샘플 기사들은","관련 기사들은").replaceAll("샘플 기사들이","관련 기사들이")}`;
   const evidence=REPORT_EVIDENCE[report.templateId][deptId].map(ids=>ids.map(id=>(report.articlePrefix||"")+id));
-  return {...base,lead,analysis,evidence,sourceIds:articles.map(article=>article.id),reportId,departmentId:deptId};
+  const insight=base.analysis.replaceAll("샘플 기사들은","관련 기사들은").replaceAll("샘플 기사들이","관련 기사들이");
+  return {...base,lead,analysis,insight,evidence,sourceIds:articles.map(article=>article.id),reportId,departmentId:deptId};
 }
 
 // Audited examples for Monday–Wednesday coverage. These contain no API output.
@@ -162,6 +163,7 @@ const REPORT_EVIDENCE={
 // Client-side demo scopes. Server authorization will be required for private data.
 const REPORT_PUBLICATIONS=DEPARTMENTS.flatMap(department=>REPORTS.map(collection=>({
   id:`sample-week-01-${department.id}-${collection.id}`,
+  kind:"period",
   departmentId:department.id,
   collectionId:collection.id,
   weekId:collection.weekId,
@@ -170,8 +172,45 @@ const REPORT_PUBLICATIONS=DEPARTMENTS.flatMap(department=>REPORTS.map(collection
   status:"published",
   access:{audienceDepartmentIds:[department.id],enforcement:"client_demo"}
 })));
-const publicationById=id=>REPORT_PUBLICATIONS.find(publication=>publication.id===id)||null;
-const departmentPublications=departmentId=>REPORT_PUBLICATIONS.filter(publication=>publication.departmentId===departmentId);
+// Calendar-month fixtures reuse authored points with audited in-month evidence.
+// Their source sets include every sample article from that month and department.
+const MONTHLY_REPORTS=[
+  {id:"monthly-2026-11",month:"2026-11",baseReportId:"thursday"},
+  {id:"monthly-2026-10",month:"2026-10",baseReportId:"monday"}
+].map(report=>{
+  const dates=[...new Set(ARTICLE_SAMPLES.filter(article=>article.date.startsWith(report.month)).map(article=>article.date))].sort();
+  const publishedAt=REPORTS.filter(period=>period.dates.some(date=>dates.includes(date))).map(period=>period.publishedAt).sort().at(-1);
+  const [year,month]=report.month.split("-").map(Number);
+  return {...report,dates,publishedAt,name:`${year}년 ${month}월 월간 보고서`,shortName:`${month}월 월간 보고서`,summaryMode:"authored_fixture"};
+});
+const monthlyReportById=id=>MONTHLY_REPORTS.find(report=>report.id===id)||null;
+function getMonthlyArticles(id){
+  const report=monthlyReportById(id);
+  return report?ARTICLE_SAMPLES.filter(article=>article.date.startsWith(report.month)).sort((a,b)=>b.date.localeCompare(a.date)||b.time.localeCompare(a.time)):[];
+}
+const MONTHLY_TITLES={
+  strategy:"수익의 질과 자본 관리로 읽는 이달의 보험시장",
+  product:"고객의 생애주기로 살펴본 이달의 상품 과제",
+  sales:"고객 관계와 현장 피드백으로 정리한 이달의 영업 전략",
+  asset:"현금흐름과 장기 부채로 살펴본 이달의 투자 환경",
+  risk:"재무 건전성과 업무 검증으로 정리한 이달의 리스크",
+  digital:"데이터 품질과 사용성으로 살펴본 이달의 디지털 전환"
+};
+function getMonthlyBrief(departmentId,id){
+  const report=monthlyReportById(id);
+  if(!report) return null;
+  const base=getReportBrief(departmentId,report.baseReportId);
+  const sourceIds=getMonthlyArticles(id).filter(article=>article.depts.includes(departmentId)).map(article=>article.id);
+  const insight=base.insight.replaceAll("세 기사는","관련 기사는").replaceAll("이번 회차","이번 달");
+  return {...base,title:MONTHLY_TITLES[departmentId],insight,reportId:id,sourceIds,summaryMode:"authored_fixture"};
+}
+const MONTHLY_PUBLICATIONS=DEPARTMENTS.flatMap(department=>MONTHLY_REPORTS.map(report=>({
+  id:`${report.id}-${department.id}`,kind:"monthly",departmentId:department.id,collectionId:report.id,
+  publishedAt:report.publishedAt,title:report.name,status:"published",
+  access:{audienceDepartmentIds:[department.id],enforcement:"client_demo"}
+})));
+const publicationById=id=>[...REPORT_PUBLICATIONS,...MONTHLY_PUBLICATIONS].find(publication=>publication.id===id)||null;
+const departmentPublications=departmentId=>[...REPORT_PUBLICATIONS,...MONTHLY_PUBLICATIONS].filter(publication=>publication.departmentId===departmentId);
 
 function normalizeDemoSession(value){
   if(value?.role==="admin") return {role:"admin"};

@@ -7,7 +7,7 @@ import vm from "node:vm";
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"..");
 export async function readPrototypeData(){
   const source=await readFile(resolve(root,"data.js"),"utf8");
-  return JSON.parse(vm.runInNewContext(`${source}\n;JSON.stringify({sample:true,pipeline:PIPELINE_METADATA,departments:DEPARTMENTS,articles:ARTICLE_SAMPLES,reports:REPORTS.map(report=>({...report,articleIds:getReportArticles(report.id).map(article=>article.id),briefings:Object.fromEntries(DEPARTMENTS.map(dept=>[dept.id,getReportBrief(dept.id,report.id)]))})),publications:REPORT_PUBLICATIONS});`));
+  return JSON.parse(vm.runInNewContext(`${source}\n;JSON.stringify({sample:true,pipeline:PIPELINE_METADATA,departments:DEPARTMENTS,articles:ARTICLE_SAMPLES,reports:REPORTS.map(report=>({...report,articleIds:getReportArticles(report.id).map(article=>article.id),briefings:Object.fromEntries(DEPARTMENTS.map(dept=>[dept.id,getReportBrief(dept.id,report.id)]))})),publications:REPORT_PUBLICATIONS,monthlyReports:MONTHLY_REPORTS.map(report=>({...report,articleIds:getMonthlyArticles(report.id).map(article=>article.id),briefings:Object.fromEntries(DEPARTMENTS.map(dept=>[dept.id,getMonthlyBrief(dept.id,report.id)]))})),monthlyPublications:MONTHLY_PUBLICATIONS});`));
 }
 const sorted=items=>[...items].sort();
 export function verifyPrototypeData(data){
@@ -72,10 +72,43 @@ export function verifyPrototypeData(data){
     assert.equal(publication.access.enforcement,"client_demo");
     assert.equal(publication.status,"published");
   }
+  assert.equal(data.monthlyReports.length,2);
+  assert.equal(data.monthlyPublications.length,12);
+  const monthlyCovered=new Set();
+  for(const report of data.monthlyReports){
+    const expected=data.articles.filter(article=>article.date.startsWith(report.month));
+    assert.deepEqual(sorted(report.articleIds),sorted(expected.map(article=>article.id)),"Monthly articles follow calendar months.");
+    for(const article of expected){
+      assert.ok(!monthlyCovered.has(article.id),"Calendar months must not overlap.");
+      assert.ok(article.date<report.publishedAt);
+      monthlyCovered.add(article.id);
+    }
+    for(const department of data.departments){
+      const brief=report.briefings[department.id];
+      const sources=expected.filter(article=>article.depts.includes(department.id)).map(article=>article.id);
+      assert.deepEqual(sorted(brief.sourceIds),sorted(sources));
+      assert.equal(brief.reportId,report.id);
+      assert.equal(brief.departmentId,department.id);
+      assert.equal(brief.summaryMode,"authored_fixture");
+      assert.ok(brief.title&&brief.insight&&brief.action);
+      assert.equal(brief.takeaways.length,3);
+      assert.equal(brief.evidence.length,3);
+      brief.evidence.forEach(ids=>assert.ok(ids.length&&ids.every(id=>sources.includes(id)),"Monthly summary references must stay within the team's calendar month."));
+    }
+  }
+  assert.equal(monthlyCovered.size,data.articles.length);
+  const publicationIds=[...data.publications,...data.monthlyPublications].map(publication=>publication.id);
+  assert.equal(new Set(publicationIds).size,publicationIds.length);
+  for(const publication of data.monthlyPublications){
+    assert.equal(publication.kind,"monthly");
+    assert.ok(data.monthlyReports.some(report=>report.id===publication.collectionId));
+    assert.deepEqual(publication.access.audienceDepartmentIds,[publication.departmentId]);
+    assert.equal(publication.access.enforcement,"client_demo");
+  }
   // Human-reviewed examples of the intended labels; these are not model evaluations.
   const labeledExamples={n01:["risk","strategy"],n02:["product","sales"],n03:["digital","risk"],n06:["asset","risk"],n08:["risk","strategy"],n10:["sales"],p03:["digital"]};
   for(const [id,labels] of Object.entries(labeledExamples)) assert.deepEqual(sorted(articleById.get(id).depts),sorted(labels),`Reviewed fixture label changed: ${id}`);
-  return {articles:data.articles.length,collections:data.reports.length,departmentReports:data.publications.length,summaryEvidenceLinks:data.reports.reduce((count,report)=>count+Object.values(report.briefings).reduce((n,brief)=>n+brief.evidence.flat().length,0),0),liveScraperTested:false,liveJevTested:false,liveLLMTested:false};
+  return {articles:data.articles.length,collections:data.reports.length,departmentReports:data.publications.length,monthlyReports:data.monthlyPublications.length,summaryEvidenceLinks:data.reports.reduce((count,report)=>count+Object.values(report.briefings).reduce((n,brief)=>n+brief.evidence.flat().length,0),0),liveScraperTested:false,liveJevTested:false,liveLLMTested:false};
 }
 
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
@@ -97,7 +130,10 @@ if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
     fixture=>{fixture.reports[0].dates[0]="2026-11-06";},
     fixture=>{fixture.reports[1].briefings.strategy.sourceIds.push("d02-1");},
     fixture=>{fixture.publications[0].access.audienceDepartmentIds=["digital"];},
-    fixture=>{fixture.reports[0].briefings.product.evidence[0]=["n18"];}
+    fixture=>{fixture.reports[0].briefings.product.evidence[0]=["n18"];},
+    fixture=>{fixture.monthlyReports[0].briefings.product.sourceIds.push("n02");},
+    fixture=>{fixture.monthlyReports[1].briefings.product.evidence[0]=["d04-2"];},
+    fixture=>{fixture.monthlyPublications[0].access.audienceDepartmentIds=["missing"];}
   ];
   invalidCases.forEach(mutate=>{const fixture=structuredClone(data);mutate(fixture);assert.throws(()=>verifyPrototypeData(fixture),"Invalid data must be rejected.");});
   console.log(JSON.stringify({...result,invalidFixturesRejected:invalidCases.length},null,2));

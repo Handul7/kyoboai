@@ -27,9 +27,9 @@
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-subset.css">
-  <link rel="stylesheet" href="./styles.css?v=20261107-3">
-  <script defer src="./data.js?v=20261107-3"></script>
-  <script defer src="./app.js?v=20261107-3"></script>
+  <link rel="stylesheet" href="./styles.css?v=20261107-4">
+  <script defer src="./data.js?v=20261107-4"></script>
+  <script defer src="./app.js?v=20261107-4"></script>
 </head>
 <body>
   <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -60,70 +60,48 @@
   </defs></svg>
 
   <aside class="sidebar" aria-label="주 메뉴">
-    <a class="brand" href="#today" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="KYOBO 교보생명" width="150" height="44"></a><div class="service-brand">뉴스브리핑<small>NEWS & INSIGHTS</small></div>
-    <div class="workspace"><span class="workspace-icon">K</span><span>교보생명 뉴스룸<small>대학원 프로젝트</small></span><span class="sample-mini">SAMPLE</span></div>
-    <div class="nav-label">WORKSPACE</div>
+    <a class="brand" href="#today" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="KYOBO 교보생명" width="150" height="44"></a><div class="service-brand">뉴스브리핑</div>
+    <div class="nav-label">메뉴</div>
     <nav class="primary-nav">
       <button class="nav-item active" data-view="today"><svg><use href="#i-grid"/></svg><span>부서</span><span class="nav-dot"></span></button>
       <button class="nav-item" data-view="news"><svg><use href="#i-paper"/></svg><span>전체 뉴스</span></button>
       <button class="nav-item" data-view="saved"><svg><use href="#i-bookmark"/></svg><span>나의 스크랩</span><span class="saved-count">0</span></button>
     </nav>
-    <div class="nav-label department-label">DEPARTMENTS <span>6</span></div>
+    <div class="nav-label department-label">팀 보고서 <span>6</span></div>
     <nav class="department-nav" id="sidebar-departments" aria-label="부서 바로가기"></nav>
     <div class="sidebar-bottom">
-      <div class="daily-note"><svg><use href="#i-clock"/></svg><span>월·목요일, 준비된 인사이트<strong>AM 07:00 <span>주 2회 보고</span></strong></span><span class="status-dot"></span></div>
       <button class="nav-item" data-view="process"><svg><use href="#i-flow"/></svg><span>서비스 소개</span></button>
       <button class="nav-item settings-trigger"><svg><use href="#i-settings"/></svg><span>관심 부서 설정</span></button>
-      <div class="profile"><span class="avatar">K</span><span>프로젝트 워크스페이스<small>Sample experience</small></span><span class="profile-status"></span></div>
     </div>
   </aside>
 
   <div class="app-shell">
-    <div class="revision-bar">최종 수정 <time datetime="2026-11-07">2026.11.07</time><span>과제용 프로토타입</span></div>
+    <div class="revision-bar">최종 수정 <time datetime="2026-11-07">2026.11.07</time><span>과제용 샘플</span></div>
     <header class="topbar">
       <div class="mobile-identity"><a class="mobile-brand" href="#today" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="KYOBO 교보생명" width="150" height="44"></a><span class="mobile-service-name">뉴스브리핑</span></div>
-      <div class="breadcrumb"><span>뉴스룸</span><svg><use href="#i-chevron"/></svg><strong id="breadcrumb-current">부서 선택</strong></div>
-      <div class="topbar-right"><span class="demo-badge"><span></span>과제용 샘플</span><span class="topbar-divider"></span><button class="icon-button settings-trigger" aria-label="관심 부서 설정"><svg><use href="#i-settings"/></svg></button><button class="login-button" id="login-trigger">로그인</button></div>
+<div class="breadcrumb"><strong id="breadcrumb-current">전체 뉴스</strong></div>
+      <div class="topbar-right"><button class="icon-button settings-trigger" aria-label="관심 부서 설정"><svg><use href="#i-settings"/></svg></button><button class="login-button" id="login-trigger">로그인</button></div>
     </header>
 
     <main id="main-content" tabindex="-1">
-      <section class="page-heading">
-        <div><div class="eyebrow" id="page-eyebrow">DEPARTMENT REPORTS</div><h1 id="page-title">우리 부서의<br class="mobile-break"> 뉴스 브리핑<span>.</span></h1><p id="page-description">부서를 선택하고, 월·목요일 보고서를 확인하세요.</p></div>
-        <span class="report-frequency"><svg><use href="#i-clock"/></svg> 주 2회 · 월·목요일 브리핑</span>
-      </section>
+      <section class="page-heading"><h1 id="page-title">전체 뉴스</h1></section>
 
-      <div class="sample-notice"><svg><use href="#i-info"/></svg><span><strong>과제용 샘플 보고서입니다.</strong><span class="notice-detail"> 기사와 AI 분석은 과제용 샘플 데이터입니다.</span></span><button data-view="process">서비스 소개 <svg><use href="#i-arrow"/></svg></button></div>
+      <aside id="implementation-note" class="implementation-note" aria-label="발표용 구현 방식"></aside>
       <section class="archive-controls" id="report-selector" aria-label="지난 보고서 조회"></section>
 
-      <section id="today-view" class="view"><div class="directory-heading"><h2>팀별 보고서</h2><span id="directory-team-count">6개 팀</span></div><div class="department-directory" id="department-overview"></div><div class="directory-footer"><span><svg><use href="#i-clock"/></svg>월·목요일, 주 2회 발행</span><button class="text-button" data-view="news">전체 뉴스 보기 <svg><use href="#i-arrow"/></svg></button></div></section>
+      <section id="today-view" class="view"><div class="directory-heading"><h2>팀을 선택하세요</h2><span id="directory-team-count">6개 팀</span></div><div class="department-directory" id="department-overview"></div><div class="directory-footer"><span><svg><use href="#i-clock"/></svg>월·목요일, 주 2회 발행</span><button class="text-button" data-view="news">전체 뉴스 보기 <svg><use href="#i-arrow"/></svg></button></div></section>
 
       <div id="news-view" class="view" hidden>
-        <section class="stats-strip" aria-label="브리핑 현황" hidden>
-          <div class="stat"><span class="stat-icon mint"><svg><use href="#i-paper"/></svg></span><div><span class="stat-label">수집한 주요 뉴스</span><strong><span id="stat-total">18</span><small>건</small></strong></div><span class="stat-note">샘플 데이터</span></div>
-          <div class="stat"><span class="stat-icon blue"><svg><use href="#i-brief"/></svg></span><div><span class="stat-label">부서별 분류</span><strong>6<small>개 부서</small></strong></div><span class="stat-note">Jev 분류 완료</span></div>
-          <div class="stat"><span class="stat-icon beige"><svg><use href="#i-spark"/></svg></span><div><span class="stat-label">부서별 인사이트</span><strong>6<small>개 브리핑</small></strong></div><span class="stat-note">LLM 분석 완료</span></div>
-          <div class="stat collection-stat"><span class="stat-icon gray"><svg><use href="#i-clock"/></svg></span><div><span class="stat-label">정기 수집 시간</span><strong class="stat-time">07:00<small>KST</small></strong></div><span class="stat-note"><span class="status-dot"></span> 주 2회</span></div>
-        </section>
-
-        <section class="featured-section" aria-label="주요 이슈">
-          <div class="section-heading"><h2>주요 보험 이슈 <span class="section-label">REPORT HIGHLIGHTS</span></h2><span class="muted small-text">업무와 연결되는 세 가지 흐름</span></div>
-          <div class="featured-grid" id="featured-news"></div>
-        </section>
-
         <section class="news-section" id="news-section">
-          <div class="section-heading"><h2 id="feed-heading">모든 뉴스 <span class="count-label" id="feed-total">18</span></h2><button class="text-button" id="collect-trigger"><svg><use href="#i-refresh"/></svg><span>수집 체험</span></button></div>
+          <div class="section-heading"><h2 id="feed-heading">기사 <span class="count-label">18건</span></h2></div>
           <div class="feed-layout">
             <div class="news-feed">
-              <div class="filter-toolbar"><div class="search-field"><svg><use href="#i-search"/></svg><input id="news-search" type="search" placeholder="기사 제목, 키워드 검색" aria-label="뉴스 검색"><kbd>⌘ K</kbd></div><div class="sort-controls"><select id="news-sort" aria-label="기사 정렬"><option value="latest">최신순</option><option value="priority">주요 이슈순</option></select><div class="view-switch" aria-label="기사 보기 방식"><button class="active" id="list-mode" aria-label="목록으로 보기" aria-pressed="true"><svg><use href="#i-list"/></svg></button><button id="grid-mode" aria-label="카드로 보기" aria-pressed="false"><svg><use href="#i-grid"/></svg></button></div></div></div>
+              <div class="filter-toolbar"><div class="search-field"><svg><use href="#i-search"/></svg><input id="news-search" type="search" placeholder="뉴스 검색" aria-label="뉴스 검색"><kbd>⌘ K</kbd></div><div class="sort-controls"><select id="news-sort" aria-label="기사 정렬"><option value="latest">최신순</option><option value="priority">주요 이슈순</option></select></div></div>
               <div class="active-filter-info" id="active-filter-info" hidden></div>
               <div class="article-list" id="article-list" aria-live="polite"></div>
-              <div class="feed-footer"><span id="result-count">18개의 기사</span><button id="show-more" class="load-more">기사 더 보기 <svg><use href="#i-down"/></svg></button><span class="feed-footer-note">중복 기사 제외 · 분류 결과 예시</span></div>
+              <div class="feed-footer"><button id="show-more" class="load-more">기사 더 보기 <svg><use href="#i-down"/></svg></button></div>
             </div>
-            <aside class="insight-rail" aria-label="부서별 AI 요약 및 키워드">
-              <div class="insight-card"><div class="insight-top"><span class="ai-symbol"><svg><use href="#i-spark"/></svg></span><span>한발 앞서 읽는<br><strong>부서별 AI 브리핑</strong></span><span class="example-label">예시</span></div><div id="rail-brief"></div><button class="brief-link" id="open-brief">전체 분석 읽기 <svg><use href="#i-arrow"/></svg></button><div class="insight-disclaimer">분류는 Jev, 요약과 분석은 LLM으로</div></div>
-              <div class="keyword-card"><h3><svg><use href="#i-chart"/></svg>주요 키워드<span>TOP 5</span></h3><div id="keyword-list"></div><p>샘플 기사에 등장하는 주제 기준</p></div>
-              <div class="pipeline-mini"><span>COLLECT. UNDERSTAND. ACT.</span><h3>보험 뉴스를,<br>부서의 인사이트로.</h3><button data-view="process">뉴스브리핑의 작동 방식 <svg><use href="#i-arrow"/></svg></button><div class="pipeline-art" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
-            </aside>
+
           </div>
         </section>
       </div>
@@ -132,23 +110,24 @@
       <section id="report-view" class="view" hidden><div id="department-content"></div></section>
       <section id="saved-view" class="view" hidden><div class="section-heading"><h2>저장한 기사 <span id="saved-total" class="count-label">0</span></h2><button class="outline-button" id="export-saved"><svg><use href="#i-download"/></svg>텍스트로 내보내기</button></div><p class="saved-description">다시 읽고 싶은 뉴스를 한곳에. 스크랩은 이 브라우저에 저장됩니다.</p><div id="saved-list" class="article-list saved-articles"></div></section>
       <section id="process-view" class="view" hidden>
-        <div class="process-intro"><span class="pill">PROJECT OVERVIEW</span><h2>흩어진 뉴스가<br>부서의 인사이트가 되기까지.</h2><p>주요 보험 뉴스를 수집·분류하고, 부서별 보고서로 요약과 인사이트를 제공합니다.<br>부서별 요약본이 중심이 되는 주 2회 보험 뉴스 브리핑 서비스입니다.</p></div>
-        <div class="process-steps"><article><span class="step-number">01</span><span class="step-icon"><svg><use href="#i-paper"/></svg></span><span class="eyebrow">COLLECT</span><h3>주요 기사 수집</h3><p>목·금·토·일 주요 보험 뉴스는 월요일 아침에, 월·화·수 뉴스는 목요일에 수집·보고합니다. 제목·본문·원문 URL·발행 시각을 정리하고 중복 기사를 제외합니다.</p><span class="step-tool">스크래핑 · 주 2회</span></article><article><span class="step-number">02</span><span class="step-icon"><svg><use href="#i-flow"/></svg></span><span class="eyebrow">CLASSIFY</span><h3>Jev로 부서 분류</h3><p>기사 제목과 본문을 함께 읽고 업무 관련성을 판단합니다. 관련 부서는 복수로 지정하고, 판단이 불확실한 기사는 검토 대상으로 남깁니다.</p><span class="step-tool">TypeSafe Jev · 의미 판단</span></article><article><span class="step-number">03</span><span class="step-icon"><svg><use href="#i-spark"/></svg></span><span class="eyebrow">UNDERSTAND</span><h3>LLM 요약·분석</h3><p>부서별로 모인 기사에서 핵심 주제와 변화를 요약합니다. 근거 기사를 연결하고, 해당 부서가 검토할 업무 시사점을 제안합니다.</p><span class="step-tool">LLM · 부서별 브리핑</span></article></div>
-        <div class="process-details"><article><h3>읽는 사람의 업무를 중심으로</h3><p>경영전략, 상품개발, 영업마케팅, 자산운용, 리스크관리, 디지털·IT. 하나의 기사도 부서에 따라 필요한 관점이 달라집니다. 팀을 선택해 로그인하면 우리 팀 보고서를, 관리자는 모든 팀 보고서를 확인합니다. 비로그인 상태에서는 전체 뉴스를 읽을 수 있습니다.</p></article><article><h3>프로토타입에서 경험할 수 있는 것</h3><p>발행 월과 날짜로 지난 보고서를 찾고, 주차·회차별 요약과 뉴스 출처를 읽을 수 있습니다. 두 주간의 기사와 분석은 체험용 예시이며, 이전 회차에는 예시를 재구성했습니다. 팀 선택 로그인은 화면 열람 범위를 체험하는 방식입니다. 실제 사용자 인증과 서버 권한 검사는 향후 데이터베이스 연결 시 적용합니다.</p></article></div>
+        <div class="process-intro"><h2>흩어진 뉴스가<br>부서의 인사이트가 되기까지.</h2><p>주요 보험 뉴스를 수집·분류하고, 부서별 보고서로 요약과 인사이트를 제공합니다.<br>부서별 요약본이 중심이 되는 주 2회 보험 뉴스 브리핑 서비스입니다.</p></div>
+        <div class="process-steps"><article><h3>주요 기사 수집</h3><p>목·금·토·일 주요 보험 뉴스는 월요일 아침에, 월·화·수 뉴스는 목요일에 수집·보고합니다. 제목·본문·원문 URL·발행 시각을 정리하고 중복 기사를 제외합니다.</p></article><article><h3>Jev로 부서 분류</h3><p>기사 제목과 본문을 함께 읽고 업무 관련성을 판단합니다. 관련 부서는 복수로 지정하고, 판단이 불확실한 기사는 검토 대상으로 남깁니다.</p></article><article><h3>LLM 요약·분석</h3><p>부서별로 모인 기사에서 핵심 주제와 변화를 요약합니다. 근거 기사를 연결하고, 해당 부서가 검토할 업무 시사점을 제안합니다.</p></article></div>
+        <div class="process-details"><article><h3>읽는 사람의 업무를 중심으로</h3><p>경영전략, 상품개발, 영업마케팅, 자산운용, 리스크관리, 디지털·IT. 하나의 기사도 부서에 따라 필요한 관점이 달라집니다. 팀을 선택해 로그인하면 우리 팀 보고서를, 관리자는 모든 팀 보고서를 확인합니다. 비로그인 상태에서는 전체 뉴스를 읽을 수 있습니다.</p></article><article><h3>프로토타입에서 경험할 수 있는 것</h3><p>발행 월과 날짜로 지난 보고서를 찾고, 주차·회차별 요약과 뉴스 출처를 읽을 수 있습니다. 회차별·월간 보고서는 체험용 예시이며, 월간 보고서에는 해당 월의 샘플 기사를 모아 작성한 예시 요약을 제공합니다. 팀 선택 로그인은 화면 열람 범위를 체험하는 방식입니다. 실제 사용자 인증과 서버 권한 검사는 향후 데이터베이스 연결 시 적용합니다.</p></article></div>
+        <button class="outline-button" id="collect-trigger">수집 흐름 체험하기</button>
         <section class="project-team" aria-labelledby="project-team-title"><h2 id="project-team-title">함께 만든 사람들</h2><dl><div><dt>조장</dt><dd>엘</dd></div><div><dt>조사</dt><dd>카밀라</dd></div><div><dt>CFO</dt><dd>루트</dd></div><div><dt>노가다</dt><dd>한들</dd></div></dl></section>
       </section>
 
-      <footer class="page-footer"><span class="footer-brand">교보 뉴스브리핑<span>오늘의 뉴스, 내일의 인사이트.</span></span><span>대학원 과제용 인터랙티브 샘플 <i>·</i> November 2026</span><button data-view="process">서비스 소개 <svg><use href="#i-arrow"/></svg></button></footer>
+      <footer class="page-footer"><span>교보 뉴스브리핑 · 과제용 샘플</span><button data-view="process">서비스 소개</button></footer>
     </main>
   </div>
 
   <nav class="mobile-nav" aria-label="모바일 메뉴"><button data-view="today" class="active"><svg><use href="#i-spark"/></svg><span>부서</span></button><button data-view="news"><svg><use href="#i-paper"/></svg><span>전체 뉴스</span></button><button data-view="saved"><span class="mobile-save-icon"><svg><use href="#i-bookmark"/></svg><span class="mobile-saved-count" hidden>0</span></span><span>나의 스크랩</span></button><button data-view="process"><svg><use href="#i-flow"/></svg><span>서비스 소개</span></button></nav>
 
   <dialog id="article-dialog" class="article-dialog"><div id="article-detail"></div></dialog>
-  <dialog id="settings-dialog" class="small-dialog"><div class="dialog-header"><span class="dialog-eyebrow">MAKE IT YOURS</span><button class="icon-button" data-close="settings-dialog" aria-label="설정 닫기"><svg><use href="#i-close"/></svg></button></div><h2>나의 관심 부서</h2><p class="dialog-description">관심 부서를 부서 선택 화면에서 먼저 보여드립니다.</p><div id="department-settings" class="department-settings"></div><div class="settings-schedule"><svg><use href="#i-clock"/></svg><div><strong>월·목요일 오전 7:00</strong><span>목–일 → 월요일 / 월–수 → 목요일</span></div><span class="example-label">설계 예시</span></div><p class="settings-hint">이 샘플에서는 자동 수집이 실행되지 않습니다.<br>관심 부서는 현재 브라우저에 저장됩니다.</p><button class="primary-button" id="save-settings">설정 저장 <svg><use href="#i-check"/></svg></button></dialog>
+  <dialog id="settings-dialog" class="small-dialog"><div class="dialog-header"><span class="implementation-inline">발표용 · 코딩</span><button class="icon-button" data-close="settings-dialog" aria-label="설정 닫기"><svg><use href="#i-close"/></svg></button></div><h2>나의 관심 부서</h2><p class="dialog-description">관심 부서를 부서 선택 화면에서 먼저 보여드립니다.</p><div id="department-settings" class="department-settings"></div><div class="settings-schedule"><svg><use href="#i-clock"/></svg><div><strong>월·목요일 오전 7:00</strong><span>목–일 → 월요일 / 월–수 → 목요일</span></div><span class="example-label">설계 예시</span></div><p class="settings-hint">이 샘플에서는 자동 수집이 실행되지 않습니다.<br>관심 부서는 현재 브라우저에 저장됩니다.</p><button class="primary-button" id="save-settings">설정 저장 <svg><use href="#i-check"/></svg></button></dialog>
 
-  <dialog id="collection-dialog" class="small-dialog collection-dialog"><span class="collection-animation"><svg><use href="#i-refresh"/></svg></span><span class="dialog-eyebrow">SAMPLE COLLECTION</span><h2>부서별 요약을 준비합니다.</h2><p class="dialog-description">수집부터 부서별 분석까지, 처리 흐름을 체험해 보세요.</p><div class="collection-steps"><div id="collect-step-0"><span>1</span>주요 기사 수집<small>샘플 기사 불러오기</small></div><div id="collect-step-1"><span>2</span>Jev 부서 분류<small>예시 분류 결과 적용</small></div><div id="collect-step-2"><span>3</span>LLM 요약·분석<small>예시 브리핑 준비</small></div></div><p class="settings-hint">실제 스크래핑이나 AI 호출은 실행하지 않습니다.</p><button class="primary-button" id="collection-done" hidden>브리핑 확인하기 <svg><use href="#i-arrow"/></svg></button></dialog>
-  <dialog id="login-dialog" class="small-dialog login-dialog" aria-labelledby="login-title"><div class="dialog-header"><span class="dialog-eyebrow">TEAM LOGIN</span><button class="icon-button" data-close="login-dialog" aria-label="로그인 창 닫기"><svg><use href="#i-close"/></svg></button></div><h2 id="login-title">우리 팀을 선택하세요</h2><p class="dialog-description">선택한 팀의 요약 보고서를 확인합니다.</p><div id="team-login-options" class="team-login-options"></div><button class="admin-login" id="admin-login"><svg><use href="#i-shield"/></svg>관리자로 로그인하기<small>모든 팀 보고서 열람</small></button><p class="login-demo-note">팀 선택으로 체험하는 임시 로그인입니다.<br>실제 사용자 인증과 접근 보안은 추후 연결됩니다.</p><button id="logout-button" class="logout-button" hidden>로그아웃하고 전체 뉴스 보기</button></dialog>
+  <dialog id="collection-dialog" class="small-dialog collection-dialog"><span class="collection-animation"><svg><use href="#i-refresh"/></svg></span><span class="implementation-inline">발표용 · 코딩 + LLM</span><h2>부서별 요약을 준비합니다.</h2><p class="dialog-description">수집부터 부서별 분석까지, 처리 흐름을 체험해 보세요.</p><div class="collection-steps"><div id="collect-step-0"><span>1</span>주요 기사 수집<small>샘플 기사 불러오기</small></div><div id="collect-step-1"><span>2</span>Jev 부서 분류<small>예시 분류 결과 적용</small></div><div id="collect-step-2"><span>3</span>LLM 요약·분석<small>예시 브리핑 준비</small></div></div><p class="settings-hint">실제 스크래핑이나 AI 호출은 실행하지 않습니다.</p><button class="primary-button" id="collection-done" hidden>브리핑 확인하기 <svg><use href="#i-arrow"/></svg></button></dialog>
+  <dialog id="login-dialog" class="small-dialog login-dialog" aria-labelledby="login-title"><div class="dialog-header"><span class="implementation-inline">발표용 · 코딩</span><button class="icon-button" data-close="login-dialog" aria-label="로그인 창 닫기"><svg><use href="#i-close"/></svg></button></div><h2 id="login-title">우리 팀을 선택하세요</h2><p class="dialog-description">선택한 팀의 요약 보고서를 확인합니다.</p><div id="team-login-options" class="team-login-options"></div><button class="admin-login" id="admin-login"><svg><use href="#i-shield"/></svg>관리자로 로그인하기<small>모든 팀 보고서 열람</small></button><p class="login-demo-note">팀 선택으로 체험하는 임시 로그인입니다.<br>실제 사용자 인증과 접근 보안은 추후 연결됩니다.</p><button id="logout-button" class="logout-button" hidden>로그아웃하고 전체 뉴스 보기</button></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

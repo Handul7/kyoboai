@@ -10,6 +10,7 @@ const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)]
 const icon = (name, className = "") => `<svg${className ? ` class="${className}"` : ""} aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const escapeHTML = (value) => String(value).replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 const STORAGE_KEY = "lifebrief-sample-v1";
+const PRESENTATION_MODE = true;
 function readStoredState() {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
@@ -21,7 +22,7 @@ function readStoredState() {
   } catch { return {saved:[],interests:["strategy","risk"],collected:false}; }
 }
 const stored = readStoredState();
-const state = {view:"news",reportId:REPORTS[0].id,archiveMonth:"",archiveFrom:"",archiveTo:"",publicationId:null,briefDepartment:stored.interests[0] || "strategy",query:"",sort:"latest",mode:"list",limit:6,...stored};
+const state = {view:"news",reportId:REPORTS[0].id,archiveKind:"period",archiveMonth:"",archiveFrom:"",archiveTo:"",publicationId:null,briefDepartment:stored.interests[0] || "strategy",query:"",sort:"latest",limit:6,...stored};
 const SESSION_KEY = "kyobo-demo-session-v1";
 function readSession() {
   try { return normalizeDemoSession(JSON.parse(sessionStorage.getItem(SESSION_KEY))); }
@@ -78,7 +79,7 @@ function tag(deptId) {
   return `<span class="category-tag" style="--dept-text:${d.text};--dept-bg:${d.bg}">${d.name}</span>`;
 }
 function articleMeta(article) {
-  return `<span class="meta-source">${article.source}</span><span class="meta-dot"></span><span>${article.time}</span><span class="meta-dot"></span><span class="meta-company">${article.company}</span>`;
+  return `<span class="meta-source">${escapeHTML(article.source)}</span><span class="meta-dot"></span><time datetime="${article.date}">${article.date.slice(5).replace("-", ".")}</time>`;
 }
 function saveButton(article, className = "") {
   if (!state.session) return "";
@@ -86,12 +87,13 @@ function saveButton(article, className = "") {
   return `<button class="bookmark-button ${className} ${saved ? "saved" : ""}" data-save="${article.id}" aria-label="${saved ? "스크랩 취소" : "기사 스크랩"}: ${escapeHTML(article.title)}" aria-pressed="${saved}">${icon("bookmark")}</button>`;
 }
 function articleRow(article) {
-  return `<article class="article-row" data-article-row="${article.id}"><div class="article-row-top"><div class="article-tags">${article.depts.map(tag).join("")}${article.priority >= 8 ? '<span class="priority-label">주요 이슈</span>' : ""}</div></div><h3><button class="article-open" data-article="${article.id}">${escapeHTML(article.title)}</button></h3><p class="article-description">${escapeHTML(article.summary)}</p><div class="article-meta">${articleMeta(article)}</div>${saveButton(article,"row-bookmark")}</article>`;
+  return `<article class="article-row ${state.session ? "has-bookmark" : ""}" data-article-row="${article.id}">
+    <h3><button class="article-open" data-article="${article.id}">${escapeHTML(article.title)}</button></h3>
+    <p class="article-description">${escapeHTML(article.summary)}</p>
+    <div class="article-meta">${articleMeta(article)}</div>
+    ${saveButton(article,"row-bookmark")}
+  </article>`;
 }
-function featuredCard(article, index) {
-  return `<article class="featured-card"><div class="featured-image"><img src="./assets/${article.image || ["architecture.jpg","planning.jpg","data.jpg"][index]}" alt="${["도심의 현대적인 오피스 건축","문서와 데이터를 검토하는 업무 현장","데이터와 지표가 담긴 업무 화면"][index]}" ${index ? 'loading="lazy"' : 'fetchpriority="high"'} width="800" height="400"><span class="featured-image-tag">${article.pick || "EDITOR’S PICK"}</span></div><div class="featured-body"><div class="featured-tags">${article.depts.map(tag).join("")}</div><h3><button class="article-open" data-article="${article.id}">${escapeHTML(article.title)}</button></h3><div class="featured-meta"><span>${article.source}</span><span class="meta-dot"></span><span>${article.time}</span>${saveButton(article)}</div></div></article>`;
-}
-
 function renderSidebar() {
   const departments = allowedDepartments();
   $("#sidebar-departments").innerHTML = departments.map(department => `
@@ -122,47 +124,68 @@ function filteredArticles() {
 }
 function renderFeed() {
   const articles = filteredArticles();
-  $("#feed-heading").innerHTML = `모든 뉴스 <span class="count-label">${articles.length}</span>`;
-  $("#article-list").classList.toggle("grid-mode",state.mode === "grid");
+  $("#feed-heading").innerHTML = `기사 <span class="count-label">${articles.length}건</span>`;
   $("#article-list").innerHTML = articles.length ? articles.slice(0,state.limit).map(articleRow).join("") : `<div class="empty-state">${icon("search")}<h3>검색 결과가 없습니다.</h3><p>다른 키워드로 다시 검색해 보세요.</p><button class="outline-button" id="reset-filters">검색 초기화</button></div>`;
   if (!state.reportId) {
     $("#article-list").innerHTML = '<div class="empty-state"><h3>해당 기간의 뉴스가 없습니다.</h3><p>발행 월이나 날짜를 바꿔보세요.</p><button class="outline-button" id="reset-news-archive">전체 기간 보기</button></div>';
   }
-  $("#result-count").textContent = `${articles.length}개의 기사`;
   $("#show-more").hidden = state.limit >= articles.length;
   if (!$("#show-more").hidden) $("#show-more").innerHTML = `기사 더 보기 (${Math.min(state.limit,articles.length)}/${articles.length}) ${icon("down")}`;
   const info = $("#active-filter-info");
   info.hidden = !state.query.trim();
   info.textContent = `“${state.query.trim()}” 검색 결과 ${articles.length}건`;
 }
-function renderRail() {
-  const showBrief = Boolean(state.session && state.reportId);
-  $(".insight-card").hidden = !showBrief;
-  $(".insight-rail").hidden = !showBrief;
-  $(".feed-layout").classList.toggle("without-brief", !showBrief);
-  if (!showBrief) { $("#rail-brief").innerHTML = ""; return; }
-  const id = state.session.role === "team" ? state.session.departmentId : state.interests[0] || "strategy";
-  const d = departmentById(id), brief = getReportBrief(id,state.reportId);
-  const count = reportArticles().filter(a => a.depts.includes(id)).length;
-  $("#rail-brief").innerHTML = `<div class="rail-dept">${d.name}<small>관련 기사 ${count}건</small></div><h3 class="rail-title">${brief.short}</h3><p class="rail-summary">${brief.lead}</p><div class="rail-implication"><span>${icon("bulb")}업무에 연결해 보면</span><p>${brief.implication}</p></div>`;
-  $("#open-brief").dataset.brief = id;
-  const keywords = new Map();
-  reportArticles().forEach(a => a.keywords.forEach(key => keywords.set(key,(keywords.get(key) || 0) + 1)));
-  const top = [...keywords].sort((a,b) => b[1] - a[1]).slice(0,5);
-  $("#keyword-list").innerHTML = top.map(([word,count],index) => `<div class="keyword-row"><span class="keyword-number">${String(index+1).padStart(2,"0")}</span><span class="keyword-word">${word}</span><span class="keyword-bar"><span style="--bar:${Math.round(count / top[0][1] * 100)}%"></span></span><span class="keyword-value">${count}</span></div>`).join("");
+function publicationContent(publication) {
+  const monthly = publication.kind === "monthly";
+  const report = monthly ? monthlyReportById(publication.collectionId) : reportById(publication.collectionId);
+  const articles = (monthly ? getMonthlyArticles(report.id) : getReportArticles(report.id)).filter(article => article.depts.includes(publication.departmentId));
+  const brief = monthly ? getMonthlyBrief(publication.departmentId, report.id) : getReportBrief(publication.departmentId, report.id);
+  return {report, articles, brief};
 }
 function renderReportDetail() {
   if (!canViewDepartment(state.session, state.briefDepartment)) return;
-  const d=departmentById(state.briefDepartment);
-  const report=reportById(state.reportId);
-  const articles=reportArticles().filter(article=>article.depts.includes(d.id));
-  const brief=getReportBrief(d.id,state.reportId);
-  $("#department-content").innerHTML=`<button class="back-link" data-department="${d.id}">${icon("arrow")} ${d.name} 보고서 목록</button><div class="brief-overview"><article class="brief-primary"><div class="brief-overline"><span>${d.name} INSIGHT REPORT</span><span class="example-label">${report.shortName}</span></div><h2>${brief.title.replace("\n","<br>")}</h2><p class="brief-lead">${brief.lead}</p><div class="brief-stats"><span>근거 뉴스<strong>${articles.length}건</strong></span><span>뉴스 수집 범위<strong>${report.periodShort}</strong></span><span>분류 · 요약<strong>Jev · LLM</strong></span></div></article><article class="brief-takeaways"><h3>${icon("spark")}핵심 요약</h3>${brief.takeaways.map((text,index)=>`<div class="takeaway"><span>${index+1}</span><p>${text}<span class="point-sources">${brief.evidence[index].map(id=>`<button data-source="${id}" aria-label="근거 기사 ${articles.findIndex(a=>a.id===id)+1} 보기">[${articles.findIndex(a=>a.id===id)+1}]</button>`).join("")}</span></p></div>`).join("")}</article></div><div class="analysis-blocks"><article class="analysis-block"><h3>${icon("chart")}주요 인사이트</h3><p>${brief.analysis}</p></article><article class="analysis-block"><h3>${icon("bulb")}우리 부서의 업무 시사점</h3><p>${brief.action}</p></article></div><div class="brief-method-note">${icon("info")}<span>이 보고서는 ${report.period} 주요 보험 뉴스를 ${d.name} 부서의 관점에서 정리한 요약·분석입니다. 아래 근거 뉴스를 통해 내용을 더 자세히 살펴보세요.</span></div><section class="report-sources"><div class="section-heading"><h3 class="related-heading">뉴스 출처 <span class="count-label">${articles.length}건</span></h3><span class="source-section-label">요약·분석의 근거 기사</span></div><ol class="source-list">${articles.map((article,index)=>`<li class="source-row" id="source-${article.id}"><span class="source-index">${String(index+1).padStart(2,"0")}</span><div><button class="source-title" data-article="${article.id}">${escapeHTML(article.title)}</button><p>${article.source}<span>·</span>${article.company}<span>·</span>${article.date.slice(5).replace("-",".")}</p></div><button class="source-read" data-article="${article.id}" aria-label="기사 내용 보기: ${escapeHTML(article.title)}">${icon("arrow")}</button></li>`).join("")}</ol><p class="source-note">프로토타입의 기사·매체명은 예시입니다. 실제 서비스에서는 각 기사에 원문 URL이 연결됩니다.</p></section>`;
+  const department = departmentById(state.briefDepartment);
+  const publication = publicationById(state.publicationId);
+  if (!publication) return;
+  const {report, articles, brief} = publicationContent(publication);
+  $("#department-content").innerHTML = `
+    <button class="back-link" data-department="${department.id}">${icon("arrow")} 보고서 목록</button>
+    <article class="report-document" aria-labelledby="report-title">
+      <header class="report-header">
+        <p class="report-meta">${department.name}팀 · ${report.shortName}</p>
+        <p class="report-publication"><time datetime="${report.publishedAt}">${report.publishedAt.replaceAll("-", ".")} 발행</time><span>근거 뉴스 ${articles.length}건</span></p>
+        <h1 id="report-title">${escapeHTML(brief.title.replace("\n", " "))}</h1>
+      </header>
+      <section class="report-section">
+        <h2>핵심 요약</h2>
+        <ul class="takeaway-list">${brief.takeaways.map((text, index) => `
+          <li class="takeaway"><p>${escapeHTML(text)}<span class="point-sources">${brief.evidence[index].map(id => {
+            const number = articles.findIndex(article => article.id === id) + 1;
+            return `<button data-source="${id}" aria-label="근거 기사 ${number} 보기">[${number}]</button>`;
+          }).join("")}</span></p></li>`).join("")}
+        </ul>
+      </section>
+      <section class="report-section"><h2>주요 인사이트</h2><p>${escapeHTML(brief.insight)}</p></section>
+      <section class="report-section"><h2>분석 레포트</h2><p>${escapeHTML(brief.action)}</p></section>
+      <section class="report-section report-sources">
+        <h2>뉴스 출처</h2>
+        <ol class="source-list">${articles.map((article, index) => `
+          <li class="source-row" id="source-${article.id}">
+            <span class="source-index">${index + 1}</span>
+            <div><button class="source-title" data-article="${article.id}">${escapeHTML(article.title)}</button>
+              <p>${escapeHTML(article.source)}<span>·</span>${article.date.slice(5).replace("-", ".")}</p>
+            </div>
+          </li>`).join("")}
+        </ol>
+        <p class="source-note">과제용 샘플 기사입니다.</p>
+      </section>
+    </article>`;
 }
-function filteredReports() {
+function filteredReports(kind = state.view === "news" ? "period" : state.archiveKind) {
   if (state.archiveFrom && state.archiveTo && state.archiveFrom > state.archiveTo) return [];
-  return REPORTS.filter(report =>
-    (!state.archiveMonth || report.publishedAt.startsWith(state.archiveMonth)) &&
+  const reports = kind === "monthly" ? MONTHLY_REPORTS : REPORTS;
+  return reports.filter(report =>
+    (!state.archiveMonth || (report.month || report.publishedAt).startsWith(state.archiveMonth)) &&
     (!state.archiveFrom || report.publishedAt >= state.archiveFrom) &&
     (!state.archiveTo || report.publishedAt <= state.archiveTo)
   );
@@ -174,22 +197,27 @@ function renderReportSelector() {
   const reports = filteredReports();
   const months = [...new Set(REPORTS.map(report => report.publishedAt.slice(0, 7)))];
   const invalidRange = state.archiveFrom && state.archiveTo && state.archiveFrom > state.archiveTo;
-  $("#report-selector").innerHTML = `
-    <details id="archive-drawer" ${state.view === "news" || state.archiveOpen ? "open" : ""}>
-    <summary>지난 보고서 찾기${state.archiveMonth || state.archiveFrom || state.archiveTo ? '<span>필터 적용</span>' : ""}${icon("down")}</summary>
+  const collectionSelect = state.view === "news" ? `<label class="collection-select-label">뉴스 회차<select id="collection-select" ${reports.length ? "" : "disabled"}>${reports.length ? reports.map(report => `<option value="${report.id}" ${state.reportId === report.id ? "selected" : ""}>${report.shortName} · ${report.publishedAt}</option>`).join("") : '<option>해당 기간의 회차 없음</option>'}</select></label>` : "";
+  const kindSelector = state.view === "news" ? "" : `<div class="report-kind-switch" role="group" aria-label="보고서 유형">
+    <button data-report-kind="period" aria-pressed="${state.archiveKind === "period"}">회차별</button>
+    <button data-report-kind="monthly" aria-pressed="${state.archiveKind === "monthly"}">월간</button>
+  </div>`;
+  $("#report-selector").innerHTML = `${kindSelector}${collectionSelect}
+    <details id="archive-drawer" ${state.archiveOpen ? "open" : ""}>
+    <summary>${state.archiveKind === "monthly" && state.view !== "news" ? "보고 월·날짜 선택" : "지난 보고서 찾기"}${state.archiveMonth || state.archiveFrom || state.archiveTo ? '<span>필터 적용</span>' : ""}${icon("down")}</summary>
     <div class="archive-filter-heading"><button class="text-button" id="reset-archive">전체 기간</button></div>
     <div class="archive-filter-fields">
-      <label>발행 월<select id="archive-month"><option value="">전체 월</option>${months.map(month => `<option value="${month}" ${state.archiveMonth === month ? "selected" : ""}>${month.replace("-", "년 ")}월</option>`).join("")}</select></label>
-      <label>시작일<input id="archive-from" type="date" value="${state.archiveFrom}" aria-invalid="${Boolean(invalidRange)}"></label>
-      <label>종료일<input id="archive-to" type="date" value="${state.archiveTo}" aria-invalid="${Boolean(invalidRange)}"></label>
-      ${state.view === "news" ? `<label class="collection-select-label">뉴스 회차<select id="collection-select" ${reports.length ? "" : "disabled"}>${reports.length ? reports.map(report => `<option value="${report.id}" ${state.reportId === report.id ? "selected" : ""}>${report.shortName} · ${report.publishedAt}</option>`).join("") : '<option>해당 기간의 회차 없음</option>'}</select></label>` : ""}
+      <label>${state.archiveKind === "monthly" && state.view !== "news" ? "보고 월" : "발행 월"}<select id="archive-month"><option value="">전체 월</option>${months.map(month => `<option value="${month}" ${state.archiveMonth === month ? "selected" : ""}>${month.replace("-", "년 ")}월</option>`).join("")}</select></label>
+      <label>발행 시작일<input id="archive-from" type="date" value="${state.archiveFrom}" aria-invalid="${Boolean(invalidRange)}"></label>
+      <label>발행 종료일<input id="archive-to" type="date" value="${state.archiveTo}" aria-invalid="${Boolean(invalidRange)}"></label>
     </div>
     ${invalidRange ? '<p class="archive-error" role="status">종료일을 시작일 이후로 설정해 주세요.</p>' : ""}
     </details>`;
 }
 function updateArchiveFilter(key, value) {
+  state.archiveOpen = $("#archive-drawer")?.open === true;
   state[key] = value;
-  const reports = filteredReports();
+  const reports = filteredReports("period");
   if (!reports.some(report => report.id === state.reportId)) state.reportId = reports[0]?.id || null;
   state.limit = 6;
   renderAll();
@@ -197,35 +225,36 @@ function updateArchiveFilter(key, value) {
 function renderOverview(){
   $("#directory-team-count").textContent = `${allowedDepartments().length}개 팀`;
   const sorted=allowedDepartments().sort((a,b)=>Number(state.interests.includes(b.id))-Number(state.interests.includes(a.id)));
-  $("#department-overview").innerHTML=sorted.map(d=>`<button class="department-choice" data-department="${d.id}" aria-label="${d.name} 보고서 목록"><span class="directory-icon" style="--dept-bg:${d.bg};--dept-text:${d.text}">${icon(d.icon)}</span><span class="directory-name">${d.name}</span><span class="directory-count">보고서 ${departmentPublications(d.id).filter(publication => filteredReports().some(report => report.id === publication.collectionId)).length}개</span>${icon("chevron","directory-arrow")}</button>`).join("");
+  $("#department-overview").innerHTML=sorted.map(d=>`<button class="department-choice" data-department="${d.id}" aria-label="${d.name} 보고서 목록"><span class="directory-icon" style="--dept-bg:${d.bg};--dept-text:${d.text}">${icon(d.icon)}</span><span class="directory-name">${d.name}</span><span class="directory-count">보고서 ${departmentPublications(d.id).filter(publication => publication.kind === state.archiveKind && filteredReports().some(report => report.id === publication.collectionId)).length}개</span>${icon("chevron","directory-arrow")}</button>`).join("");
 }
 function renderDepartmentList() {
   if (!canViewDepartment(state.session, state.briefDepartment)) return;
   const department = departmentById(state.briefDepartment);
   const reportIds = filteredReports().map(report => report.id);
-  const publications = departmentPublications(department.id).filter(publication => reportIds.includes(publication.collectionId));
+  const publications = departmentPublications(department.id).filter(publication => publication.kind === state.archiveKind && reportIds.includes(publication.collectionId));
   $("#department-report-list").innerHTML = `
     ${state.session.role === "admin" ? `<button class="back-link" data-view="today">${icon("arrow")} 전체 팀</button>` : ""}
-    <div class="report-archive-heading"><h2>요약 보고서</h2><span>${publications.length}개</span></div>
+    <p class="archive-count">보고서 ${publications.length}개</p>
     <div class="publication-list">${publications.map(publication => {
-      const collection = reportById(publication.collectionId);
-      const count = getReportBrief(department.id, collection.id).sourceIds.length;
+      const {report: collection, articles} = publicationContent(publication);
+      const count = articles.length;
       return `<button class="publication-item" data-publication="${publication.id}">
-        <span class="publication-day">${collection.sequence}<small>회차</small></span>
+
         <span class="publication-copy"><strong>${publication.title}</strong>
-          <span class="publication-date">${publication.publishedAt.replaceAll("-", ".")} 발행</span>
-          <span class="publication-period">${collection.dates[0].slice(5).replace("-", ".")}–${collection.dates.at(-1).slice(5).replace("-", ".")} 뉴스 · 근거 ${count}건</span>
+          <span class="publication-date">${publication.publishedAt.replaceAll("-", ".")} 발행 · 근거 뉴스 ${count}건</span>
         </span>${icon("chevron", "publication-arrow")}</button>`;
     }).join("") || '<div class="empty-state"><h3>해당 기간의 보고서가 없습니다.</h3><p>발행 월이나 날짜를 바꿔보세요.</p><button class="outline-button" id="reset-archive-empty">전체 기간 보기</button></div>'}</div>
-    <p class="archive-cadence">${icon("clock")} 1회는 월요일, 2회는 목요일 발행 · 주차는 해당 주 월요일 기준</p>`;
+    `;
 }
 function openPublication(id,scroll=true,replace=false){
   const publication=publicationById(id);
-  if(!publication||!DEPARTMENTS.some(dept=>dept.id===publication.departmentId)||!REPORTS.some(report=>report.id===publication.collectionId)){
+  if(!publication||!DEPARTMENTS.some(dept=>dept.id===publication.departmentId)||![...REPORTS,...MONTHLY_REPORTS].some(report=>report.id===publication.collectionId)){
     navigate("today",null,scroll,replace);toast("보고서를 찾을 수 없습니다.","info");return;
   }
   if (!requireDepartment(publication.departmentId)) return;
-  state.publicationId=publication.id;state.reportId=publication.collectionId;
+  state.publicationId = publication.id;
+  state.archiveKind = publication.kind;
+  if (publication.kind === "period") state.reportId = publication.collectionId;
   navigate("report",publication.departmentId,scroll,replace);
 }
 function openDepartmentReport(departmentId,collectionId=state.reportId){
@@ -241,25 +270,41 @@ function renderSaved() {
   $("#saved-list").innerHTML = articles.length ? articles.map(articleRow).join("") : `<div class="empty-state">${icon("bookmark")}<h3>다시 읽고 싶은 뉴스를 모아보세요.</h3><p>기사의 북마크 아이콘을 누르면 여기에 저장됩니다.<br>스크랩은 현재 브라우저에서 유지됩니다.</p><button class="primary-button" data-view="news">주요 보험 뉴스 둘러보기 ${icon("arrow")}</button></div>`;
 }
 function renderHeading() {
-  const content={
-    today:["DEPARTMENT REPORTS","우리 부서의<br class=\"mobile-break\"> 뉴스 브리핑<span>.</span>","부서를 선택하고, 월·목요일 보고서를 확인하세요.","부서 선택"],
-    news:["THE NEWS BEHIND THE BRIEF","요약의 근거가 되는,<br class=\"mobile-break\"> 주요 보험 뉴스<span>.</span>","발행 회차를 선택하고 보험 뉴스를 찾아보세요.","전체 뉴스"],
-    departments:["DEPARTMENT ARCHIVE",`${departmentById(state.briefDepartment).name}<br class=\"mobile-break\"> 보고서<span>.</span>`,"주차와 회차, 발행일을 확인하고 보고서를 선택하세요.",`${departmentById(state.briefDepartment).name} 보고서`],
-    report:["SUMMARY & INSIGHTS",`${departmentById(state.briefDepartment).name}<br class=\"mobile-break\"> 요약 보고서<span>.</span>`,`${reportById(state.reportId).shortName} · ${reportById(state.reportId).publishedAt.replaceAll("-", ".")} 발행`,"요약 보고서"],
-    saved:["YOUR PERSONAL READING ROOM","다시 꺼내 읽을,<br class=\"mobile-break\"> 나만의 인사이트<span>.</span>","중요한 소식을 스크랩하고, 생각의 단서를 한곳에 모아보세요.","나의 스크랩"],
-    process:["THE IDEA BEHIND THE BRIEF","뉴스를 부서의 관점으로,<br class=\"mobile-break\"> 주 2회 보험 브리핑<span>.</span>","보험 뉴스 수집, Jev 부서 분류, LLM 요약·분석의 흐름입니다.","서비스 소개"]
+  const title = {
+    today: "팀별 보고서",
+    news: "전체 뉴스",
+    departments: `${departmentById(state.briefDepartment).name}팀 보고서`,
+    report: "요약 보고서",
+    saved: "나의 스크랩",
+    process: "서비스 소개"
   }[state.view];
-  $("#page-eyebrow").textContent=content[0];$("#page-title").innerHTML=content[1];$("#page-description").textContent=content[2];$("#breadcrumb-current").textContent=content[3];
-  document.title=`${content[3]} — 교보 뉴스브리핑`;
+  $(".page-heading").hidden = state.view === "report";
+  $("#page-title").textContent = title;
+  $("#breadcrumb-current").textContent = title;
+  document.title = `${title} — 교보 뉴스브리핑`;
 }
-
+function renderImplementationNote() {
+  document.body.classList.toggle("presentation-mode", PRESENTATION_MODE);
+  $("#implementation-note").hidden = !PRESENTATION_MODE;
+  if (!PRESENTATION_MODE) return;
+  const notes = {
+    today: {code:"팀별 열람·보고서 조회"},
+    departments: {code:"권한 분기·월간/회차 조회"},
+    news: {code:"기사 조회·검색·정렬", llm:"기사 한줄 요약"},
+    report: {code:"기간 집계·출처 연결", llm:"핵심 요약·인사이트·분석 레포트"},
+    saved: {code:"스크랩 저장·내보내기"},
+    process: {code:"수집·화면·권한 처리", llm:"요약·인사이트 작성"}
+  };
+  const note = notes[state.view];
+  $("#implementation-note").innerHTML = `<details>
+    <summary><span>발표용</span><span class="implementation-tag">코딩</span>${note.llm ? '<span class="implementation-tag llm-tag">LLM</span>' : ""}${icon("down")}</summary>
+    <div><p><strong>코딩</strong> ${note.code}</p>${note.llm ? `<p><strong>LLM</strong> ${note.llm}</p><p class="implementation-fixture">AI 결과는 현재 샘플 데이터입니다.</p>` : ""}</div>
+  </details>`;
+}
 function renderAll() {
-  renderHeading(); renderSidebar(); renderReportSelector(); renderOverview();
+  renderHeading(); renderSidebar(); renderReportSelector(); renderOverview(); renderImplementationNote();
   $$("main>.view").forEach(el => el.hidden = el.id !== `${state.view}-view`);
-  $("#stat-total").textContent = reportArticles().length;
-  $("#featured-news").innerHTML = reportArticles().slice(0,3).map(featuredCard).join("");
-  $(".featured-section").hidden = !reportArticles().length;
-  renderFeed(); renderRail(); renderSaved();
+  renderFeed(); renderSaved();
   if(state.view==="departments") renderDepartmentList(); else $("#department-report-list").innerHTML="";
   if(state.view==="report") renderReportDetail(); else $("#department-content").innerHTML="";
 }
@@ -324,7 +369,19 @@ function openArticle(id) {
   activeArticleId = id;
   const body = article.body || [article.summary,`이번 기사에서는 ${article.keywords.slice(0,2).join(", ")} 등의 주제를 중심으로 생명보험회사의 업무 관련성을 살펴봅니다. ${article.depts.map(d => departmentById(d).name).join(", ")} 부서는 각자의 관점에서 검토할 항목을 정리할 수 있습니다.`,"기사의 핵심을 부서의 업무 맥락과 연결해 살펴보면, 변화의 의미와 후속 검토 사항을 구체적으로 정리할 수 있습니다. 관련 기사들을 함께 읽고 서로 연결되는 주제를 확인하는 것이 도움이 됩니다."];
   const saved = state.saved.includes(id);
-  $("#article-detail").innerHTML = `<div class="article-dialog-top"><img src="./assets/${article.image || (article.depts.includes("digital") ? "data.jpg" : article.depts.includes("product") ? "planning.jpg" : "architecture.jpg")}" alt="${article.depts.includes("digital") ? "데이터와 지표가 담긴 업무 화면" : article.depts.includes("product") ? "문서를 검토하는 업무 현장" : "도심의 오피스 건축"}"><button class="icon-button" data-close="article-dialog" aria-label="기사 닫기">${icon("close")}</button></div><div class="article-detail-body"><div class="article-tags">${article.depts.map(tag).join("")}<span class="example-label">샘플 기사</span></div><h2 id="article-dialog-title">${escapeHTML(article.title)}</h2><div class="article-meta">${articleMeta(article)}<span class="meta-dot"></span><span>${article.date.replaceAll("-",".")}</span></div><div class="detail-sample-note">${icon("info")}<span>프로토타입용 기사입니다. 주요 뉴스 수집, Jev 부서 분류, LLM 분석이 완료된 상태를 보여주는 샘플입니다.</span></div><div class="detail-content">${body.map(paragraph => `<p>${escapeHTML(paragraph)}</p>`).join("")}</div><div class="classification-box"><h3>${icon("flow")}Jev 부서 분류<span class="example-label">판단 근거</span></h3><p>${escapeHTML(article.reason)}</p><div class="article-tags">${article.depts.map(tag).join("")}</div></div></div><div class="article-dialog-actions"><button class="outline-button ${saved ? "saved" : ""}" data-save="${id}" aria-pressed="${saved}" aria-label="${saved ? "스크랩 취소" : "기사 스크랩"}: ${escapeHTML(article.title)}">${icon("bookmark")}<span class="save-label">${saved ? "스크랩 완료" : "기사 스크랩"}</span></button><button class="text-button" data-article-brief="${article.depts[0]}">부서 브리핑 읽기 ${icon("arrow")}</button></div>`;
+  $("#article-detail").innerHTML = `
+    <div class="article-dialog-top"><span class="implementation-inline">발표용 · 코딩</span><button class="icon-button" data-close="article-dialog" aria-label="기사 닫기">${icon("close")}</button></div>
+    <div class="article-detail-body">
+      <p class="article-fixture-note">과제용 샘플 기사</p>
+      <h2 id="article-dialog-title">${escapeHTML(article.title)}</h2>
+      <div class="article-meta">${articleMeta(article)}</div>
+      <div class="detail-content">${body.map(paragraph => `<p>${escapeHTML(paragraph)}</p>`).join("")}</div>
+      <details class="classification-box"><summary>관련 팀과 분류 근거</summary><p>${escapeHTML(article.reason)}</p><div class="article-tags">${article.depts.map(tag).join("")}</div></details>
+    </div>
+    <div class="article-dialog-actions">
+      <button class="outline-button ${saved ? "saved" : ""}" data-save="${id}" aria-pressed="${saved}" aria-label="${saved ? "스크랩 취소" : "기사 스크랩"}: ${escapeHTML(article.title)}">${icon("bookmark")}<span class="save-label">${saved ? "스크랩 완료" : "기사 스크랩"}</span></button>
+      <button class="text-button" data-article-brief="${article.depts[0]}">팀 보고서 보기 ${icon("arrow")}</button>
+    </div>`;
   const briefLink = $("[data-article-brief]", $("#article-detail"));
   const accessibleDepartment = article.depts.find(id => canViewDepartment(state.session, id));
   if (accessibleDepartment) briefLink.dataset.articleBrief = accessibleDepartment;
@@ -387,6 +444,14 @@ document.addEventListener("click",event => {
   if(event.target.closest(".brand, .mobile-brand")){event.preventDefault();navigate("today");return;}
   const button = event.target.closest("button");
   if (!button) return;
+  if (button.dataset.reportKind) {
+    state.archiveKind = button.dataset.reportKind;
+    state.archiveMonth = "";
+    state.archiveFrom = "";
+    state.archiveTo = "";
+    renderAll();
+    return;
+  }
   if (button.dataset.loginTeam) { setSession({role:"team", departmentId:button.dataset.loginTeam}); return; }
   if (button.dataset.save) {toggleSaved(button.dataset.save); return;}
   if (button.dataset.article) {openArticle(button.dataset.article); return;}
@@ -417,20 +482,15 @@ document.addEventListener("click",event => {
     case "show-more": state.limit+=6; renderFeed(); break;
     case "export-saved": exportSaved(); break;
     case "reset-filters": state.query=""; state.limit=6; $("#news-search").value=""; renderFeed();$("#news-search").focus();break;
-    case "grid-mode": state.mode="grid"; renderFeed(); updateViewButtons(); break;
-    case "list-mode": state.mode="list"; renderFeed(); updateViewButtons(); break;
   }
 });
-function updateViewButtons() {
-  ["grid","list"].forEach(mode => {const button=$(`#${mode}-mode`);button.classList.toggle("active",mode===state.mode);button.setAttribute("aria-pressed",String(mode===state.mode));});
-}
 document.addEventListener("change", event => {
   const keys = {"archive-month":"archiveMonth", "archive-from":"archiveFrom", "archive-to":"archiveTo"};
   if (keys[event.target.id]) updateArchiveFilter(keys[event.target.id], event.target.value);
   if (event.target.id === "collection-select") setReport(event.target.value);
 });
 document.addEventListener("toggle", event => {
-  if (event.target.id === "archive-drawer" && state.view !== "news") state.archiveOpen = event.target.open;
+  if (event.target.id === "archive-drawer" && event.target.isConnected) state.archiveOpen = event.target.open;
 }, true);
 $("#news-search").addEventListener("input",event => {state.query=event.target.value;state.limit=6;renderFeed();});
 $("#news-sort").addEventListener("change",event => {state.sort=event.target.value;state.limit=6;renderFeed();});
