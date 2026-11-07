@@ -481,3 +481,53 @@ body{color:#242424}.sidebar{background:#fff;border-right:1px solid #e9ebef;color
   .report-publication { gap: 5px; }
   .report-kind-switch { margin-bottom: 12px; }
 }
+
+/* Compact summary citations and journal-style endnotes. */
+.report-summary { margin-top: 18px; padding-top: 16px; }
+.report-summary h2 { margin-bottom: 8px; }
+.report-summary .takeaway-list { padding-left: 17px; }
+.report-summary .takeaway { padding: 0; margin: 0 0 7px; }
+.report-summary .takeaway:last-child { margin-bottom: 0; }
+.report-summary .takeaway p { font-size: 16px; line-height: 1.65; }
+.point-sources { display: inline; vertical-align: super; font-size: 13px; line-height: 0; margin-left: 3px; white-space: nowrap; }
+.point-sources a { display: inline; padding: 5px 3px; color: #2a81eb; text-decoration: none; }
+.point-sources a:hover { text-decoration: underline; }
+.report-sources { margin-top: 18px; padding-top: 16px; }
+.report-sources h2 { font-size: 17px; margin-bottom: 8px; }
+.report-sources .source-list { display: block; }
+.report-sources .source-row {
+  display: block;
+  position: relative;
+  padding: 3px 0 3px 27px;
+  margin: 0 0 4px;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.report-sources .source-row:last-child { margin-bottom: 0; }
+.report-sources .source-index { position: absolute; top: 3px; left: 0; margin: 0; font-size: 13px; line-height: inherit; }
+.report-sources .source-title {
+  display: inline;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: inherit;
+  color: #365578;
+  text-decoration: underline;
+  text-decoration-color: #a9b9cd;
+  text-underline-offset: 3px;
+}
+.report-sources .source-meta { display: inline; font-size: 14px; color: #65768c; }
+.report-sources a.source-entry { display: block; text-decoration: none; }
+.report-sources .source-label { text-decoration: underline; text-decoration-color: #a9b9cd; text-underline-offset: 3px; }
+.report-sources .source-note { font-size: 14px; line-height: 1.6; margin-top: 8px; }
+.project-team { padding: 12px 14px; margin: 0 0 24px; border-radius: 8px; }
+.project-team h2 { font-size: 16px; line-height: 1.5; }
+.project-team dl { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 16px; margin: 8px 0 0; }
+.project-team dl > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px; }
+.project-team dt { font-size: 14px; line-height: 1.6; }
+.project-team dd { margin: 0; font-size: 14px; line-height: 1.6; font-weight: 600; }
+@media (max-width: 600px) {
+  .project-team dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

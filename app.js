@@ -156,13 +156,13 @@ function renderReportDetail() {
         <p class="report-publication"><time datetime="${report.publishedAt}">${report.publishedAt.replaceAll("-", ".")} 발행</time><span>근거 뉴스 ${articles.length}건</span></p>
         <h1 id="report-title">${escapeHTML(brief.title.replace("\n", " "))}</h1>
       </header>
-      <section class="report-section">
+      <section class="report-section report-summary">
         <h2>핵심 요약</h2>
         <ul class="takeaway-list">${brief.takeaways.map((text, index) => `
-          <li class="takeaway"><p>${escapeHTML(text)}<span class="point-sources">${brief.evidence[index].map(id => {
+          <li class="takeaway"><p>${escapeHTML(text)}<sup class="point-sources">${brief.evidence[index].map(id => {
             const number = articles.findIndex(article => article.id === id) + 1;
-            return `<button data-source="${id}" aria-label="근거 기사 ${number} 보기">[${number}]</button>`;
-          }).join("")}</span></p></li>`).join("")}
+            return `<a href="#source-${id}" data-source="${id}" aria-label="근거 기사 ${number} 보기">${number}</a>`;
+          }).join(",")}</sup></p></li>`).join("")}
         </ul>
       </section>
       <section class="report-section"><h2>주요 인사이트</h2><p>${escapeHTML(brief.insight)}</p></section>
@@ -171,10 +171,7 @@ function renderReportDetail() {
         <h2>뉴스 출처</h2>
         <ol class="source-list">${articles.map((article, index) => `
           <li class="source-row" id="source-${article.id}">
-            <span class="source-index">${index + 1}</span>
-            <div><button class="source-title" data-article="${article.id}">${escapeHTML(article.title)}</button>
-              <p>${escapeHTML(article.source)}<span>·</span>${article.date.slice(5).replace("-", ".")}</p>
-            </div>
+            <a class="source-title source-entry" href="#article-${article.id}" data-article="${article.id}"><span class="source-index">[${index + 1}]</span><span class="source-label">${escapeHTML(article.title)}</span><span class="source-meta"> (${escapeHTML(article.source)}, ${article.date.slice(5).replace("-", ".")})</span></a>
           </li>`).join("")}
         </ol>
         <p class="source-note">과제용 샘플 기사입니다.</p>
@@ -442,29 +439,30 @@ function exportSaved() {
 
 document.addEventListener("click",event => {
   if(event.target.closest(".brand, .mobile-brand")){event.preventDefault();navigate("today");return;}
-  const button = event.target.closest("button");
-  if (!button) return;
-  if (button.dataset.reportKind) {
-    state.archiveKind = button.dataset.reportKind;
+  const action = event.target.closest("button, a[data-article], a[data-source]");
+  if (!action) return;
+  if (action.tagName === "A") event.preventDefault();
+  if (action.dataset.reportKind) {
+    state.archiveKind = action.dataset.reportKind;
     state.archiveMonth = "";
     state.archiveFrom = "";
     state.archiveTo = "";
     renderAll();
     return;
   }
-  if (button.dataset.loginTeam) { setSession({role:"team", departmentId:button.dataset.loginTeam}); return; }
-  if (button.dataset.save) {toggleSaved(button.dataset.save); return;}
-  if (button.dataset.article) {openArticle(button.dataset.article); return;}
-  if (button.dataset.close) {document.getElementById(button.dataset.close).close(); return;}
-  if (button.dataset.articleBrief) { const article=ARTICLE_SAMPLES.find(a=>a.id===activeArticleId); if(article) state.reportId=REPORTS.find(report=>report.dates.includes(article.date))?.id||state.reportId; $("#article-dialog").close(); openDepartmentReport(button.dataset.articleBrief); return;}
-  if (button.dataset.view) {navigate(button.dataset.view); return;}
-  if (button.dataset.department) {navigate("departments",button.dataset.department); return;}
-  if (button.dataset.publication) {openPublication(button.dataset.publication); return;}
-  if (button.dataset.brief) {openDepartmentReport(button.dataset.brief); return;}
-  if (button.dataset.source) {const source=document.getElementById(`source-${button.dataset.source}`);if(source){source.scrollIntoView({behavior:"smooth",block:"center"});$(".source-title",source).focus({preventScroll:true});}return;}
-  if (button.dataset.report) {setReport(button.dataset.report); return;}
-  if (button.classList.contains("settings-trigger")) {openSettings(); return;}
-  switch(button.id) {
+  if (action.dataset.loginTeam) { setSession({role:"team", departmentId:action.dataset.loginTeam}); return; }
+  if (action.dataset.save) {toggleSaved(action.dataset.save); return;}
+  if (action.dataset.article) {openArticle(action.dataset.article); return;}
+  if (action.dataset.close) {document.getElementById(action.dataset.close).close(); return;}
+  if (action.dataset.articleBrief) { const article=ARTICLE_SAMPLES.find(a=>a.id===activeArticleId); if(article) state.reportId=REPORTS.find(report=>report.dates.includes(article.date))?.id||state.reportId; $("#article-dialog").close(); openDepartmentReport(action.dataset.articleBrief); return;}
+  if (action.dataset.view) {navigate(action.dataset.view); return;}
+  if (action.dataset.department) {navigate("departments",action.dataset.department); return;}
+  if (action.dataset.publication) {openPublication(action.dataset.publication); return;}
+  if (action.dataset.brief) {openDepartmentReport(action.dataset.brief); return;}
+  if (action.dataset.source) {const source=document.getElementById(`source-${action.dataset.source}`);if(source){source.scrollIntoView({behavior:"smooth",block:"center"});$(".source-title",source).focus({preventScroll:true});}return;}
+  if (action.dataset.report) {setReport(action.dataset.report); return;}
+  if (action.classList.contains("settings-trigger")) {openSettings(); return;}
+  switch(action.id) {
     case "login-trigger": openLogin(); break;
     case "admin-login": setSession({role:"admin"}); break;
     case "logout-button": setSession(null); break;

@@ -27,9 +27,9 @@
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-subset.css">
-  <link rel="stylesheet" href="./styles.css?v=20261107-4">
-  <script defer src="./data.js?v=20261107-4"></script>
-  <script defer src="./app.js?v=20261107-4"></script>
+  <link rel="stylesheet" href="./styles.css?v=20261107-5">
+  <script defer src="./data.js?v=20261107-5"></script>
+  <script defer src="./app.js?v=20261107-5"></script>
 </head>
 <body>
   <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -110,11 +110,12 @@
       <section id="report-view" class="view" hidden><div id="department-content"></div></section>
       <section id="saved-view" class="view" hidden><div class="section-heading"><h2>저장한 기사 <span id="saved-total" class="count-label">0</span></h2><button class="outline-button" id="export-saved"><svg><use href="#i-download"/></svg>텍스트로 내보내기</button></div><p class="saved-description">다시 읽고 싶은 뉴스를 한곳에. 스크랩은 이 브라우저에 저장됩니다.</p><div id="saved-list" class="article-list saved-articles"></div></section>
       <section id="process-view" class="view" hidden>
+        <section class="project-team" aria-labelledby="project-team-title"><h2 id="project-team-title">함께 만든 사람들</h2><dl><div><dt>조장</dt><dd>엘</dd></div><div><dt>조사</dt><dd>카밀라</dd></div><div><dt>CFO</dt><dd>루트</dd></div><div><dt>노가다</dt><dd>한들</dd></div></dl></section>
         <div class="process-intro"><h2>흩어진 뉴스가<br>부서의 인사이트가 되기까지.</h2><p>주요 보험 뉴스를 수집·분류하고, 부서별 보고서로 요약과 인사이트를 제공합니다.<br>부서별 요약본이 중심이 되는 주 2회 보험 뉴스 브리핑 서비스입니다.</p></div>
         <div class="process-steps"><article><h3>주요 기사 수집</h3><p>목·금·토·일 주요 보험 뉴스는 월요일 아침에, 월·화·수 뉴스는 목요일에 수집·보고합니다. 제목·본문·원문 URL·발행 시각을 정리하고 중복 기사를 제외합니다.</p></article><article><h3>Jev로 부서 분류</h3><p>기사 제목과 본문을 함께 읽고 업무 관련성을 판단합니다. 관련 부서는 복수로 지정하고, 판단이 불확실한 기사는 검토 대상으로 남깁니다.</p></article><article><h3>LLM 요약·분석</h3><p>부서별로 모인 기사에서 핵심 주제와 변화를 요약합니다. 근거 기사를 연결하고, 해당 부서가 검토할 업무 시사점을 제안합니다.</p></article></div>
         <div class="process-details"><article><h3>읽는 사람의 업무를 중심으로</h3><p>경영전략, 상품개발, 영업마케팅, 자산운용, 리스크관리, 디지털·IT. 하나의 기사도 부서에 따라 필요한 관점이 달라집니다. 팀을 선택해 로그인하면 우리 팀 보고서를, 관리자는 모든 팀 보고서를 확인합니다. 비로그인 상태에서는 전체 뉴스를 읽을 수 있습니다.</p></article><article><h3>프로토타입에서 경험할 수 있는 것</h3><p>발행 월과 날짜로 지난 보고서를 찾고, 주차·회차별 요약과 뉴스 출처를 읽을 수 있습니다. 회차별·월간 보고서는 체험용 예시이며, 월간 보고서에는 해당 월의 샘플 기사를 모아 작성한 예시 요약을 제공합니다. 팀 선택 로그인은 화면 열람 범위를 체험하는 방식입니다. 실제 사용자 인증과 서버 권한 검사는 향후 데이터베이스 연결 시 적용합니다.</p></article></div>
         <button class="outline-button" id="collect-trigger">수집 흐름 체험하기</button>
-        <section class="project-team" aria-labelledby="project-team-title"><h2 id="project-team-title">함께 만든 사람들</h2><dl><div><dt>조장</dt><dd>엘</dd></div><div><dt>조사</dt><dd>카밀라</dd></div><div><dt>CFO</dt><dd>루트</dd></div><div><dt>노가다</dt><dd>한들</dd></div></dl></section>
+
       </section>
 
       <footer class="page-footer"><span>교보 뉴스브리핑 · 과제용 샘플</span><button data-view="process">서비스 소개</button></footer>
