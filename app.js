@@ -171,7 +171,7 @@ function renderReportDetail() {
         <h2>뉴스 출처</h2>
         <ol class="source-list">${articles.map((article, index) => `
           <li class="source-row" id="source-${article.id}">
-            <a class="source-title source-entry" href="#article-${article.id}" data-article="${article.id}"><span class="source-index">[${index + 1}]</span><span class="source-label">${escapeHTML(article.title)}</span><span class="source-meta"> (${escapeHTML(article.source)}, ${article.date.slice(5).replace("-", ".")})</span></a>
+            <a class="source-title source-entry" href="#article-${article.id}" data-article="${article.id}"><span class="source-index">[${index + 1}]</span><span><span class="source-label">${escapeHTML(article.title)}</span><span class="source-meta"> (${escapeHTML(article.source)}, ${article.date.slice(5).replace("-", ".")})</span></span></a>
           </li>`).join("")}
         </ol>
         <p class="source-note">과제용 샘플 기사입니다.</p>
@@ -298,12 +298,13 @@ function renderNewsResearch() {
     <div class="research-comparison-content">
     <p class="research-note">2026년 10월 29일–11월 11일 · 월·목 보고서 4회분</p>
     <p class="research-result"><strong>${uniqueBaseline.length}건 → ${uniqueIssues.length}건</strong><span>2주 전체 고유 이슈 +${added}건</span></p>
+    <div class="research-table-scroll" tabindex="0" role="region" aria-labelledby="research-table-title">
     <table class="research-table">
-      <caption>회차별 고유 이슈 수 <span>생보 / 손보 / 공통 순</span></caption>
+      <caption id="research-table-title">회차별 고유 이슈 수 <span>생보 / 손보 / 공통 순</span></caption>
       <thead><tr><th scope="col">보고일</th><th scope="col">5곳</th><th scope="col">10곳</th><th scope="col">추가</th></tr></thead>
       <tbody>${reports.map(compareRow).join("")}</tbody>
       <tfoot><tr><th scope="row">2주 고유</th><td>${counts(uniqueBaseline)}</td><td>${counts(uniqueIssues)}</td><td class="research-delta">+${added}</td></tr></tfoot>
-    </table>
+    </table></div>
     <p class="research-note">10개 매체의 공개 기사 검색 표본입니다. 국내 보험사·감독 이슈와 국내 상품에 참고할 해외 보도를 포함했습니다. 같은 사건은 회차별로 한 건으로 묶고, 생·손보 공통은 공통에 한 번만 셌습니다. 2주 고유 수에는 다른 회차에 재보도된 이슈도 한 번만 들어갑니다.</p>
     <p class="research-note"><strong>운영 후보</strong> 기본 5곳을 유지하고, 손보 상품과 보상 이슈가 필요하면 매일경제와 한국경제를 먼저 검토할 만합니다. 이 표본에서 2주 전체에 새로 더해진 이슈는 두 매체에서 확인됐습니다.</p>
     <section class="research-evidence" aria-labelledby="research-evidence-title"><h3 id="research-evidence-title">회차별 이슈와 관련 부서</h3>
@@ -448,11 +449,11 @@ function openArticle(id) {
   const accessibleDepartment = article.depts.find(id => canViewDepartment(state.session, id));
   if (accessibleDepartment) briefLink.dataset.articleBrief = accessibleDepartment;
   else briefLink.remove();
-  if (!state.session) $(".article-dialog-actions .outline-button").hidden = true;
+  $(".article-dialog-actions").hidden = !state.session;
   const dialog = $("#article-dialog");
   dialog.setAttribute("aria-labelledby","article-dialog-title");
   if (!dialog.open) dialog.showModal();
-  dialog.scrollTop = 0;
+  $(".article-detail-body", dialog).scrollTop = 0;
 }
 function openSettings() {
   $("#department-settings").innerHTML = DEPARTMENTS.map(d => `<label><input type="checkbox" name="interest" value="${d.id}" ${state.interests.includes(d.id) ? "checked" : ""}>${d.name}</label>`).join("");

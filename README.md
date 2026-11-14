@@ -17,7 +17,7 @@ npm run dev
 
 로컬 주소는 `http://127.0.0.1:4173/#process/operations`입니다. 로컬 관리자 화면은 `PREVIEW_ADMIN=true npm run dev`로 확인합니다. 이 옵션은 로컬 서버에만 있고 배포 Worker에는 포함되지 않습니다. 로컬 DB는 무시되는 `.local-data/`에 저장하며 실제 D1과 분리됩니다.
 
-`index.html`을 직접 열면 기존 샘플은 확인할 수 있지만 운영 API는 사용할 수 없습니다. 정적 파일만 필요한 경우 `npm run build:static`을 사용합니다. **실제 로그인·저장·API 호출은 정적 GitHub Pages만으로 실행되지 않습니다.** 현재 배포 대상은 `.openai/hosting.json`에 기록한 기존 Sites 프로젝트입니다.
+`index.html`을 직접 열면 기존 샘플을 확인할 수 있습니다. 정적 파일만 필요한 경우 `npm run build:static`을 사용합니다. 실제 로그인·저장·API 호출을 포함한 배포 대상은 `.openai/hosting.json`에 기록한 Sites 프로젝트입니다.
 
 ## 역할
 
@@ -30,9 +30,9 @@ npm run dev
 
 ## 배포와 버전 확인
 
-대표 주소는 [kyoboai.handul.dev](https://kyoboai.handul.dev/)입니다. 소스는 [Handul7/kyoboai](https://github.com/Handul7/kyoboai)에 보관하고, Sites의 Cloudflare Worker·D1에서 실행합니다. Cloudflare DNS의 `kyoboai` CNAME은 `custom-domains.chatgpt.site`를 가리킵니다. GitHub Pages는 정적 샘플 미러이며 실제 API 서버가 아닙니다.
+서비스는 [kyoboai.handul.dev](https://kyoboai.handul.dev/) 한 곳에서 운영하며, Sites의 Cloudflare Worker·D1에서 실행합니다. Cloudflare DNS의 `kyoboai` CNAME은 `custom-domains.chatgpt.site`를 가리킵니다. [Handul7/kyoboai](https://github.com/Handul7/kyoboai)의 `main`이 원본이며, 이전 GitHub Pages 배포는 종료했습니다.
 
-2026.11.14에 GitHub의 최신 화면과 별도 서버 배포본을 통합했습니다. 이전에는 두 소스가 달라 수정일·발표용 구현 표시·팀 선택 로그인·월별 보고서가 서버 배포본에서 누락되어 있었습니다. 현재 공통 버전은 `release.json`과 모든 화면 상단에서 확인합니다. 한 소스로 검증한 뒤 GitHub와 Sites에 같은 파일을 반영해야 하며, 두 체크아웃을 따로 수정하지 않습니다.
+현재 버전은 `release.json`과 모든 화면 상단에서 확인합니다. 이전 변경은 Git 이력에서 확인할 수 있습니다.
 
 GitHub `main`을 원본으로 관리합니다. GitHub 푸시만으로 Worker가 자동 배포되는 워크플로는 아직 없습니다. 릴리스 순서는 (1) 같은 소스의 검사·빌드, (2) GitHub 저장, (3) 기존 Sites 프로젝트에 동일 파일로 버전 저장·배포, (4) 대표 주소의 `release.json`과 GitHub 파일 대조입니다. 저장소별 커밋 SHA는 달라도 되며 배포 파일 내용이 같아야 합니다. 환경 변수와 로컬 DB는 복사하지 않습니다. 다음 업데이트에서는 DNS를 바꾸지 않습니다.
 
