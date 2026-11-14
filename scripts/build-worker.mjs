@@ -6,12 +6,12 @@ import { readPrototypeData, verifyPrototypeData } from './verify-prototype.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 verifyPrototypeData(await readPrototypeData());
 // Build one Worker ESM module; no dynamic imports or runtime build dependencies.
-const modules=['core.mjs','providers.mjs','config.mjs','index.mjs'];
+const modules=['core.mjs','providers.mjs','scrape.mjs','config.mjs','index.mjs'];
 const source=(await Promise.all(modules.map(file=>readFile(resolve(root,'server',file),'utf8')))).map(code=>code.replace(/^import .*?;\s*$/gm,'').replace(/^export /gm,'')).join('\n');
 const release=JSON.parse(await readFile(resolve(root,'release.json'),'utf8'));
 const html=await readFile(resolve(root,'index.html'),'utf8');
 if(!html.includes(release.version)||!html.includes(release.updatedAt))throw new Error('화면의 수정일·버전을 release.json과 일치시켜 주세요.');
-const files=['index.html','styles.css','data.js','news-research.js','operations.js','app.js','release.json',...(await readdir(resolve(root,'assets'))).map(f=>`assets/${f}`)];
+const files=['index.html','styles.css','data.js','news-research.js','issues.js','operations.js','app.js','release.json',...(await readdir(resolve(root,'assets'))).map(f=>`assets/${f}`)];
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.jpg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml'};
 const assets=Object.fromEntries(await Promise.all(files.map(async file=>['/'+file,{type:mime[extname(file)]||'application/octet-stream',data:(await readFile(resolve(root,file))).toString('base64')}])));
 const worker=`${source}\nconst STATIC_ASSETS=${JSON.stringify(assets)};

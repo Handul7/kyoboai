@@ -1,13 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {DEPARTMENT_IDS,reportWindow,canonicalUrl,normalizeArticle,deduplicateArticles,buildJevRequest,parseJevResult,buildLlmRequest,validateReport} from "../server/core.mjs";
+import {DEPARTMENT_IDS,reportWindow,canonicalUrl,normalizeArticle,deduplicateArticles,buildJevRequest,parseJevResult,evidenceCandidates,buildLlmRequest,validateReport} from "../server/core.mjs";
 import {classifyArticle,summarizeArticles} from "../server/providers.mjs";
 
 const source={id:"newsis",domains:["newsis.com"],bodyAllowed:true,aiAllowed:true};
 const article={sourceId:"newsis",url:"https://www.newsis.com/view/NISX_123?utm_source=test",title:"보험업계 새 상품과 지급여력 기준 점검",publishedAt:"2026-11-11T08:10:00+09:00",body:"보험업계는 새 상품과 지급여력 기준을 점검했다. 이번 변화는 보험 상품 개발 부서와 리스크 관리 부서의 업무에 관련된다."};
 const now=new Date("2026-11-13T00:00:00Z");
 function rawJev(overrides={}) {
-  const answers={relevance:{type:"noul",noul:.97},importance:{type:"score",score:2.8,confidence:.82,probabilities:{"0":0,"1":0,"2":.2,"3":.8}}};
+  const answers={relevance:{type:"noul",noul:.97},urgency:{type:"noul",noul:.9},importance:{type:"score",score:2.8,confidence:.82,probabilities:{"0":0,"1":0,"2":.2,"3":.8}}};
+  answers.lead={type:"choice",choice:"product",confidence:.78,probabilities:{strategy:0,product:.81,sales:0,asset:0,risk:.19,digital:0,none:0}};
+  answers.evidence={type:"choice",choice:"s2",confidence:.9,probabilities:{s1:.03,s2:.95,none:.02}};
   for(const id of DEPARTMENT_IDS)answers[`dept_${id}`]={type:"noul",noul:["product","risk"].includes(id)?.94:.04};
   Object.assign(answers,overrides);
   return {model:"jev-test-contract",answers,usage:{input_tokens:300,output_tokens:40}};
@@ -78,26 +80,36 @@ test("dedup preserves source references, merges bridges and leaves related stori
   assert.equal(deduplicateArticles([a,c,bridge]).length,1);
   assert.equal(a.sourceRefs,undefined,"caller records are not mutated");
 });
-test("Jev sends eight independent typed questions against full title and body",()=>{
+test("Jev sends typed routing, priority and verbatim evidence questions against full title and body",()=>{
   const request=buildJevRequest({...article,id:"a_1"},"jev-test");
-  assert.equal(Object.keys(request.questions).length,8);
+  assert.equal(Object.keys(request.questions).length,11);
+  assert.equal(request.questions.lead.type,"choice");
+  assert.equal(request.questions.evidence.criteria.s2,evidenceCandidates(article.body)[1].quote);
   assert.equal(request.questions.importance.type,"score");
   for(const id of DEPARTMENT_IDS)assert.equal(request.questions[`dept_${id}`].type,"noul");
   assert.equal(request.state.article.body,article.body);
 });
 test("multi-department results remain multi-label and preserve raw probabilities",()=>{
-  const parsed=parseJevResult(rawJev());
+  const parsed=parseJevResult(rawJev(),article);
   assert.deepEqual(parsed.departments,["product","risk"]);
+  assert.equal(parsed.leadDepartmentId,"product");assert.deepEqual(parsed.supportDepartmentIds,["risk"]);
+  assert.ok(article.body.includes(parsed.evidence));
+  assert.equal(parsed.urgencyCandidate,true);
   assert.equal(parsed.reviewRequired,false);assert.equal(parsed.decision,"candidate");
   assert.equal(parsed.thresholdsValidated,false);
   assert.equal(parsed.importance,2.8);
 });
 test("ambiguous department, relevance and importance results route to review",()=>{
-  assert.equal(parseJevResult(rawJev({dept_asset:{type:"noul",noul:.5}})).reviewRequired,true);
-  assert.equal(parseJevResult(rawJev({relevance:{type:"noul",noul:.5}})).decision,"review");
+  assert.equal(parseJevResult(rawJev({dept_asset:{type:"noul",noul:.5}}),article).reviewRequired,true);
+  assert.equal(parseJevResult(rawJev({relevance:{type:"noul",noul:.5}}),article).decision,"review");
   const raw=rawJev();raw.answers.importance.confidence=.3;
-  assert.equal(parseJevResult(raw).reviewRequired,true);
-  assert.equal(parseJevResult(rawJev({relevance:{type:"noul",noul:.03}})).decision,"irrelevant");
+  assert.equal(parseJevResult(raw,article).reviewRequired,true);
+  assert.equal(parseJevResult(rawJev({relevance:{type:"noul",noul:.03}}),article).decision,"irrelevant");
+  const tied=rawJev();tied.answers.lead.probabilities.product=.52;tied.answers.lead.probabilities.risk=.48;
+  assert.equal(parseJevResult(tied,article).leadDepartmentId,null);
+  const unsupported=rawJev();unsupported.answers.evidence={type:"choice",choice:"none",confidence:1,probabilities:{s1:0,s2:0,none:1}};
+  assert.equal(parseJevResult(unsupported,article).decision,"review");
+  assert.equal(parseJevResult(rawJev({urgency:{type:"noul",noul:.03}}),article).urgencyCandidate,false);
 });
 test("missing or invalid model judgments never receive a silent default",()=>{
   const raw=rawJev();delete raw.answers.dept_risk;assert.throws(()=>parseJevResult(raw));

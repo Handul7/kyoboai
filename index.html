@@ -23,15 +23,16 @@
   <meta name="twitter:description" content="교보 뉴스브리핑 · 부서별 보험 뉴스 요약 보고서">
   <meta name="twitter:image" content="https://kyoboai.handul.dev/assets/og-cheer-v1.png">
   <meta name="twitter:image:alt" content="희경 조장님 팟팅!">
-  <title>교보 뉴스브리핑 — 보험 뉴스 부서별 요약</title>
+  <title>교보 뉴스브리핑 — 보험 이슈와 팀 대응</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-subset.css">
-  <link rel="stylesheet" href="./styles.css?v=2026.11.14.2">
-  <script defer src="./data.js?v=2026.11.14.2"></script>
-  <script defer src="./news-research.js?v=2026.11.14.2"></script>
-  <script defer src="./operations.js?v=2026.11.14.2"></script>
-  <script defer src="./app.js?v=2026.11.14.2"></script>
+  <link rel="stylesheet" href="./styles.css?v=2026.11.14.3">
+  <script defer src="./data.js?v=2026.11.14.3"></script>
+  <script defer src="./news-research.js?v=2026.11.14.3"></script>
+  <script defer src="./issues.js?v=2026.11.14.3"></script>
+  <script defer src="./operations.js?v=2026.11.14.3"></script>
+  <script defer src="./app.js?v=2026.11.14.3"></script>
 </head>
 <body>
   <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -72,13 +73,13 @@
     <div class="nav-label department-label">팀 보고서 <span>6</span></div>
     <nav class="department-nav" id="sidebar-departments" aria-label="부서 바로가기"></nav>
     <div class="sidebar-bottom">
-      <button class="nav-item" data-view="process"><svg><use href="#i-flow"/></svg><span>서비스 소개</span></button>
+      <button class="nav-item" data-view="process"><svg><use href="#i-flow"/></svg><span>작동 방식</span></button>
       <button class="nav-item settings-trigger"><svg><use href="#i-settings"/></svg><span>관심 부서 설정</span></button>
     </div>
   </aside>
 
   <div class="app-shell">
-    <div class="revision-bar" data-release="2026.11.14.2">최종 수정 <time datetime="2026-11-14">2026.11.14</time><span class="release-id">버전 2026.11.14.2</span></div>
+    <div class="revision-bar" data-release="2026.11.14.3">최종 수정 <time datetime="2026-11-14">2026.11.14</time><span class="release-id">버전 2026.11.14.3</span></div>
     <header class="topbar">
       <div class="mobile-identity"><a class="mobile-brand" href="#today" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="KYOBO 교보생명" width="150" height="44"></a><span class="mobile-service-name">뉴스브리핑</span></div>
 <div class="breadcrumb"><strong id="breadcrumb-current">전체 뉴스</strong></div>
@@ -90,11 +91,15 @@
 
       <aside id="implementation-note" class="implementation-note" aria-label="발표용 구현 방식"></aside>
       <a class="ops-live-entry" href="#process/operations">실제 보고서 · 연동 현황 <svg><use href="#i-arrow"/></svg></a>
+      <div id="archive-home"></div>
       <section class="archive-controls" id="report-selector" aria-label="지난 보고서 조회"></section>
 
       <section id="today-view" class="view"><div class="directory-heading"><h2>팀을 선택하세요</h2><span id="directory-team-count">6개 팀</span></div><div class="department-directory" id="department-overview"></div><div class="directory-footer"><span><svg><use href="#i-clock"/></svg>월·목요일, 주 2회 발행</span><button class="text-button" data-view="news">전체 뉴스 보기 <svg><use href="#i-arrow"/></svg></button></div></section>
 
       <div id="news-view" class="view" hidden>
+        <section id="issue-desk" class="issue-desk" aria-label="보험 이슈와 부서 배분"></section>
+        <details id="sample-news" class="sample-news">
+        <summary>회차별 샘플 기사 보기</summary>
         <section class="news-section" id="news-section">
           <div class="section-heading"><h2 id="feed-heading">기사 <span class="count-label">18건</span></h2></div>
           <div class="feed-layout">
@@ -107,6 +112,7 @@
 
           </div>
         </section>
+        </details>
       </div>
 
       <section id="departments-view" class="view" hidden><div id="department-report-list"></div></section>
@@ -118,18 +124,27 @@
           <dl><div><dt>조장</dt><dd>엘</dd></div><div><dt>조사</dt><dd>카밀라</dd></div><div><dt>CFO</dt><dd>루트</dd></div><div><dt>노가다</dt><dd>한들</dd></div></dl>
         </section>
         <nav class="process-tabs" aria-label="서비스 소개 메뉴">
-          <a id="overview-tab" href="#process" aria-current="page">Project Overview</a>
+          <a id="overview-tab" href="#process" aria-current="page">작동 방식</a>
           <a id="research-tab" href="#process/news">뉴스 관련</a>
           <a id="operations-tab" href="#process/operations">연동 준비</a>
         </nav>
         <div id="overview-panel" aria-labelledby="overview-tab">
-          <div class="process-intro"><h2>흩어진 뉴스가<br>부서의 인사이트가 되기까지.</h2><p>주요 보험 뉴스를 수집·분류하고, 부서별 보고서로 요약과 인사이트를 제공하는 주 2회 브리핑 설계입니다.</p></div>
+          <div class="process-intro"><h2>기사 한 건이<br>팀의 대응으로 이어지기까지.</h2><p>과제 1은 보험 뉴스 수집과 이슈 배분 서비스입니다. 과제 2는 수집·판단·보고가 어떻게 이어지며 오분류를 어떻게 고치는지 설명합니다.</p><a class="text-button" href="#news">과제 1 · 이슈 화면 보기 <svg><use href="#i-arrow"/></svg></a></div>
           <div class="process-steps">
             <article><span class="step-icon"><svg><use href="#i-paper"/></svg></span><span class="eyebrow">코딩</span><h3>기사 수집·정리</h3><p>허용된 출처에서 제목·원문 링크·발행일·본문을 받습니다. 회차별 날짜를 적용하고 동일 URL·동일 본문을 정리합니다.</p></article>
-            <article><span class="step-icon"><svg><use href="#i-flow"/></svg></span><span class="eyebrow">TypeSafe Jev</span><h3>주요 기사 선별·분류</h3><p>제목과 본문으로 보험업 관련성, 보고 가치, 관련 부서를 판단합니다. 여러 부서에 해당할 수 있으며 판단이 애매한 기사는 검토 대상으로 남깁니다.</p></article>
-            <article><span class="step-icon"><svg><use href="#i-spark"/></svg></span><span class="eyebrow">LLM</span><h3>부서별 요약·분석</h3><p>선정된 기사로 부서별 핵심 요약과 업무 시사점을 작성합니다. 코드는 기사 ID로 원문 링크를 붙이고 월·목 보고서에 표시합니다.</p></article>
+            <article><span class="step-icon"><svg><use href="#i-flow"/></svg></span><span class="eyebrow">TypeSafe Jev</span><h3>주관 1팀·협조 여러 팀</h3><p>제목과 본문에서 보험업 관련성, 첫 대응 책임, 다른 팀이 제공할 검토·자료를 판단합니다. 근거가 부족한 배분은 검토로 넘깁니다.</p></article>
+            <article><span class="step-icon"><svg><use href="#i-spark"/></svg></span><span class="eyebrow">LLM</span><h3>브리핑 초안 작성</h3><p>확정된 팀 배분과 기사 ID를 받아 요약·시사점·공동 검토 제안을 작성합니다. 관리자가 근거를 확인한 뒤 발행합니다.</p></article>
           </div>
-          <div class="process-details"><article><h3>월·목 보고 주기</h3><p>목~일 기사는 월요일 아침, 월~수 기사는 목요일 아침 보고에 반영합니다. 경영전략, 상품개발, 영업마케팅, 자산운용, 리스크관리, 디지털·IT의 관점에서 읽을 수 있습니다.</p></article><article><h3>과제용 프로토타입</h3><p>팀 선택 로그인, 회차별·월간 보고서, 날짜 검색과 스크랩을 샘플 데이터로 체험합니다. 실제 서버 보고서는 연동 준비 화면에서 별도 로그인과 부서 권한으로 열람합니다.</p></article></div>
+          <section class="jev-guide" aria-labelledby="jev-guide-title">
+            <h3 id="jev-guide-title">Jev 판단 기준</h3>
+            <p>이슈를 어떻게 배분할지 세 가지 출력으로 판단합니다. 아래 숫자는 초기 운영 기준이며, 실제 성능은 검토한 기사로 평가합니다.</p>
+            <div class="jev-types">
+              <article><h4><a href="https://docs.typesafe.ai/primitives/noul">Noul</a><small>예 / 아니오 확률</small></h4><p>보험업에 관련 있나? 이 팀이 구체적으로 도울 일이 있나? 다음 브리핑 전에 확인해야 하나?</p><p><strong>0.80 이상</strong> 채택 · <strong>0.20 이하</strong> 제외 · 그 사이는 배분 검토. 긴급 확률은 긴급 후보를 고를 때만 사용합니다.</p></article>
+              <article><h4><a href="https://docs.typesafe.ai/primitives/choice">Choice</a><small>한 가지 선택</small></h4><p>첫 대응을 책임질 주관팀 한 곳 또는 판단 불가를 고릅니다. 근거도 원문 문장 후보 중 하나를 고릅니다.</p><p>주관 확률 <strong>0.65 이상</strong>, 2순위와 <strong>0.20 이상 차이</strong>, 해당 팀의 Noul 통과가 필요합니다. 근거 선택 확률은 0.65 이상입니다.</p></article>
+              <article><h4><a href="https://docs.typesafe.ai/primitives/score">Score</a><small>보고 가치 0~3</small></h4><p>0 무관 · 1 참고 · 2 업무 검토 · 3 대응 필요. 네 단계의 확률로 점수를 계산합니다.</p><p><strong>1.5 이상</strong> 정기 후보. <strong>2.6 이상</strong>에 긴급 Noul 0.80 이상, 근거와 배분 통과 시 긴급 후보. 신뢰도 0.65 미만은 검토합니다.</p></article>
+            </div>
+          </section>
+          <div class="process-details"><article><h3>정기 브리핑과 긴급 검토</h3><p>목~일 기사는 월요일, 월~수 기사는 목요일 오전 7시 브리핑 기준입니다. 긴급 후보는 별도 표시합니다. 실시간 수집과 외부 알림 발송은 운영 과제로 남아 있습니다.</p></article><article><h3>근거와 분류 정정</h3><p>기사에서는 원문 링크와 선택된 근거 문장을 확인합니다. 오분류를 신고하면 관리자가 주관·협조팀을 검토해 배분에 반영합니다. 승인된 정정은 이후 평가 표본으로 활용할 수 있습니다.</p></article></div>
           <button class="outline-button" id="collect-trigger">샘플 수집 흐름 체험하기</button>
         </div>
         <section id="research-panel" aria-labelledby="research-tab" hidden></section>
@@ -140,7 +155,7 @@
     </main>
   </div>
 
-  <nav class="mobile-nav" aria-label="모바일 메뉴"><button data-view="today" class="active"><svg><use href="#i-spark"/></svg><span>부서</span></button><button data-view="news"><svg><use href="#i-paper"/></svg><span>전체 뉴스</span></button><button data-view="saved"><span class="mobile-save-icon"><svg><use href="#i-bookmark"/></svg><span class="mobile-saved-count" hidden>0</span></span><span>나의 스크랩</span></button><button data-view="process"><svg><use href="#i-flow"/></svg><span>서비스 소개</span></button></nav>
+  <nav class="mobile-nav" aria-label="모바일 메뉴"><button data-view="today" class="active"><svg><use href="#i-spark"/></svg><span>부서</span></button><button data-view="news"><svg><use href="#i-paper"/></svg><span>전체 뉴스</span></button><button data-view="saved"><span class="mobile-save-icon"><svg><use href="#i-bookmark"/></svg><span class="mobile-saved-count" hidden>0</span></span><span>나의 스크랩</span></button><button data-view="process"><svg><use href="#i-flow"/></svg><span>작동 방식</span></button></nav>
 
   <dialog id="article-dialog" class="article-dialog"><div id="article-detail"></div></dialog>
   <dialog id="settings-dialog" class="small-dialog"><div class="dialog-header"><span class="implementation-inline">발표용 · 코딩</span><button class="icon-button" data-close="settings-dialog" aria-label="설정 닫기"><svg><use href="#i-close"/></svg></button></div><h2>나의 관심 부서</h2><p class="dialog-description">관심 부서를 부서 선택 화면에서 먼저 보여드립니다.</p><div id="department-settings" class="department-settings"></div><div class="settings-schedule"><svg><use href="#i-clock"/></svg><div><strong>월·목요일 오전 7:00</strong><span>목–일 → 월요일 / 월–수 → 목요일</span></div><span class="example-label">설계 예시</span></div><p class="settings-hint">이 샘플에서는 자동 수집이 실행되지 않습니다.<br>관심 부서는 현재 브라우저에 저장됩니다.</p><button class="primary-button" id="save-settings">설정 저장 <svg><use href="#i-check"/></svg></button></dialog>

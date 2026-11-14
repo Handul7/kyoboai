@@ -1,4 +1,4 @@
-export const PIPELINE_VERSION = 'insurance-v1';
+export const PIPELINE_VERSION = 'insurance-v2';
 export const LIMITS = Object.freeze({ maxArticles: 40, maxReportArticles: 12, maxImport: 100, maxBodyBytes: 2500000, concurrency: 4, classificationsPerStep: 8 });
 export function configuredLimits(env) {
   const n=Number(env.NEWS_MAX_CANDIDATES);

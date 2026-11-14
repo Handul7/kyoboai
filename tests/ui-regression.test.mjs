@@ -18,7 +18,7 @@ function ui() {
         innerHTML: '', textContent: '', hidden: false, open: false, value: '', dataset: {},
         classList: { add: (...items) => items.forEach(item => classes.add(item)), remove: (...items) => items.forEach(item => classes.delete(item)), contains: item => classes.has(item), toggle(item, force) { const next = force ?? !classes.has(item); next ? classes.add(item) : classes.delete(item); return next; } },
         setAttribute(name, content) { this[name] = String(content); },
-        addEventListener() {}, focus() {}, scrollIntoView() {}, appendChild() {}, remove() {}, click() {}, contains() { return false; },
+        addEventListener() {}, focus() {}, scrollIntoView() {}, appendChild() {}, after() {}, remove() {}, click() {}, contains() { return false; },
         showModal() { this.open = true; }, close() { this.open = false; },
         querySelector: name => node(`${selector} ${name}`), querySelectorAll: () => [],
       };

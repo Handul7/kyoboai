@@ -43,9 +43,14 @@ function insertReport(env, article, { id = 'report-test', dept = 'strategy', sta
   env.DB.sqlite.prepare('INSERT INTO reports (id,run_key,department_id,window_id,window_json,title,payload,status,published_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(id, key, dept, WINDOW.id, JSON.stringify(WINDOW), payload.title, JSON.stringify(payload), status, status === 'published' ? TIMESTAMP : null, TIMESTAMP, TIMESTAMP);
   return id;
 }
-function wireJev({ relevance = .98, uncertain = false } = {}) {
+function wireJev({ relevance = .98, uncertain = false, questions } = {}) {
+  const evidence=Object.keys(questions?.evidence?.criteria||{});
+  const choice=(options,selected)=>({type:'choice',choice:selected,confidence:1,probabilities:Object.fromEntries(options.map(id=>[id,+(id===selected)]))});
   return { model: 'jev-test', answers: {
     relevance: { type: 'noul', noul: relevance },
+    urgency: { type: 'noul', noul: .04 },
+    lead: choice([...DEPARTMENT_IDS,'none'],'strategy'),
+    ...(evidence.length?{evidence:choice(evidence,evidence[0])}:{}),
     importance: { type: 'score', score: 2, confidence: 1, probabilities: { 0: 0, 1: 0, 2: 1, 3: 0 } },
     ...Object.fromEntries(DEPARTMENT_IDS.map(id => [`dept_${id}`, { type: 'noul', noul: id === 'strategy' ? (uncertain ? .5 : .98) : .02 }])),
   }, usage: { input_tokens: 10, output_tokens: 10 } };
@@ -55,7 +60,7 @@ function providers(t, { citation = 'valid', uncertain = false, beforeJev } = {})
   t.after(() => { globalThis.fetch = original; });
   globalThis.fetch = async (url, init) => {
     const payload = JSON.parse(init.body); const kind = String(url).includes('typesafe.ai') ? 'jev' : 'llm'; calls.push(kind);
-    if (kind === 'jev') { if (beforeJev) await beforeJev(); return Response.json(wireJev({ uncertain })); }
+    if (kind === 'jev') { if (beforeJev) await beforeJev(); return Response.json(wireJev({ uncertain,questions:payload.questions })); }
     const articles = JSON.parse(payload.messages[1].content).articles;
     const report = { title: '보험업 핵심 보고서', summary: [{ text: '제공된 시험 기사에 근거한 핵심 내용입니다.', sourceIds: [citation === 'valid' ? articles[0].id : 'not-an-input-article'] }], insights: [], actions: [] };
     return Response.json({ model: 'llm-test', choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(report) } }], usage: { prompt_tokens: 20, completion_tokens: 20 } });
@@ -63,6 +68,55 @@ function providers(t, { citation = 'valid', uncertain = false, beforeJev } = {})
   return calls;
 }
 const runRequest = env => request(env, '/api/admin/run', { method: 'POST', data: { reportDate: DATE, departmentId: 'strategy', kind: 'brief' } });
+
+test('approved HTML article scraping feeds Jev-only routing and scoped correction review', async t => {
+  const env=fixture(t);
+  delete env.LLM_API_KEY;
+  const item=inputArticle('html');
+  const markup=input=>`<!doctype html><script type="application/ld+json">${JSON.stringify({"@context":"https://schema.org","@type":"NewsArticle",headline:input.title,datePublished:input.publishedAt,articleBody:input.body,isAccessibleForFree:input.free??true})}</script>`;
+  const calls=[];
+  const original=globalThis.fetch;t.after(()=>{globalThis.fetch=original;});
+  globalThis.fetch=async(url,options)=>{
+    calls.push(String(url));
+    if(String(url).includes('typesafe.ai')){
+      return Response.json(wireJev({questions:JSON.parse(options.body).questions}));
+    }
+    assert.equal(options.redirect,'error');
+    return new Response(markup({...item,free:!String(url).endsWith('paid')}),{headers:{'Content-Type':'text/html; charset=utf-8'}});
+  };
+  const scrape=(urls,user='admin-1')=>request(env,'/api/admin/scrape',{method:'POST',user,data:{urls}});
+  assert.equal((await scrape([item.url])).status,400);
+  assert.equal((await scrape([item.url],'member')).status,403);
+  assert.equal(calls.length,0);
+  await allowSource(env);
+  assert.equal((await scrape([item.url,'https://example.com/a'])).status,400);
+  assert.equal(calls.length,0);
+  assert.equal((await scrape([item.url,'https://www.newsis.com/view/paid'])).status,422);
+  assert.equal(env.DB.sqlite.prepare('SELECT COUNT(*) AS n FROM articles').get().n,0);
+  assert.equal((await scrape([item.url])).data.stored,1);
+  const classified=await request(env,'/api/admin/run',{method:'POST',data:{reportDate:DATE,classifyOnly:true}});
+  assert.equal(classified.data.status,'classified',JSON.stringify(classified.data));
+  assert.equal(calls.filter(u=>u.includes('typesafe.ai')).length,1);
+  assert.equal(calls.some(u=>u.includes('llm.example')),false);
+  const [issue]=(await request(env,'/api/issues')).data.issues;
+  assert.equal(issue.lead,'strategy');assert.deepEqual(issue.support,[]);
+  assert.ok(item.body.includes(issue.evidence));assert.equal(issue.body,undefined);
+  assert.deepEqual((await request(env,'/api/issues',{user:null})).data.issues,[]);
+  const member=departmentId=>request(env,'/api/admin/members/member',{method:'PUT',data:{departmentId}});
+  const feedback=(origin=ORIGIN)=>request(env,`/api/issues/${issue.id}/feedback`,{method:'POST',origin,user:'member',data:{leadDepartmentId:'risk',note:'지급여력 규제 대응이 핵심입니다.'}});
+  await member('product');assert.equal((await feedback()).status,404);
+  await member('strategy');assert.equal((await feedback('https://another.example')).status,403);
+  assert.equal((await feedback()).status,200);assert.equal((await feedback()).status,409);
+  assert.equal((await request(env,'/api/admin/review')).data.articles[0].judgment.feedback.leadDepartmentId,'risk');
+  const update=data=>request(env,`/api/admin/review/${issue.id}`,{method:'PUT',data:{decision:'candidate',leadDepartmentId:'risk',supportDepartmentIds:['strategy'],...data}});
+  assert.equal((await update({evidence:'원문에 없는 문장'})).status,400);
+  assert.equal((await update({supportDepartmentIds:['risk']})).status,400);
+  assert.equal((await update({evidence:issue.evidence})).status,200);
+  const [corrected]=(await request(env,'/api/issues',{user:'member'})).data.issues;
+  assert.equal(corrected.lead,'risk');assert.deepEqual(corrected.support,['strategy']);assert.equal(corrected.feedbackPending,false);
+  await request(env,'/api/admin/sources/newsis',{method:'PUT',data:{enabled:false,bodyAllowed:false,aiAllowed:false,permissionNote:''}});
+  assert.deepEqual((await request(env,'/api/issues')).data.issues,[]);
+});
 
 test('unattended connection check persists an audit entry without exposing job secrets or calling models', async t => {
   const env=fixture(t);env.JOB_TOKEN='job-test';const calls=providers(t);
@@ -197,7 +251,7 @@ test('uncertain classification is held for review; administrator correction enab
   assert.equal(held.data.status, 'blocked');
   const queue = await request(env, '/api/admin/review');
   assert.equal(queue.data.articles[0].id, article.id);
-  assert.equal((await request(env, `/api/admin/review/${article.id}`, { method: 'PUT', data: { decision: 'candidate', departments: ['strategy'] } })).status, 200);
+  assert.equal((await request(env, `/api/admin/review/${article.id}`, { method: 'PUT', data: { decision: 'candidate', leadDepartmentId:'strategy',supportDepartmentIds:[] } })).status, 200);
   assert.equal((await runRequest(env)).data.status, 'draft');
   assert.deepEqual(calls, ['jev', 'llm']);
 });

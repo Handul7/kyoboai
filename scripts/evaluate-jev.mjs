@@ -60,7 +60,7 @@ export async function main(args=process.argv.slice(2),env=process.env) {
   if(args.some(arg=>!["--live","--write-results"].includes(arg)))throw new Error("Use --live for API calls and --write-results for ignored local metrics output.");
   const fixture=validateEvaluationFixture(JSON.parse(await readFile(resolve(root,"tests/fixtures/jev-evaluation.json"),"utf8")));
   const live=args.includes("--live");
-  const output={fixtureVersion:fixture.version,labelStatus:fixture.labelStatus,mode:live?"live_evaluation":"dry_run_no_api_calls",model:env.TYPESAFE_MODEL||"jev-latest",caseCount:fixture.cases.length,questionsPerCase:8,thresholds:JEV_THRESHOLDS,thresholdsValidated:false,notes:["작성한 가상 기사와 초안 라벨입니다. 실제 보도나 검증 완료 정답셋이 아닙니다.","기준 라벨은 보험 업무 담당자가 검토해야 합니다.","정확도 지표는 성공한 호출에 대해 계산하며 실패 건수·완료율을 별도로 표시합니다.","알려진 양성 사례의 판단 유보는 재현율에서 누락으로 계산합니다.","모호한 정답(relevant=null)은 관련성·부서 점수에서 제외하고 검토 경로를 따로 평가합니다.","소규모 표본 점수는 운영 정확도나 자동 발행의 근거가 아닙니다."]};
+  const output={fixtureVersion:fixture.version,labelStatus:fixture.labelStatus,mode:live?"live_evaluation":"dry_run_no_api_calls",model:env.TYPESAFE_MODEL||"jev-latest",caseCount:fixture.cases.length,questionsPerCase:"10~11",thresholds:JEV_THRESHOLDS,thresholdsValidated:false,notes:["작성한 가상 기사와 초안 라벨입니다. 실제 보도나 검증 완료 정답셋이 아닙니다.","기준 라벨은 보험 업무 담당자가 검토해야 합니다.","정확도 지표는 성공한 호출에 대해 계산하며 실패 건수·완료율을 별도로 표시합니다.","알려진 양성 사례의 판단 유보는 재현율에서 누락으로 계산합니다.","모호한 정답(relevant=null)은 관련성·부서 점수에서 제외하고 검토 경로를 따로 평가합니다.","소규모 표본 점수는 운영 정확도나 자동 발행의 근거가 아닙니다."]};
   if(live) {
     if(!env.TYPESAFE_API_KEY?.trim())throw new Error("TYPESAFE_API_KEY server environment variable is required for --live.");
     const predictions=[];

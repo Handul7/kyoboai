@@ -1,4 +1,5 @@
-import { DEPARTMENT_IDS, reportWindow, normalizeArticle, deduplicateArticles, validateReport } from './core.mjs';
+import { DEPARTMENT_IDS, JEV_THRESHOLDS, ISSUE_ACTIONS, reportWindow, canonicalUrl, normalizeArticle, deduplicateArticles, validateReport } from './core.mjs';
+import { scrapeArticle } from './scrape.mjs';
 import { classifyArticle, summarizeArticles } from './providers.mjs';
 import { LIMITS, SOURCES, PIPELINE_VERSION, validEndpoint, configuredLimits } from './config.mjs';
 
@@ -105,12 +106,14 @@ async function mapBounded(list,worker) {
 
 async function generate(input,env,user) {
   const limits=configuredLimits(env);
-  const dept=department(input.departmentId), window=reportWindow(input.reportDate,input.kind||'brief');
+  const classifyOnly=input.classifyOnly===true;
+  const dept=classifyOnly?'issues':department(input.departmentId), window=reportWindow(input.reportDate,input.kind||'brief');
   if(Date.parse(window.end)>Date.now()) fail(400,'아직 마감되지 않은 기간입니다.');
   const key=`${window.id}:${dept}:${PIPELINE_VERSION}`;
   const existing=await first(env.DB,'SELECT * FROM reports WHERE run_key = ?',key);
   if(existing) return {runId:existing.id,status:existing.status,reportId:existing.id,message:'이미 생성된 보고서를 불러왔습니다. API를 다시 호출하지 않았습니다.'};
-  if(!env.TYPESAFE_API_KEY||!env.LLM_API_KEY||!env.LLM_MODEL||!validEndpoint(env.LLM_API_URL)) fail(503,'Jev·LLM 서버 설정을 먼저 완료해 주세요.');
+  if(!env.TYPESAFE_API_KEY) fail(503,'Jev 서버 설정을 먼저 완료해 주세요.');
+  if(!classifyOnly&&(!env.LLM_API_KEY||!env.LLM_MODEL||!validEndpoint(env.LLM_API_URL))) fail(503,'LLM 서버 설정을 먼저 완료해 주세요.');
   const started=now(),owner=crypto.randomUUID(),runId=`run_${crypto.randomUUID()}`,lease=new Date(Date.now()+10*60*1000).toISOString();
   const claimed=await run(env.DB,"INSERT INTO runs (id,run_key,window_id,department_id,status,created_at,updated_at,error,counts,lease_until,owner_token) VALUES (?,?,?,?, 'running',?,?,NULL,'{}',?,?) ON CONFLICT(run_key) DO UPDATE SET status='running',updated_at=excluded.updated_at,error=NULL,lease_until=excluded.lease_until,owner_token=excluded.owner_token WHERE runs.status!='running' OR runs.lease_until < excluded.updated_at",runId,key,window.id,dept,started,started,lease,owner);
   if(!claimed.meta?.changes) fail(409,'같은 회차·부서를 처리 중입니다. 실행 기록에서 완료 여부를 확인해 주세요.');
@@ -147,12 +150,14 @@ async function generate(input,env,user) {
     if(counts.remaining>0) return finish('pending',`${judged.length}/${articles.length}건 분류를 저장했습니다. 다음 요청에서 이어서 처리합니다.`);
     counts.review=judged.filter(x=>x.judgment.reviewRequired).length;
     counts.irrelevant=judged.filter(x=>x.judgment.decision==='irrelevant').length;
-    counts.lowPriority=judged.filter(x=>!x.judgment.reviewRequired&&x.judgment.decision==='candidate'&&x.judgment.importance<1.5&&!x.judgment.reviewedBy).length;
-    const relevant=judged.filter(x=>!x.judgment.reviewRequired&&x.judgment.decision!=='irrelevant'&&(x.judgment.importance>=1.5||x.judgment.reviewedBy)&&x.judgment.departments.includes(dept)).sort((a,b)=>b.judgment.importance-a.judgment.importance||a.article.id.localeCompare(b.article.id));
+    counts.urgent=judged.filter(x=>x.judgment.urgencyCandidate).length;
+    counts.lowPriority=judged.filter(x=>!x.judgment.reviewRequired&&x.judgment.decision==='candidate'&&x.judgment.importance<JEV_THRESHOLDS.briefScore&&!x.judgment.reviewedBy).length;
+    if(classifyOnly) return finish('classified',`부서 배분을 저장했습니다. 확인이 필요한 기사 ${counts.review}건, 긴급 검토 후보 ${counts.urgent}건입니다.`);
+    const relevant=judged.filter(x=>!x.judgment.reviewRequired&&!x.judgment.feedback&&x.judgment.decision==='candidate'&&(x.judgment.importance>=JEV_THRESHOLDS.briefScore||x.judgment.reviewedBy)&&x.judgment.departments.includes(dept)).sort((a,b)=>b.judgment.importance-a.judgment.importance||a.article.id.localeCompare(b.article.id));
     counts.eligible=relevant.length;
     if(!relevant.length) return finish(counts.review?'blocked':'empty',counts.review?'불확실한 분류가 있습니다. 기사 검토에서 분류를 확인한 후 다시 실행해 주세요.':'이 부서의 보고서에 넣을 기사가 없습니다.');
     const selected=[];let inputCharacters=0;counts.budgetDeferred=0;
-    for(const {article} of relevant) {if(selected.length>=LIMITS.maxReportArticles)break;if(inputCharacters+article.body.length>90000){counts.budgetDeferred++;continue;}selected.push(article);inputCharacters+=article.body.length;}
+    for(const {article,judgment} of relevant) {if(selected.length>=LIMITS.maxReportArticles)break;if(inputCharacters+article.body.length>90000){counts.budgetDeferred++;continue;}selected.push({...article,leadDepartmentId:judgment.leadDepartmentId,supportDepartmentIds:judgment.supportDepartmentIds});inputCharacters+=article.body.length;}
     counts.selected=selected.length;counts.deferred=relevant.length-selected.length;
     const generated=await summarizeArticles(selected,dept,window,env);
     validateReport(generated.report,selected,dept);
@@ -202,21 +207,78 @@ export async function handleApi(request,env) {
       await audit(env,user.userId,'member.update',id);return json({updated:true});
     }
     if(path==='/api/admin/import'&&method==='POST') return json(await importArticles(await body(request),env,operator));
+    if(path==='/api/admin/scrape'&&method==='POST') {
+      const p=await body(request);
+      if(!Array.isArray(p.urls)||p.urls.length<1||p.urls.length>5) fail(400,'기사 URL을 1~5개 입력해 주세요.');
+      const registry=await sources(env), prepared=[];
+      for(const url of p.urls) {
+        const host=new URL(canonicalUrl(url)).hostname;
+        const source=registry.find(s=>s.enabled&&s.canSummarize&&s.domains.includes(host));
+        if(!source) fail(400,'수집·본문 저장·AI 이용이 승인된 매체 주소만 입력해 주세요.');
+        prepared.push({url,source});
+      }
+      let articles;
+      try { articles=await mapBounded(prepared,({url,source})=>scrapeArticle(url,source)); }
+      catch { fail(422,'공개 본문을 확인할 수 없는 페이지가 있습니다. 본문·발행 시각과 이용 범위를 확인해 주세요. 이번 입력은 저장하지 않았습니다.'); }
+      return json(await importArticles({articles,permissionNote:'관리자가 설정한 매체별 수집·본문 저장·AI 이용 권한에 따라 공개 HTML에서 수집'},env,operator));
+    }
     if(['/api/admin/collect','/api/jobs/collect'].includes(path)&&method==='POST') return json(await collect(await body(request),env,operator));
     if(['/api/admin/run','/api/jobs/run'].includes(path)&&method==='POST') return json(await generate(await body(request),env,operator));
+    const feedbackPath=path.match(/^\/api\/issues\/(a_[0-9a-f]{64})\/feedback$/);
+    if((path==='/api/issues'&&method==='GET')||(feedbackPath&&method==='POST')) {
+      if(feedbackPath&&(user.role==='guest'||request.headers.get('origin')!==url.origin)) fail(403,'등록된 구성원이 같은 사이트에서 요청해 주세요.');
+      if(user.role==='guest') return json({issues:[],authorized:false});
+      const found=await rows(env.DB,`SELECT a.id,a.title,a.url,a.published_at,a.source_id,j.payload FROM judgments j
+        JOIN articles a ON a.id=j.article_id AND a.body_hash=j.body_hash
+        JOIN source_permissions s ON s.id=a.source_id AND s.enabled=1 AND s.body_allowed=1 AND s.ai_allowed=1
+        WHERE j.pipeline_version=? AND json_extract(j.payload,'$.decision')='candidate' AND json_extract(j.payload,'$.reviewRequired')=0
+        AND (json_extract(j.payload,'$.importance')>=? OR json_extract(j.payload,'$.reviewedBy') IS NOT NULL)
+        AND json_extract(json_extract(j.payload,'$.stateFingerprint'),'$[0]')=a.title
+        AND json_extract(json_extract(j.payload,'$.stateFingerprint'),'$[2]')=a.source_id
+        AND json_extract(json_extract(j.payload,'$.stateFingerprint'),'$[3]')=a.published_at
+        AND json_extract(json_extract(j.payload,'$.stateFingerprint'),'$[4]')=?
+        AND (?=1 OR EXISTS (SELECT 1 FROM json_each(json_extract(j.payload,'$.departments')) WHERE value=?))
+        AND (? IS NULL OR a.id=?)
+        ORDER BY a.published_at DESC,a.id LIMIT 60`,
+        PIPELINE_VERSION,JEV_THRESHOLDS.briefScore,env.TYPESAFE_MODEL||'jev-latest',+(user.role==='admin'),user.departmentId||'',feedbackPath?.[1]||null,feedbackPath?.[1]||null);
+      if(feedbackPath) {
+        const issue=found[0];if(!issue) fail(404,'신고할 수 있는 이슈가 없습니다.');
+        const p=await body(request),note=typeof p.note==='string'?p.note.trim():'';
+        if(note.length<5||note.length>400) fail(400,'수정 이유를 5~400자로 적어 주세요.');
+        const suggested=department(p.leadDepartmentId);
+        const saved=await run(env.DB,"UPDATE judgments SET payload=json_set(payload,'$.feedback',json(?)),updated_at=? WHERE article_id=? AND pipeline_version=? AND payload=? AND json_extract(payload,'$.feedback') IS NULL",JSON.stringify({note,leadDepartmentId:suggested,reportedBy:user.userId,reportedAt:now()}),now(),issue.id,PIPELINE_VERSION,issue.payload);
+        if(!saved.meta?.changes) fail(409,'이미 검토 요청이 있거나 배분이 변경됐습니다. 목록을 새로고침해 주세요.');
+        await audit(env,user.userId,'article.feedback',issue.id);
+        return json({submitted:true});
+      }
+      return json({authorized:true,issues:found.flatMap(r=>{
+        const j=JSON.parse(r.payload);if(!DEPARTMENT_IDS.includes(j.leadDepartmentId))return [];
+        const urgent=!!j.urgencyCandidate&&!j.feedback&&Date.now()-Date.parse(r.published_at)<72*3600000;
+        const support=j.supportDepartmentIds||[];
+        return [{id:r.id,title:r.title,url:r.url,publishedAt:r.published_at,source:SOURCES.find(s=>s.id===r.source_id)?.name||r.source_id,lead:j.leadDepartmentId,support,actions:Object.fromEntries(j.departments.map(d=>[d,ISSUE_ACTIONS[d]])),joint:support.length?"협조팀은 아래 검토 결과를 주관팀에 공유하고, 주관팀은 기사 근거와 함께 후속 조치와 담당 일정을 정리합니다.":null,evidence:j.evidence,urgent,reviewed:!!j.reviewedBy,feedbackPending:!!j.feedback}];
+      })});
+    }
     if(path==='/api/admin/runs'&&method==='GET') return json({runs:(await rows(env.DB,'SELECT * FROM runs ORDER BY updated_at DESC LIMIT 30')).map(r=>({id:r.id,status:r.status,departmentId:r.department_id,windowId:r.window_id,createdAt:r.created_at,error:r.error,counts:JSON.parse(r.counts)}))});
     if(path==='/api/admin/review'&&method==='GET') {
-      const found=await rows(env.DB,"SELECT a.*,j.payload FROM judgments j JOIN articles a ON a.id=j.article_id WHERE j.body_hash=a.body_hash AND j.pipeline_version=? AND json_extract(j.payload,'$.reviewRequired')=1 ORDER BY j.updated_at ASC LIMIT 40",PIPELINE_VERSION);
+      const found=await rows(env.DB,"SELECT a.*,j.payload FROM judgments j JOIN articles a ON a.id=j.article_id JOIN source_permissions s ON s.id=a.source_id AND s.enabled=1 AND s.body_allowed=1 AND s.ai_allowed=1 WHERE j.body_hash=a.body_hash AND j.pipeline_version=? AND (json_extract(j.payload,'$.reviewRequired')=1 OR json_extract(j.payload,'$.feedback') IS NOT NULL) ORDER BY j.updated_at ASC LIMIT 40",PIPELINE_VERSION);
       return json({articles:found.map(r=>({...articleRecord(r),judgment:JSON.parse(r.payload)}))});
     }
     if(path.startsWith('/api/admin/review/')&&method==='PUT') {
       const id=decodeURIComponent(path.split('/').pop()),p=await body(request),a=await first(env.DB,'SELECT * FROM articles WHERE id=?',id);
       if(!a) fail(404,'기사가 없습니다.');
-      if(!['candidate','irrelevant'].includes(p.decision)||!Array.isArray(p.departments)||p.departments.length>6||(p.decision==='candidate'&&!p.departments.length)) fail(400,'제외 또는 관련 부서를 지정해 주세요.');
-      p.departments.forEach(department);
-      const old=await first(env.DB,'SELECT * FROM judgments WHERE article_id=?',id);if(!old) fail(400,'Jev 판단 후 검토할 수 있습니다.');
-      const judgment={...JSON.parse(old.payload),decision:p.decision,departments:[...new Set(p.departments)],reviewRequired:false,reviewedBy:user.userId,reviewedAt:now()};
-      await run(env.DB,'UPDATE judgments SET payload=?,body_hash=?,updated_at=? WHERE article_id=?',JSON.stringify(judgment),a.body_hash,now(),id);
+      if(!['candidate','irrelevant'].includes(p.decision)||!Array.isArray(p.supportDepartmentIds)||p.supportDepartmentIds.length>5) fail(400,'처리 결과와 협조팀을 확인해 주세요.');
+      const lead=p.decision==='candidate'?department(p.leadDepartmentId):null;
+      const support=lead?[...new Set(p.supportDepartmentIds.map(department))]:[];
+      if(support.includes(lead)) fail(400,'주관팀은 협조팀에서 제외해 주세요.');
+      const old=await first(env.DB,'SELECT * FROM judgments WHERE article_id=? AND pipeline_version=? AND body_hash=?',id,PIPELINE_VERSION,a.body_hash);if(!old) fail(400,'현재 기사에 대한 Jev 판단 후 검토할 수 있습니다.');
+      const previous=JSON.parse(old.payload);
+      if(previous.stateFingerprint!==JSON.stringify([a.title,a.body_hash,a.source_id,a.published_at,env.TYPESAFE_MODEL||'jev-latest'])) fail(409,'기사나 모델이 변경됐습니다. 다시 분류해 주세요.');
+      const evidence=typeof p.evidence==='string'?p.evidence.trim():previous.evidence;
+      if(evidence&&(evidence.length>400||!a.body.includes(evidence))) fail(400,'근거는 원문과 일치하는 문장을 사용해 주세요.');
+      const {feedback,...prior}=previous;
+      const judgment={...prior,decision:p.decision,leadDepartmentId:lead,supportDepartmentIds:support,departments:lead?[lead,...support]:[],urgencyCandidate:!!(lead&&evidence&&previous.probabilities?.urgency>=JEV_THRESHOLDS.yes&&previous.importance>=JEV_THRESHOLDS.urgentScore),evidence:evidence||null,reviewRequired:false,reviewedBy:user.userId,reviewedAt:now()};
+      const saved=await run(env.DB,'UPDATE judgments SET payload=?,updated_at=? WHERE article_id=? AND pipeline_version=? AND body_hash=? AND payload=?',JSON.stringify(judgment),now(),id,PIPELINE_VERSION,a.body_hash,old.payload);
+      if(!saved.meta?.changes) fail(409,'배분이 변경됐습니다. 검토 목록을 새로고침해 주세요.');
       await audit(env,user.userId,'article.review',id);return json({updated:true});
     }
     if(path==='/api/reports'||path==='/api/admin/reports') {

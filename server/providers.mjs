@@ -68,7 +68,7 @@ export async function classifyArticle(article,env,fetchImpl=fetch) {
   const key=secret(env.TYPESAFE_API_KEY,"typesafe");
   const payload=buildJevRequest(article,env.TYPESAFE_MODEL||"jev-latest");
   const result=await requestJson("https://api.typesafe.ai/v1/systemone",key,payload,fetchImpl);
-  try{return parseJevResult(result);}catch{throw new ProviderError("jev_response_invalid");}
+  try{return parseJevResult(result,article);}catch{throw new ProviderError("jev_response_invalid");}
 }
 
 export async function summarizeArticles(articles,departmentId,window,env,fetchImpl=fetch) {

@@ -321,7 +321,7 @@ function renderHeading() {
     departments: `${departmentById(state.briefDepartment).name}팀 보고서`,
     report: "요약 보고서",
     saved: "나의 스크랩",
-    process: "서비스 소개"
+    process: "과제 2 · 작동 방식"
   }[state.view];
   $(".page-heading").hidden = state.view === "report";
   $("#page-title").textContent = title;
@@ -335,7 +335,7 @@ function renderImplementationNote() {
   const notes = {
     today: {code:"팀 선택·열람 범위·보고서 목록", jev:"기사의 관련 부서 판단", llm:"부서별 보고서 작성"},
     departments: {code:"팀별 조회·월간/회차·날짜 필터", jev:"기사의 관련 부서 판단", llm:"보고서 제목·요약 작성"},
-    news: {code:"기사 조회·검색·정렬", jev:"보험업 관련성·보고 가치·관련 부서 판단", llm:"기사 한줄 요약"},
+    news: {code:"수집·중복 정리·이슈 표시", jev:"보험업 관련성·주관/협조 배분·긴급도 판단", llm:"선정 기사로 정기 브리핑 작성"},
     report: {code:"기간 집계·근거 기사 연결", jev:"보고서에 넣을 기사 선별·부서 분류", llm:"핵심 요약·인사이트·분석 레포트"},
     saved: {code:"스크랩 저장·검색·내보내기", jev:"저장 화면에서는 호출하지 않음", llm:"저장 화면에서는 호출하지 않음"},
     process: {code:"수집·화면·저장·권한 처리", jev:"보험 관련성·보고 가치·부서 판단", llm:"선정 기사 요약·업무 시사점 작성"}
@@ -355,6 +355,8 @@ function renderImplementationNote() {
 }
 function renderAll() {
   renderHeading(); renderSidebar(); renderReportSelector(); renderOverview(); renderImplementationNote();
+  const archive=$("#report-selector");
+  (state.view==="news"?$("#sample-news > summary"):$("#archive-home")).after(archive);
   $$("main>.view").forEach(el => el.hidden = el.id !== `${state.view}-view`);
   renderFeed(); renderSaved();
   if(state.view==="departments") renderDepartmentList(); else $("#department-report-list").innerHTML="";
@@ -364,7 +366,7 @@ function renderAll() {
   $("#overview-panel").hidden = showResearch || showOperations;
   $("#research-panel").hidden = !showResearch;
   $("#operations-panel").hidden = !showOperations;
-  $(".ops-live-entry").hidden = showOperations;
+  $(".ops-live-entry").hidden = showOperations || state.view === "news";
   if (showOperations) renderOperations();
   $("#overview-tab").setAttribute("aria-current", showResearch || showOperations ? "false" : "page");
   $("#research-tab").setAttribute("aria-current", showResearch ? "page" : "false");
@@ -562,6 +564,7 @@ document.addEventListener("keydown",event => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && !$("dialog[open]")) {
     event.preventDefault();
     if(state.view!=="news") navigate("news",null,false);
+    $("#sample-news").open = true;
     $("#news-search").focus();
     $("#news-search").scrollIntoView({block:"center",behavior:"smooth"});
   }
@@ -603,4 +606,5 @@ function readHash(){
 window.addEventListener("hashchange",readHash);
 renderNewsResearch();
 readHash();
+window.bootIssueDesk?.();
 

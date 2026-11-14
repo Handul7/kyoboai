@@ -788,3 +788,58 @@ html:has(dialog[open]) { overflow: hidden; }
   .topbar { position: relative; top: auto; }
   .mobile-nav > button { flex-direction: row; gap: 6px; }
 }
+
+/* Issue desk and its explanation share the same mobile reading rhythm. */
+.issue-desk,.jev-guide { max-width: 960px; min-width: 0; }
+.issue-desk { margin-bottom: 24px; overflow-wrap: anywhere; }
+.issue-intro h2,.jev-guide h3 { color: #121c72; font-size: clamp(23px, 5vw, 33px); }
+.issue-kicker { color: #2a653b; font-size: 14px; font-weight: 650; }
+.issue-intro p,.jev-guide > p { margin: 6px 0; font-size: 16px; color: #485d77; }
+.issue-intro a,.issue-state a,.jev-types a { color: #254889; text-decoration: underline; text-underline-offset: 4px; }
+.issue-intro a { display: inline-flex; min-height: 44px; align-items: center; font-size: 15px; }
+.issue-state { background: #edf3fa; border-radius: 8px; padding: 12px 14px; margin: 8px 0 19px; font-size: 15px; }
+.issue-state a { display: inline-block; margin-left: 4px; }
+.issue-examples > h3,#issue-live > h3 { font-size: 20px; color: #173661; }
+.issue-lane { border: 1px solid #dce5ef; border-radius: 10px; background: #fff; margin: 12px 0; padding: 14px; }
+.issue-lane > h3 { font-size: 16px; color: #304969; }
+.issue-lane > .issue-caption { margin-bottom: 8px; }
+.issue-card { min-width: 0; padding: 12px 0 2px; border-top: 1px solid #e5ebf1; }
+.issue-card + .issue-card { margin-top: 10px; }
+.issue-card h3 { color: #14265d; font-size: clamp(17px, 4vw, 21px); margin: 4px 0 8px; }
+.issue-meta,.issue-at-a-glance { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+.issue-meta,.issue-caption { color: #506681; font-size: 14px; }
+.issue-at-a-glance { display: block; font-size: 15px; }
+.issue-at-a-glance > span { display: inline-block; margin-left: 10px; }
+.issue-at-a-glance strong { color: #285a38; }
+.issue-card summary,.sample-news > summary { cursor: pointer; min-height: 44px; padding: 11px 0; color: #345376; font-size: 15px; }
+.issue-card dl { margin: 0; display: grid; gap: 8px; }
+.issue-card dl > div { display: grid; grid-template-columns: minmax(0, 130px) minmax(0, 1fr); gap: 8px; background: #f5f8fc; border-radius: 6px; padding: 8px 10px; }
+.issue-card dt { font-weight: 650; color: #243f67; }
+.issue-card dd { margin: 0; }
+.issue-card dt,.issue-card dd,.issue-joint { font-size: 15px; line-height: 1.6; }
+.issue-joint { margin: 11px 0 0; }
+.issue-evidence blockquote { margin: 0 0 10px; padding: 10px 12px; border-left: 3px solid #6fa66e; font-size: 15px; line-height: 1.6; background: #f5f8f2; }
+.issue-evidence mark,.ops-review-text mark { background: #fff1b5; color: inherit; }
+.issue-source { text-decoration: underline; }
+.issue-feedback form { display: grid; gap: 8px; margin-bottom: 10px; }
+.issue-feedback label { display: grid; gap: 4px; font-size: 14px; min-width: 0; }
+.issue-feedback :is(select,textarea) { width: 100%; min-width: 0; min-height: 44px; border: 1px solid #cbd7e6; border-radius: 6px; padding: 8px; font: inherit; font-size: 16px; background: #fff; color: #253b60; }
+.issue-feedback button { justify-self: start; min-height: 44px; }
+.sample-news { margin: 20px 0; }
+.sample-news > summary { font-weight: 650; }
+.sample-news > .news-section { padding-top: 12px; }
+.jev-guide { margin: 24px 0; }
+.jev-types { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-top: 12px; }
+.jev-types > article { background: #fff; border: 1px solid #dae6ef; border-top: 3px solid #8268b4; border-radius: 9px; padding: 14px; }
+.jev-types > article:nth-child(2) { border-top-color: #4382bd; }
+.jev-types > article:nth-child(3) { border-top-color: #64966b; }
+.jev-types h4 { font-size: 18px; color: #203867; }
+.jev-types h4 small { display: block; font-size: 14px; font-weight: 500; color: #4d637f; }
+.jev-types p { font-size: 15px; line-height: 1.65; margin-top: 8px; color: #374f6e; }
+@media screen and (max-width: 700px) {
+  .jev-types { grid-template-columns: minmax(0,1fr); }
+}
+@media screen and (max-width: 420px) {
+  .issue-card dl > div { grid-template-columns: minmax(0,1fr); gap: 1px; }
+  .issue-at-a-glance > span { display: block; margin-left: 0; }
+}
