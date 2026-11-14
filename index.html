@@ -27,9 +27,11 @@
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-subset.css">
-  <link rel="stylesheet" href="./styles.css?v=20261107-5">
-  <script defer src="./data.js?v=20261107-5"></script>
-  <script defer src="./app.js?v=20261107-5"></script>
+  <link rel="stylesheet" href="./styles.css?v=2026.11.14.1">
+  <script defer src="./data.js?v=2026.11.14.1"></script>
+  <script defer src="./news-research.js?v=2026.11.14.1"></script>
+  <script defer src="./operations.js?v=2026.11.14.1"></script>
+  <script defer src="./app.js?v=2026.11.14.1"></script>
 </head>
 <body>
   <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -76,7 +78,7 @@
   </aside>
 
   <div class="app-shell">
-    <div class="revision-bar">최종 수정 <time datetime="2026-11-07">2026.11.07</time><span>과제용 샘플</span></div>
+    <div class="revision-bar" data-release="2026.11.14.1">최종 수정 <time datetime="2026-11-14">2026.11.14</time><span class="release-id">버전 2026.11.14.1</span></div>
     <header class="topbar">
       <div class="mobile-identity"><a class="mobile-brand" href="#today" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="KYOBO 교보생명" width="150" height="44"></a><span class="mobile-service-name">뉴스브리핑</span></div>
 <div class="breadcrumb"><strong id="breadcrumb-current">전체 뉴스</strong></div>
@@ -87,6 +89,7 @@
       <section class="page-heading"><h1 id="page-title">전체 뉴스</h1></section>
 
       <aside id="implementation-note" class="implementation-note" aria-label="발표용 구현 방식"></aside>
+      <a class="ops-live-entry" href="#process/operations">실제 보고서 · 연동 현황 <svg><use href="#i-arrow"/></svg></a>
       <section class="archive-controls" id="report-selector" aria-label="지난 보고서 조회"></section>
 
       <section id="today-view" class="view"><div class="directory-heading"><h2>팀을 선택하세요</h2><span id="directory-team-count">6개 팀</span></div><div class="department-directory" id="department-overview"></div><div class="directory-footer"><span><svg><use href="#i-clock"/></svg>월·목요일, 주 2회 발행</span><button class="text-button" data-view="news">전체 뉴스 보기 <svg><use href="#i-arrow"/></svg></button></div></section>
@@ -110,12 +113,27 @@
       <section id="report-view" class="view" hidden><div id="department-content"></div></section>
       <section id="saved-view" class="view" hidden><div class="section-heading"><h2>저장한 기사 <span id="saved-total" class="count-label">0</span></h2><button class="outline-button" id="export-saved"><svg><use href="#i-download"/></svg>텍스트로 내보내기</button></div><p class="saved-description">다시 읽고 싶은 뉴스를 한곳에. 스크랩은 이 브라우저에 저장됩니다.</p><div id="saved-list" class="article-list saved-articles"></div></section>
       <section id="process-view" class="view" hidden>
-        <section class="project-team" aria-labelledby="project-team-title"><h2 id="project-team-title">함께 만든 사람들</h2><dl><div><dt>조장</dt><dd>엘</dd></div><div><dt>조사</dt><dd>카밀라</dd></div><div><dt>CFO</dt><dd>루트</dd></div><div><dt>노가다</dt><dd>한들</dd></div></dl></section>
-        <div class="process-intro"><h2>흩어진 뉴스가<br>부서의 인사이트가 되기까지.</h2><p>주요 보험 뉴스를 수집·분류하고, 부서별 보고서로 요약과 인사이트를 제공합니다.<br>부서별 요약본이 중심이 되는 주 2회 보험 뉴스 브리핑 서비스입니다.</p></div>
-        <div class="process-steps"><article><h3>주요 기사 수집</h3><p>목·금·토·일 주요 보험 뉴스는 월요일 아침에, 월·화·수 뉴스는 목요일에 수집·보고합니다. 제목·본문·원문 URL·발행 시각을 정리하고 중복 기사를 제외합니다.</p></article><article><h3>Jev로 부서 분류</h3><p>기사 제목과 본문을 함께 읽고 업무 관련성을 판단합니다. 관련 부서는 복수로 지정하고, 판단이 불확실한 기사는 검토 대상으로 남깁니다.</p></article><article><h3>LLM 요약·분석</h3><p>부서별로 모인 기사에서 핵심 주제와 변화를 요약합니다. 근거 기사를 연결하고, 해당 부서가 검토할 업무 시사점을 제안합니다.</p></article></div>
-        <div class="process-details"><article><h3>읽는 사람의 업무를 중심으로</h3><p>경영전략, 상품개발, 영업마케팅, 자산운용, 리스크관리, 디지털·IT. 하나의 기사도 부서에 따라 필요한 관점이 달라집니다. 팀을 선택해 로그인하면 우리 팀 보고서를, 관리자는 모든 팀 보고서를 확인합니다. 비로그인 상태에서는 전체 뉴스를 읽을 수 있습니다.</p></article><article><h3>프로토타입에서 경험할 수 있는 것</h3><p>발행 월과 날짜로 지난 보고서를 찾고, 주차·회차별 요약과 뉴스 출처를 읽을 수 있습니다. 회차별·월간 보고서는 체험용 예시이며, 월간 보고서에는 해당 월의 샘플 기사를 모아 작성한 예시 요약을 제공합니다. 팀 선택 로그인은 화면 열람 범위를 체험하는 방식입니다. 실제 사용자 인증과 서버 권한 검사는 향후 데이터베이스 연결 시 적용합니다.</p></article></div>
-        <button class="outline-button" id="collect-trigger">수집 흐름 체험하기</button>
-
+        <section class="project-team" aria-labelledby="project-team-title">
+          <h2 id="project-team-title">함께 만든 사람들</h2>
+          <dl><div><dt>조장</dt><dd>엘</dd></div><div><dt>조사</dt><dd>카밀라</dd></div><div><dt>CFO</dt><dd>루트</dd></div><div><dt>노가다</dt><dd>한들</dd></div></dl>
+        </section>
+        <nav class="process-tabs" aria-label="서비스 소개 메뉴">
+          <a id="overview-tab" href="#process" aria-current="page">Project Overview</a>
+          <a id="research-tab" href="#process/news">뉴스 관련</a>
+          <a id="operations-tab" href="#process/operations">연동 준비</a>
+        </nav>
+        <div id="overview-panel" aria-labelledby="overview-tab">
+          <div class="process-intro"><h2>흩어진 뉴스가<br>부서의 인사이트가 되기까지.</h2><p>주요 보험 뉴스를 수집·분류하고, 부서별 보고서로 요약과 인사이트를 제공하는 주 2회 브리핑 설계입니다.</p></div>
+          <div class="process-steps">
+            <article><span class="step-icon"><svg><use href="#i-paper"/></svg></span><span class="eyebrow">코딩</span><h3>기사 수집·정리</h3><p>허용된 출처에서 제목·원문 링크·발행일·본문을 받습니다. 회차별 날짜를 적용하고 동일 URL·동일 본문을 정리합니다.</p></article>
+            <article><span class="step-icon"><svg><use href="#i-flow"/></svg></span><span class="eyebrow">TypeSafe Jev</span><h3>주요 기사 선별·분류</h3><p>제목과 본문으로 보험업 관련성, 보고 가치, 관련 부서를 판단합니다. 여러 부서에 해당할 수 있으며 판단이 애매한 기사는 검토 대상으로 남깁니다.</p></article>
+            <article><span class="step-icon"><svg><use href="#i-spark"/></svg></span><span class="eyebrow">LLM</span><h3>부서별 요약·분석</h3><p>선정된 기사로 부서별 핵심 요약과 업무 시사점을 작성합니다. 코드는 기사 ID로 원문 링크를 붙이고 월·목 보고서에 표시합니다.</p></article>
+          </div>
+          <div class="process-details"><article><h3>월·목 보고 주기</h3><p>목~일 기사는 월요일 아침, 월~수 기사는 목요일 아침 보고에 반영합니다. 경영전략, 상품개발, 영업마케팅, 자산운용, 리스크관리, 디지털·IT의 관점에서 읽을 수 있습니다.</p></article><article><h3>과제용 프로토타입</h3><p>팀 선택 로그인, 회차별·월간 보고서, 날짜 검색과 스크랩을 샘플 데이터로 체험합니다. 실제 서버 보고서는 연동 준비 화면에서 별도 로그인과 부서 권한으로 열람합니다.</p></article></div>
+          <button class="outline-button" id="collect-trigger">샘플 수집 흐름 체험하기</button>
+        </div>
+        <section id="research-panel" aria-labelledby="research-tab" hidden></section>
+        <section id="operations-panel" aria-labelledby="operations-tab" hidden></section>
       </section>
 
       <footer class="page-footer"><span>교보 뉴스브리핑 · 과제용 샘플</span><button data-view="process">서비스 소개</button></footer>
@@ -127,8 +145,8 @@
   <dialog id="article-dialog" class="article-dialog"><div id="article-detail"></div></dialog>
   <dialog id="settings-dialog" class="small-dialog"><div class="dialog-header"><span class="implementation-inline">발표용 · 코딩</span><button class="icon-button" data-close="settings-dialog" aria-label="설정 닫기"><svg><use href="#i-close"/></svg></button></div><h2>나의 관심 부서</h2><p class="dialog-description">관심 부서를 부서 선택 화면에서 먼저 보여드립니다.</p><div id="department-settings" class="department-settings"></div><div class="settings-schedule"><svg><use href="#i-clock"/></svg><div><strong>월·목요일 오전 7:00</strong><span>목–일 → 월요일 / 월–수 → 목요일</span></div><span class="example-label">설계 예시</span></div><p class="settings-hint">이 샘플에서는 자동 수집이 실행되지 않습니다.<br>관심 부서는 현재 브라우저에 저장됩니다.</p><button class="primary-button" id="save-settings">설정 저장 <svg><use href="#i-check"/></svg></button></dialog>
 
-  <dialog id="collection-dialog" class="small-dialog collection-dialog"><span class="collection-animation"><svg><use href="#i-refresh"/></svg></span><span class="implementation-inline">발표용 · 코딩 + LLM</span><h2>부서별 요약을 준비합니다.</h2><p class="dialog-description">수집부터 부서별 분석까지, 처리 흐름을 체험해 보세요.</p><div class="collection-steps"><div id="collect-step-0"><span>1</span>주요 기사 수집<small>샘플 기사 불러오기</small></div><div id="collect-step-1"><span>2</span>Jev 부서 분류<small>예시 분류 결과 적용</small></div><div id="collect-step-2"><span>3</span>LLM 요약·분석<small>예시 브리핑 준비</small></div></div><p class="settings-hint">실제 스크래핑이나 AI 호출은 실행하지 않습니다.</p><button class="primary-button" id="collection-done" hidden>브리핑 확인하기 <svg><use href="#i-arrow"/></svg></button></dialog>
-  <dialog id="login-dialog" class="small-dialog login-dialog" aria-labelledby="login-title"><div class="dialog-header"><span class="implementation-inline">발표용 · 코딩</span><button class="icon-button" data-close="login-dialog" aria-label="로그인 창 닫기"><svg><use href="#i-close"/></svg></button></div><h2 id="login-title">우리 팀을 선택하세요</h2><p class="dialog-description">선택한 팀의 요약 보고서를 확인합니다.</p><div id="team-login-options" class="team-login-options"></div><button class="admin-login" id="admin-login"><svg><use href="#i-shield"/></svg>관리자로 로그인하기<small>모든 팀 보고서 열람</small></button><p class="login-demo-note">팀 선택으로 체험하는 임시 로그인입니다.<br>실제 사용자 인증과 접근 보안은 추후 연결됩니다.</p><button id="logout-button" class="logout-button" hidden>로그아웃하고 전체 뉴스 보기</button></dialog>
+  <dialog id="collection-dialog" class="small-dialog collection-dialog"><span class="collection-animation"><svg><use href="#i-refresh"/></svg></span><span class="implementation-inline">발표용 · 코딩 · Jev · LLM</span><h2>부서별 요약을 준비합니다.</h2><p class="dialog-description">수집부터 부서별 분석까지, 처리 흐름을 체험해 보세요.</p><div class="collection-steps"><div id="collect-step-0"><span>1</span>주요 기사 수집<small>샘플 기사 불러오기</small></div><div id="collect-step-1"><span>2</span>Jev 부서 분류<small>예시 분류 결과 적용</small></div><div id="collect-step-2"><span>3</span>LLM 요약·분석<small>예시 브리핑 준비</small></div></div><p class="settings-hint">실제 스크래핑이나 AI 호출은 실행하지 않습니다.</p><button class="primary-button" id="collection-done" hidden>브리핑 확인하기 <svg><use href="#i-arrow"/></svg></button></dialog>
+  <dialog id="login-dialog" class="small-dialog login-dialog" aria-labelledby="login-title"><div class="dialog-header"><span class="implementation-inline">발표용 · 코딩</span><button class="icon-button" data-close="login-dialog" aria-label="로그인 창 닫기"><svg><use href="#i-close"/></svg></button></div><h2 id="login-title">우리 팀을 선택하세요</h2><p class="dialog-description">선택한 팀의 요약 보고서를 확인합니다.</p><div id="team-login-options" class="team-login-options"></div><button class="admin-login" id="admin-login"><svg><use href="#i-shield"/></svg>관리자로 로그인하기<small>모든 팀 보고서 열람</small></button><p class="login-demo-note">팀 선택으로 체험하는 임시 로그인입니다.<br>실제 보고서의 로그인·부서 권한과 별개입니다.</p><button id="logout-button" class="logout-button" hidden>로그아웃하고 전체 뉴스 보기</button></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

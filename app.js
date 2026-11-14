@@ -1,7 +1,7 @@
 /*
  * LIFE:BRIEF — interactive academic sample.
  * All articles, Jev labels, and LLM analyses below are authored examples.
- * No scraping, model API request, or scheduled task runs in this static site.
+ * Presentation views use fixed samples. Actual server workflows live in operations.js.
  */
 "use strict";
 
@@ -266,6 +266,53 @@ function renderSaved() {
   $("#export-saved").hidden = !articles.length;
   $("#saved-list").innerHTML = articles.length ? articles.map(articleRow).join("") : `<div class="empty-state">${icon("bookmark")}<h3>다시 읽고 싶은 뉴스를 모아보세요.</h3><p>기사의 북마크 아이콘을 누르면 여기에 저장됩니다.<br>스크랩은 현재 브라우저에서 유지됩니다.</p><button class="primary-button" data-view="news">주요 보험 뉴스 둘러보기 ${icon("arrow")}</button></div>`;
 }
+function renderNewsResearch() {
+  const { outlets, reports, coverageLabels } = NEWS_RESEARCH;
+  const coverages = Object.keys(coverageLabels);
+  const tally = issues => coverages.map(coverage => issues.filter(issue => issue.coverage === coverage).length);
+  const isBaseline = issue => issue.sources.some(source => outlets[source.outlet].baseline);
+  const counts = issues => tally(issues).join(" / ");
+  const allIssues = reports.flatMap(report => report.issues);
+  const deduplicate = issues => [...new Map(issues.map(issue => [issue.event || issue.title, issue])).values()];
+  const baselineIssues = allIssues.filter(isBaseline);
+  const uniqueIssues = deduplicate(allIssues);
+  const uniqueBaseline = deduplicate(baselineIssues);
+  const added = uniqueIssues.length - uniqueBaseline.length;
+  const publishers = Object.values(outlets);
+  const publisherGroup = (heading, baseline) => {
+    const group = publishers.filter(outlet => outlet.baseline === baseline);
+    return `<section class="research-publisher-group"><h3>${heading} <span>${group.length}곳</span></h3><ul>${group.map(({ name, type, homepage }) => `<li><a href="${escapeHTML(homepage)}" target="_blank" rel="noopener noreferrer"><strong>${escapeHTML(name)}</strong><span>${escapeHTML(type)} ↗</span></a></li>`).join("")}</ul></section>`;
+  };
+  const compareRow = ({ date, period, issues }) => `<tr><th scope="row">${escapeHTML(date)}<small>${escapeHTML(period)}</small></th><td>${counts(issues.filter(isBaseline))}</td><td>${counts(issues)}</td><td class="research-delta">+${issues.filter(issue => !isBaseline(issue)).length}</td></tr>`;
+  const issueRow = issue => {
+    const sources = issue.sources.map(({ outlet, date, url }) => `<a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(outlets[outlet].name)} ${escapeHTML(date.slice(5).replace("-", "/"))} ↗</a>`).join("");
+    const departments = issue.departments.map(id => departmentById(id).name).join(" · ");
+    return `<li><span class="research-coverage">${escapeHTML(coverageLabels[issue.coverage])}${isBaseline(issue) ? "" : " · 추가 발견"}</span><h4>${escapeHTML(issue.title)}</h4><p>${escapeHTML(departments)}${issue.relevance ? ` — ${escapeHTML(issue.relevance)}` : ""}</p><div class="research-links">${sources}</div></li>`;
+  };
+
+  $("#research-panel").innerHTML = `
+    <div class="research-intro"><h2>참고 뉴스 매체 ${publishers.length}곳</h2><p>생명보험과 손해보험을 함께 살펴본 출처입니다. 과제용 조사에 참고했으며 자동 수집은 미연동 상태입니다.</p></div>
+    <div class="research-publishers">${publisherGroup("우선 참고", true)}${publisherGroup("비교·확장 후보", false)}</div>
+    <details class="research-comparison">
+    <summary>2주간 기사 비교 결과</summary>
+    <div class="research-comparison-content">
+    <p class="research-note">2026년 10월 29일–11월 11일 · 월·목 보고서 4회분</p>
+    <p class="research-result"><strong>${uniqueBaseline.length}건 → ${uniqueIssues.length}건</strong><span>2주 전체 고유 이슈 +${added}건</span></p>
+    <table class="research-table">
+      <caption>회차별 고유 이슈 수 <span>생보 / 손보 / 공통 순</span></caption>
+      <thead><tr><th scope="col">보고일</th><th scope="col">5곳</th><th scope="col">10곳</th><th scope="col">추가</th></tr></thead>
+      <tbody>${reports.map(compareRow).join("")}</tbody>
+      <tfoot><tr><th scope="row">2주 고유</th><td>${counts(uniqueBaseline)}</td><td>${counts(uniqueIssues)}</td><td class="research-delta">+${added}</td></tr></tfoot>
+    </table>
+    <p class="research-note">10개 매체의 공개 기사 검색 표본입니다. 국내 보험사·감독 이슈와 국내 상품에 참고할 해외 보도를 포함했습니다. 같은 사건은 회차별로 한 건으로 묶고, 생·손보 공통은 공통에 한 번만 셌습니다. 2주 고유 수에는 다른 회차에 재보도된 이슈도 한 번만 들어갑니다.</p>
+    <p class="research-note"><strong>운영 후보</strong> 기본 5곳을 유지하고, 손보 상품과 보상 이슈가 필요하면 매일경제와 한국경제를 먼저 검토할 만합니다. 이 표본에서 2주 전체에 새로 더해진 이슈는 두 매체에서 확인됐습니다.</p>
+    <section class="research-evidence" aria-labelledby="research-evidence-title"><h3 id="research-evidence-title">회차별 이슈와 관련 부서</h3>
+      ${reports.map(report => `<details><summary><span>${escapeHTML(report.date)} 보고 <small>${escapeHTML(report.period)}</small></span><span class="research-delta">+${report.issues.filter(issue => !isBaseline(issue)).length}건</span></summary><ul>${report.issues.slice().sort((a,b) => Number(isBaseline(a)) - Number(isBaseline(b))).map(issueRow).join("")}</ul></details>`).join("")}
+    </section>
+    <p class="research-note">같은 회차의 우선 참고 매체 5곳에서 확인되지 않은 이슈는 ‘추가 발견’으로 표시했습니다.</p>
+    </div></details>`;
+}
+
 function renderHeading() {
   const title = {
     today: "팀별 보고서",
@@ -285,17 +332,24 @@ function renderImplementationNote() {
   $("#implementation-note").hidden = !PRESENTATION_MODE;
   if (!PRESENTATION_MODE) return;
   const notes = {
-    today: {code:"팀별 열람·보고서 조회"},
-    departments: {code:"권한 분기·월간/회차 조회"},
-    news: {code:"기사 조회·검색·정렬", llm:"기사 한줄 요약"},
-    report: {code:"기간 집계·출처 연결", llm:"핵심 요약·인사이트·분석 레포트"},
-    saved: {code:"스크랩 저장·내보내기"},
-    process: {code:"수집·화면·권한 처리", llm:"요약·인사이트 작성"}
+    today: {code:"팀 선택·열람 범위·보고서 목록", jev:"기사의 관련 부서 판단", llm:"부서별 보고서 작성"},
+    departments: {code:"팀별 조회·월간/회차·날짜 필터", jev:"기사의 관련 부서 판단", llm:"보고서 제목·요약 작성"},
+    news: {code:"기사 조회·검색·정렬", jev:"보험업 관련성·보고 가치·관련 부서 판단", llm:"기사 한줄 요약"},
+    report: {code:"기간 집계·근거 기사 연결", jev:"보고서에 넣을 기사 선별·부서 분류", llm:"핵심 요약·인사이트·분석 레포트"},
+    saved: {code:"스크랩 저장·검색·내보내기", jev:"저장 화면에서는 호출하지 않음", llm:"저장 화면에서는 호출하지 않음"},
+    process: {code:"수집·화면·저장·권한 처리", jev:"보험 관련성·보고 가치·부서 판단", llm:"선정 기사 요약·업무 시사점 작성"}
   };
   const note = notes[state.view];
+  const live = state.view === "process" && state.processTab === "operations";
+  const research = state.view === "process" && state.processTab === "news";
+  const explanation = live
+    ? "실제 서버의 연결 상태를 표시합니다. Jev·LLM은 서버 API 설정 후 관리자 실행에서 호출합니다."
+    : research
+      ? "뉴스 매체 비교는 공개 기사를 직접 조사한 표본입니다. Jev·LLM 자동 수집 결과가 아닙니다."
+      : "현재 일반 뉴스·팀 보고서는 샘플입니다. Jev·LLM 판단·요약은 작성한 예시이며 이 화면에서 모델을 호출하지 않습니다.";
   $("#implementation-note").innerHTML = `<details>
-    <summary><span>발표용</span><span class="implementation-tag">코딩</span>${note.llm ? '<span class="implementation-tag llm-tag">LLM</span>' : ""}${icon("down")}</summary>
-    <div><p><strong>코딩</strong> ${note.code}</p>${note.llm ? `<p><strong>LLM</strong> ${note.llm}</p><p class="implementation-fixture">AI 결과는 현재 샘플 데이터입니다.</p>` : ""}</div>
+    <summary><span>발표용</span><span class="implementation-tag">코딩</span><span class="implementation-tag jev-tag">Jev</span><span class="implementation-tag llm-tag">LLM</span>${icon("down")}</summary>
+    <div><p><strong>코딩</strong> ${note.code}</p><p><strong>Jev</strong> ${note.jev}</p><p><strong>LLM</strong> ${note.llm}</p><p class="implementation-fixture">${explanation}</p></div>
   </details>`;
 }
 function renderAll() {
@@ -304,9 +358,19 @@ function renderAll() {
   renderFeed(); renderSaved();
   if(state.view==="departments") renderDepartmentList(); else $("#department-report-list").innerHTML="";
   if(state.view==="report") renderReportDetail(); else $("#department-content").innerHTML="";
+  const showResearch = state.view === "process" && state.processTab === "news";
+  const showOperations = state.view === "process" && state.processTab === "operations";
+  $("#overview-panel").hidden = showResearch || showOperations;
+  $("#research-panel").hidden = !showResearch;
+  $("#operations-panel").hidden = !showOperations;
+  $(".ops-live-entry").hidden = showOperations;
+  if (showOperations) renderOperations();
+  $("#overview-tab").setAttribute("aria-current", showResearch || showOperations ? "false" : "page");
+  $("#research-tab").setAttribute("aria-current", showResearch ? "page" : "false");
+  $("#operations-tab").setAttribute("aria-current", showOperations ? "page" : "false");
 }
 
-function navigate(view,department,scroll=true,replace=false){
+function navigate(view,department,scroll=true,replace=false,processTab="overview"){
   if(!["today","news","departments","report","saved","process"].includes(view)) view="today";
   if (view === "today") {
     if (!state.session) view = "news";
@@ -329,8 +393,9 @@ function navigate(view,department,scroll=true,replace=false){
     else state.briefDepartment=department;
   }
   state.view=view;
+  state.processTab=processTab;
   if(view!=="report") state.publicationId=null;
-  const route=view==="departments"?`department/${state.briefDepartment}`:view==="report"?`report/${state.publicationId}`:view;
+  const route=view==="departments"?`department/${state.briefDepartment}`:view==="report"?`report/${state.publicationId}`:view==="process"&&["news","operations"].includes(processTab)?`process/${processTab}`:view;
   if(location.hash!==`#${route}`) history[replace?"replaceState":"pushState"](null,"",`#${route}`);
   renderAll();
   if(scroll){window.scrollTo({top:0,behavior:"instant"});$("#main-content").focus({preventScroll:true});}
@@ -521,6 +586,8 @@ $$('dialog').forEach(dialog => {
 function readHash(){
   const hash=location.hash.slice(1);
   const parts=hash.split("/");
+  if(hash==="process/news"){navigate("process",null,false,true,"news");return;}
+  if(hash==="process/operations"){navigate("process",null,false,true,"operations");return;}
   if(parts[0]==="department"&&parts.length===2&&DEPARTMENTS.some(d=>d.id===parts[1])){navigate("departments",parts[1],false,true);return;}
   if (parts[0] === "report" && parts.length === 2) { openPublication(parts[1], false, true); return; }
   if(parts[0]==="report"&&parts.length===3){
@@ -533,5 +600,6 @@ function readHash(){
   navigate("today",null,false,true);
 }
 window.addEventListener("hashchange",readHash);
+renderNewsResearch();
 readHash();
 
