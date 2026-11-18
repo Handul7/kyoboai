@@ -144,10 +144,48 @@
     if(scroll){$('#content').focus({preventScroll:true});window.scrollTo(0,0);}
   }
   window.addEventListener('hashchange',()=>route(true));route();
-  const today=dateKst(Date.now()), day=86400000;
-  let edition=Date.parse(today+'T12:00:00+09:00');
-  while(![1,4].includes(new Date(edition).getUTCDay()))edition-=day;
-  $('#to').value=dateKst(edition-day);$('#from').value=dateKst(edition-day*(new Date(edition).getUTCDay()===1?4:3));$('#from').max=today;$('#to').max=today;
+  const monthField=$('#week-month'), weekField=$('#collection-week');
+  // Arithmetic on ISO calendar dates is independent of the visitor's time zone.
+  function shiftDay(date,offset){
+    return new Date(Date.parse(date+'T00:00:00Z')+offset*86400000).toISOString().slice(0,10);
+  }
+  function mondayOf(date){
+    const weekday=new Date(date+'T00:00:00Z').getUTCDay();
+    return shiftDay(date,-((weekday+6)%7));
+  }
+  function selectedWeek(){
+    const from=weekField.value;
+    if(!from)return null;
+    const sunday=shiftDay(from,6),today=dateKst(Date.now());
+    return {from,to:sunday<today?sunday:today};
+  }
+  function showWeekRange(){
+    const range=selectedWeek();
+    if(!range){$('#week-range').textContent='조회할 수 있는 월을 선택해 주세요.';return;}
+    const end=range.to<shiftDay(range.from,6)?' · 오늘까지':'';
+    $('#week-range').textContent=`수집 기간　${dateLabel(range.from)} ~ ${dateLabel(range.to)}${end} (한국 시간)`;
+  }
+  function updateWeeks(){
+    const previous=weekField.value;
+    const currentMonday=mondayOf(dateKst(Date.now()));
+    monthField.max=currentMonday.slice(0,7);
+    const month=monthField.value, mondays=[];
+    if(/^\d{4}-(0[1-9]|1[0-2])$/.test(month) && month>'0000-12' && month<=monthField.max){
+      const first=month+'-01';
+      let start=mondayOf(first);
+      if(start<first)start=shiftDay(start,7);
+      for(;start.startsWith(month)&&start<=currentMonday;start=shiftDay(start,7))mondays.push(start);
+    }
+    weekField.innerHTML=mondays.map((start,i)=>`<option value="${start}">${i+1}주차 · ${start===currentMonday?'이번 주':Number(start.slice(-2))+'일 시작'}</option>`).join('');
+    weekField.value=mondays.includes(previous)?previous:mondays.at(-1)||'';
+    weekField.disabled=!mondays.length;
+    showWeekRange();
+  }
+  monthField.value=mondayOf(dateKst(Date.now())).slice(0,7);
+  monthField.oninput=updateWeeks;
+  weekField.onchange=showWeekRange;
+  window.addEventListener('focus',updateWeeks);
+  updateWeeks();
 
   function showConnection(value){
     connected=value===true;
@@ -172,7 +210,7 @@
       await api('connection',{action},key);
       const settings=await api('settings');showConnection(settings.jevConfigured);
       if(connected!==saving)throw Error('브라우저 쿠키 설정을 확인한 뒤 다시 시도해 주세요.');
-      msg.textContent=saving?'저장했습니다. 뉴스 링크와 기간별 확인에서 바로 사용할 수 있습니다.':'이 브라우저에서 키를 삭제했습니다.';
+      msg.textContent=saving?'저장했습니다. 뉴스 링크와 주차별 확인에서 바로 사용할 수 있습니다.':'이 브라우저에서 키를 삭제했습니다.';
     }catch(e){msg.textContent=e.message;}
     finally{buttons.forEach(b=>b.disabled=false);}
   }
@@ -227,11 +265,10 @@
   $('#link-form').onsubmit=e=>{e.preventDefault();checkNews('link',{url:$('#seed').value.trim()});};
   $('#run-form').onsubmit=e=>{
     e.preventDefault();
-    const from=$('#from').value,to=$('#to').value,topic=$('#topic').value.trim();
-    if(!from||!to||from>to||to>today||Date.parse(to)-Date.parse(from)>=31*day){
-      Object.assign(runs.period,{message:'오늘까지의 날짜를 1~31일 범위로 선택해 주세요.',attention:true});renderRun();return;
-    }
-    checkNews('period',{from,to,topic});
+    updateWeeks();
+    const range=selectedWeek();
+    if(!range){monthField.focus();return;}
+    checkNews('period',{...range,topic:$('#topic').value.trim()});
   };
 
 })();

@@ -20,6 +20,8 @@ label{display:block;color:var(--ink);font-weight:600}label small{font-weight:400
 .role-sources{margin-top:auto;padding-top:8px;border-top:1px solid var(--line);font-size:14px}
 .role-sources a{display:inline-block;padding-block:4px}
 #role-actions{margin-top:14px;justify-content:flex-end}
+.week-picker input,.week-picker select{display:block;width:100%;max-width:100%;min-height:44px;margin:4px 0 0}
+#week-range{margin:6px 0 16px}
 #roles-message:empty{display:none}
 .brief-review{margin:8px 0}
 .review-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}

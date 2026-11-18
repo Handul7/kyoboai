@@ -25,26 +25,26 @@
   <meta name="twitter:image:alt" content="희경 조장님 팟팅!">
   <title>교보 뉴스브리핑 — 보험 뉴스 보고서</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=2026.11.19.7">
-  <script defer src="./news-research.js?v=2026.11.19.7"></script>
-  <script defer src="./published-news.js?v=2026.11.19.7"></script>
-  <script defer src="./dossier-pdf.js?v=2026.11.19.7"></script>
-  <script defer src="./public-desk.js?v=2026.11.19.7"></script>
+  <link rel="stylesheet" href="./styles.css?v=2026.11.19.8">
+  <script defer src="./news-research.js?v=2026.11.19.8"></script>
+  <script defer src="./published-news.js?v=2026.11.19.8"></script>
+  <script defer src="./dossier-pdf.js?v=2026.11.19.8"></script>
+  <script defer src="./public-desk.js?v=2026.11.19.8"></script>
 </head>
 <body>
   <a class="skip" href="#content">본문으로</a>
-  <header class="mast"><div class="mast-inner"><a class="brand" href="#news" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="교보생명"><b>뉴스브리핑</b></a><small>최종 수정 <time datetime="2026-11-19">2026.11.19</time><span> · 2026.11.19.7</span></small></div></header>
+  <header class="mast"><div class="mast-inner"><a class="brand" href="#news" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="교보생명"><b>뉴스브리핑</b></a><small>최종 수정 <time datetime="2026-11-19">2026.11.19</time><span> · 2026.11.19.8</span></small></div></header>
   <nav class="nav" aria-label="주요 메뉴"><div><a href="#news">브리핑</a><a href="#collect">뉴스 확인</a><a href="#roles">부서 역할</a><a href="#process">서비스 소개</a></div></nav>
   <main id="content" tabindex="-1">
     <section id="news-screen">
-      <div class="headline"><div><p class="overline">월·목 오전 7시 기준</p><h1>보험 뉴스 브리핑</h1></div><div class="actions"><a href="#link" class="primary">뉴스 링크 확인</a><a href="#collect" class="secondary">기간별 확인</a></div></div>
+      <div class="headline"><div><p class="overline">월·목 오전 7시 기준</p><h1>보험 뉴스 브리핑</h1></div><div class="actions"><a href="#link" class="primary">뉴스 링크 확인</a><a href="#collect" class="secondary">주차별 확인</a></div></div>
       <div class="list-head"><h2>주요 이슈</h2><label>발행 회차 <select id="edition"></select></label></div>
       <div id="stories"></div>
       <p class="method">코딩 · 회차 조회　/　LLM · 기사와 부서 업무를 대조해 작성한 발행본</p>
     </section>
     <section id="collect-screen" hidden>
       <h1>뉴스 확인</h1>
-      <div class="tabs" aria-label="뉴스 확인 방식"><a href="#link">뉴스 링크 확인</a><a href="#collect">기간별 확인</a></div>
+      <div class="tabs" aria-label="뉴스 확인 방식"><a href="#link">뉴스 링크 확인</a><a href="#collect">주차별 확인</a></div>
       <details class="panel" id="key-settings"><summary>Jev 연결 <span class="key-state" id="key-state">확인 중</span></summary>
         <form id="key-form" method="post"><label for="jev-key">Jev API 키</label>
         <input id="jev-key" type="password" required maxlength="512" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="key-help" placeholder="API 키 붙여넣기">
@@ -54,16 +54,21 @@
       <form id="link-form" class="panel" method="post" hidden><label for="seed">뉴스 기사 링크</label><input id="seed" type="url" required maxlength="2048" placeholder="https:// 언론사 기사 주소">
         <p class="hint">기사 제목과 발행일을 읽고 관련 보도를 찾습니다. Jev가 보험업 관련성, 보고 가치와 부서별 관련성을 판단합니다.</p>
         <button class="primary" id="check-link" type="submit">링크 확인하기</button></form>
-      <form id="run-form" class="panel" method="post"><div class="two"><label>시작일<input type="date" id="from" required></label><label>종료일<input type="date" id="to" required></label></div>
+      <form id="run-form" class="panel" method="post">
+        <div class="two week-picker">
+          <label>조회 월<input type="month" id="week-month" placeholder="YYYY-MM" required></label>
+          <label>주차<select id="collection-week" required aria-describedby="week-range"></select></label>
+        </div>
+        <p id="week-range" class="hint" role="status"></p>
         <label>주제 <small>선택</small><input id="topic" maxlength="180" placeholder="비워 두면 보험업 전체 검색"></label>
-        <button class="primary" id="run" type="submit">기간 확인하기</button></form>
+        <button class="primary" id="run" type="submit">선택한 주 뉴스 확인</button></form>
       <p class="hint" id="role-count"></p>
       <div id="progress" role="status" aria-live="polite"></div><div id="results"></div>
       <p class="method">코딩 · 기간·매체 확인과 중복 정리　/　Jev · 관련성·보고 가치 판단</p>
     </section>
     <section id="roles-screen" hidden>
       <div class="headline"><h1>부서별 검토 기준</h1><button type="button" class="secondary" id="edit-roles" disabled>기준 편집</button></div>
-      <p class="intro">교보생명 공개 자료를 바탕으로 정리했습니다. 뉴스 링크와 기간별 수집 모두 아래 네 부서의 업무를 기준으로 관련 기사를 찾습니다.</p>
+      <p class="intro">교보생명 공개 자료를 바탕으로 정리했습니다. 뉴스 링크와 주차별 확인 모두 아래 네 부서의 업무를 기준으로 관련 기사를 찾습니다.</p>
       <form id="roles-form">
         <div id="role-fields" class="role-grid"></div>
         <div class="form-foot" id="role-actions" hidden><button type="button" class="secondary" id="cancel-roles">취소</button><button type="submit" class="primary" id="save-roles">이 브라우저에 저장</button></div>
@@ -76,8 +81,8 @@
       <div id="about"><h2>이슈당 보고서 하나</h2><p>생명보험·손해보험 소식을 한곳에서 읽고, 중요한 변화와 확인할 일을 원문과 함께 살펴보는 대학원 프로젝트입니다.</p>
       <dl class="flow"><dt>코딩 · 수집</dt><dd>한국 시간으로 기간을 나누어 뉴스 검색 RSS를 조회합니다. 참고 매체의 제목·발행일·링크를 확인하고 같은 링크와 같은 매체의 동일 제목을 정리합니다.</dd>
       <dt>Jev · 판단</dt><dd>보험업 관련성과 입력한 부서 역할은 예·아니오 확률(Noul)로, 보고 가치는 0~3점(Score)으로 평가합니다. 관련성 0.80 이상, 점수 1.5 이상, 점수 신뢰도 0.65 이상이면 주요 후보입니다. 경계 사례는 검토 필요로 표시합니다. 기사마다 판단에 사용한 자료를 표시합니다.</dd>
-      <dt>LLM · 보고서</dt><dd>현재 발행본은 원문을 대조해 작성했습니다. 링크 확인과 기간별 확인에서는 기사 목록과 Jev 판단을 확인하고 PDF로 내려받을 수 있습니다.</dd></dl>
-      <p><strong>정기 브리핑</strong>　목~일 기사는 월요일, 월~수 기사는 목요일 오전 7시 기준으로 묶습니다. 기간 테스트는 정기 일정을 변경하지 않습니다.</p><a href="#collect" class="primary">날짜 선택 · 실제 수집 흐름 실행</a></div>
+      <dt>LLM · 보고서</dt><dd>현재 발행본은 원문을 대조해 작성했습니다. 링크 확인과 주차별 확인에서는 기사 목록과 Jev 판단을 확인하고 PDF로 내려받을 수 있습니다.</dd></dl>
+      <p><strong>정기 브리핑</strong>　목~일 기사는 월요일, 월~수 기사는 목요일 오전 7시 기준으로 묶습니다. 주차별 확인은 원하는 주의 기사를 직접 조회하는 기능입니다.</p><a href="#collect" class="primary">주차를 선택해 뉴스 확인</a></div>
       <div id="research" hidden></div></section>
   </main><footer>교보 뉴스브리핑 · 대학원 프로젝트</footer>
 </body></html>
