@@ -40,7 +40,7 @@ export async function requestJson(url,key,payload,fetchImpl) {
   for(let attempt=0;attempt<MAX_ATTEMPTS;attempt++) {
     const abort=new AbortController();const timer=setTimeout(()=>abort.abort(),TIMEOUT_MS);
     try {
-      const response=await fetchImpl(url,{method:"POST",redirect:"error",headers:{"content-type":"application/json","authorization":`Bearer ${key}`},body:JSON.stringify(payload),signal:abort.signal});
+      const response=await fetchImpl(url,{method:"POST",redirect:"manual",headers:{"content-type":"application/json","authorization":`Bearer ${key}`},body:JSON.stringify(payload),signal:abort.signal});
       if(!response.ok) {
         const retryable=response.status===429||response.status>=500;
         const retryAfter=response.headers.get("retry-after");

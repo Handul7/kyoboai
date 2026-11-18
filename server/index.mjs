@@ -89,7 +89,7 @@ async function collect(input,env,user) {
   if(Date.parse(window.end)>Date.now()) fail(400,'아직 마감되지 않은 기간입니다.');
   const url=new URL(env.NEWS_FEED_URL); url.searchParams.set('from',window.start);url.searchParams.set('to',window.end);url.searchParams.set('limit',String(LIMITS.maxImport));
   let response;
-  try { response=await fetch(url,{headers:{Accept:'application/json',...(env.NEWS_FEED_KEY?{Authorization:`Bearer ${env.NEWS_FEED_KEY}`}:{})},redirect:'error',signal:AbortSignal.timeout(30000)}); } catch {fail(502,'뉴스 공급 API 요청이 실패했습니다. 기존 기사는 유지됩니다.');}
+  try { response=await fetch(url,{headers:{Accept:'application/json',...(env.NEWS_FEED_KEY?{Authorization:`Bearer ${env.NEWS_FEED_KEY}`}:{})},redirect:'manual',signal:AbortSignal.timeout(30000)}); } catch {fail(502,'뉴스 공급 API 요청이 실패했습니다. 기존 기사는 유지됩니다.');}
   if(!response.ok) fail(502,`뉴스 공급 API 오류 (${response.status}). 기존 기사는 유지됩니다.`);
   const data=await body(response);
   if(!Array.isArray(data.articles)||data.hasMore===true||data.nextCursor) fail(422,'단일 회차 전체를 반환하는 JSON 공급 API가 필요합니다. 잘린 응답은 저장하지 않습니다.');
@@ -242,7 +242,7 @@ async function dossierCandidates(seed,env,operator,registry,cutoff,external) {
     if(!validEndpoint(env.NEWS_SEARCH_URL,true))fail(503,'관련 기사 검색 API 주소를 확인해 주세요.');
     const u=new URL(env.NEWS_SEARCH_URL);
     for(const [k,v] of Object.entries({q:seed.title,from:start,to:end,limit:'10'}))u.searchParams.set(k,v);
-    const response=await fetch(u,{headers:{Accept:'application/json',...(env.NEWS_SEARCH_KEY?{Authorization:'Bearer '+env.NEWS_SEARCH_KEY}:{})},redirect:'error',signal:AbortSignal.timeout(18000)});
+    const response=await fetch(u,{headers:{Accept:'application/json',...(env.NEWS_SEARCH_KEY?{Authorization:'Bearer '+env.NEWS_SEARCH_KEY}:{})},redirect:'manual',signal:AbortSignal.timeout(18000)});
     if(!response.ok)fail(502,'관련 기사 공급 API가 응답하지 않았습니다. 다시 시도해 주세요.');
     const data=await body(response);
     if(!Array.isArray(data.articles)||data.articles.length>10)fail(422,'검색 공급 응답 형식을 확인해 주세요.');

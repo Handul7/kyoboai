@@ -23,7 +23,7 @@ function structuredArticle(html) {
 export async function scrapeArticle(input,source,fetchImpl=fetch) {
   const url=canonicalUrl(input);
   if(!source?.enabled||!source.bodyAllowed||!source.aiAllowed||!source.domains.includes(new URL(url).hostname)) throw Error('본문 수집과 AI 처리를 승인한 매체의 기사 주소를 입력해 주세요.');
-  const response=await fetchImpl(url,{headers:{Accept:'text/html'},redirect:'error',signal:AbortSignal.timeout(12000)});
+  const response=await fetchImpl(url,{headers:{Accept:'text/html'},redirect:'manual',signal:AbortSignal.timeout(12000)});
   if(!response.ok||!/^text\/html\b/i.test(response.headers.get('content-type')||'')) throw Error('공개 기사 HTML에 접근할 수 없습니다.');
   if(!response.body||Number(response.headers.get('content-length'))>1500000) throw Error('기사 페이지가 허용 크기를 초과합니다.');
   const reader=response.body.getReader(),decoder=new TextDecoder();

@@ -77,7 +77,7 @@ async function pressTopic(value,fetcher){
   const topic=String(value||"").trim();if(topic.length>2048)throw new PressError(400,"기사 주소 또는 제목을 짧게 입력해 주세요.");
   if(!/^https?:\/\//i.test(topic))return topic.slice(0,180);
   if(!pressOutlet(topic)||!topic.startsWith("https://"))throw new PressError(400,"참고 매체의 HTTPS 기사 주소 또는 기사 제목을 입력해 주세요.");
-  const response=await fetcher(topic,{headers:{Accept:"text/html"},redirect:"error",signal:AbortSignal.timeout(10000)});
+  const response=await fetcher(topic,{headers:{Accept:"text/html"},redirect:"manual",signal:AbortSignal.timeout(10000)});
   const html=await pressText(response,1700000);
   const tags=html.match(/<meta\b[^>]*>/gi)||[];
   const og=tags.find(t=>/\b(?:property|name)=["']og:title["']/i.test(t));
@@ -96,7 +96,10 @@ export async function searchPress(input,env,fetcher=fetch){
     while(cursor<days.length){
       const ms=days[cursor++],day=pressDate(ms),u=new URL("https://news.google.com/rss/search");
       u.search=new URLSearchParams({q:term+" after:"+pressDate(ms-PRESS_DAY)+" before:"+pressDate(ms+PRESS_DAY),hl:"ko",gl:"KR",ceid:"KR:ko"});
-      const response=await fetcher(u.href,{headers:{Accept:"application/rss+xml, application/xml"},redirect:"error",signal:AbortSignal.timeout(17000)});
+      let response;
+      try{response=await fetcher(u.href,{headers:{Accept:"application/rss+xml, application/xml"},redirect:"manual",signal:AbortSignal.timeout(17000)});}
+      catch{throw new PressError(502,"뉴스 검색 RSS에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");}
+      if(!response.ok)throw new PressError(502,"뉴스 검색 RSS의 응답 상태는 HTTP "+response.status+"입니다. 잠시 후 다시 시도해 주세요.");
       found.push(...parsePressFeed(await pressText(response,1500000),day));
     }
   }));

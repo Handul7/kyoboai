@@ -132,7 +132,7 @@ test("reports require all expected sections and known nonempty unique citations"
 });
 test("Jev uses fixed endpoint and server bearer key; missing key makes zero calls",async()=>{
   let calls=0;
-  const fake=async(url,options)=>{calls++;assert.equal(url,"https://api.typesafe.ai/v1/systemone");assert.equal(options.headers.authorization,"Bearer test-key");assert.equal(options.redirect,"error");return Response.json(rawJev());};
+  const fake=async(url,options)=>{calls++;assert.equal(url,"https://api.typesafe.ai/v1/systemone");assert.equal(options.headers.authorization,"Bearer test-key");assert.equal(options.redirect,"manual");return Response.json(rawJev());};
   await assert.rejects(classifyArticle(article,{},fake),{code:"typesafe_not_configured"});assert.equal(calls,0);
   const parsed=await classifyArticle(article,{TYPESAFE_API_KEY:"test-key"},fake);assert.equal(parsed.departments.length,2);assert.equal(calls,1);
 });

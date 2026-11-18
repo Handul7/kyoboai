@@ -81,7 +81,7 @@ test('approved HTML article scraping feeds Jev-only routing and scoped correctio
     if(String(url).includes('typesafe.ai')){
       return Response.json(wireJev({questions:JSON.parse(options.body).questions}));
     }
-    assert.equal(options.redirect,'error');
+    assert.equal(options.redirect,'manual');
     return new Response(markup({...item,free:!String(url).endsWith('paid')}),{headers:{'Content-Type':'text/html; charset=utf-8'}});
   };
   const scrape=(urls,user='admin-1')=>request(env,'/api/admin/scrape',{method:'POST',user,data:{urls}});
@@ -333,7 +333,7 @@ test('feed collection sends exact period bounds and refuses partial or out-of-wi
     assert.equal(url.searchParams.get('from'), WINDOW.start);
     assert.equal(url.searchParams.get('to'), WINDOW.end);
     assert.equal(init.headers.Authorization, 'Bearer test-feed-secret');
-    assert.equal(init.redirect, 'error');
+    assert.equal(init.redirect, 'manual');
     return Response.json(payload);
   };
   const collect = () => request(env, '/api/admin/collect', { method: 'POST', data: { reportDate: DATE, kind: 'brief' } });
