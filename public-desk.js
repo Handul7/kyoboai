@@ -11,8 +11,15 @@
   const roleKey = 'kyobo.press.roles.v1';
   let roles, snapshot, judgments = [], busy = false, settingsError = '';
   try {const saved=JSON.parse(localStorage.getItem(roleKey)); if(Array.isArray(saved)) roles=saved;} catch {}
-  async function api(path,payload) {
-    const response = await fetch('/api/press/'+path,payload===undefined ? {cache:'no-store'} : {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  async function api(path,payload,executionKey) {
+    const options = {cache:'no-store', mode:'same-origin', redirect:'error'};
+    if(payload !== undefined){
+      options.method='POST';
+      options.headers={'Content-Type':'application/json'};
+      options.body=JSON.stringify(payload);
+    }
+    if(path==='judge' && executionKey) options.headers.Authorization='Bearer '+executionKey;
+    const response = await fetch('/api/press/'+path,options);
     if(!response.headers.get('content-type')?.includes('json'))throw Error('뉴스 수집 서버에 연결할 수 없습니다.');
     const data=await response.json();
     if(!response.ok)throw Error(data.error || `서버 응답 오류 (${response.status})`);
@@ -29,6 +36,7 @@
   function roleCount(){ $('#role-count').textContent=roles ? `적용할 부서 기준 ${roles.length}개` : settingsError || '부서 기준을 불러오는 중입니다.'; }
   const initialized=api('settings').then(data=>{
     roles??=data.roles;roleFields(roles);roleCount();
+    if(!data.jevConfigured) $('#jev-key-help').textContent='키를 입력하면 기사 제목을 판단합니다. 비워 두면 기사만 수집합니다. 키는 저장하지 않습니다.';
   }).catch(e=>{
     settingsError=e.message;roleFields(roles||[]);roleCount();$('#roles-message').textContent='서버 기본 역할을 불러올 수 없습니다. 직접 작성한 역할은 이 브라우저에 저장할 수 있습니다.';
   });
@@ -97,10 +105,17 @@
     if(rows.length)$('#download-list').onclick=e=>pdf(e.currentTarget,{title:'보험 뉴스 수집 결과',meta:`${snapshot.from} ~ ${snapshot.to} · ${rows.length}건`,sections:[{title:'기사별 판단',lines:rows.map((a,i)=>`[${i+1}] ${a.title} — ${judgmentText(judgments[i])}`)}],sources:rows.map(a=>({...a,publishedAt:dateKst(a.publishedAt)}))});
   }
   function progress(message,attention=false){const p=$('#progress');p.className='notice'+(attention?' alert':'');p.textContent=message;}
+  const keyField=$('#jev-key');
+  window.addEventListener('pagehide',()=>{keyField.value='';});
   $('#run-form').onsubmit=async e=>{
     e.preventDefault();if(busy)return;
     const from=$('#from').value,to=$('#to').value,topic=$('#topic').value.trim();
     if(!from||!to||from>to||to>today||Date.parse(to)-Date.parse(from)>=31*day){progress('오늘까지의 날짜를 1~31일 범위로 선택해 주세요.',true);return;}
+    let executionKey=keyField.value.trim();
+    if(executionKey && (!window.isSecureContext || !/^[!-~]{1,512}$/.test(executionKey))){
+      progress('HTTPS 화면에서 공백이나 가림 표시가 없는 API 키 원본을 입력해 주세요.',true);keyField.focus();return;
+    }
+    keyField.value='';keyField.disabled=true;
     busy=true;$('#run').disabled=true;judgments=[];snapshot=null;renderResults();
     try{
       progress('뉴스 검색 RSS에서 발행일과 매체를 확인하고 있습니다.');
@@ -108,15 +123,15 @@
       const criteria=roles?.map(r=>({...r}));snapshot=await api('collect',{from,to,topic});
       renderResults();
       if(!snapshot.articles.length){progress('이 기간과 검색 조건에 맞는 참고 매체 기사가 없습니다.');return;}
-      if(!snapshot.jevConfigured){progress(`실제 기사 ${snapshot.articles.length}건 수집 완료 · Jev 서버 키 연결 대기`,true);return;}
+      if(!executionKey && !snapshot.jevConfigured){progress(`실제 기사 ${snapshot.articles.length}건 수집 완료 · Jev 판단은 키를 입력한 뒤 실행해 주세요.`);return;}
       if(!criteria){progress('기사 수집을 완료했습니다. 부서 기준을 불러온 뒤 다시 실행해 주세요.',true);return;}
       for(let offset=0;offset<snapshot.articles.length;offset+=snapshot.batchSize){
         progress(`실제 기사 ${snapshot.articles.length}건 수집 완료 · Jev 판단 중 (${offset}/${snapshot.articles.length})`);
-        const res=await api('judge',{id:snapshot.id,version:snapshot.version,roles:criteria,offset});
+        const res=await api('judge',{id:snapshot.id,version:snapshot.version,roles:criteria,offset,personal:!!executionKey},executionKey);
         judgments.push(...res.answers);renderResults();
       }
       progress(`실제 기사 ${judgments.length}건 판단 완료 · 주요 후보 ${judgments.filter(j=>j.status==='주요 후보').length}건 · ${judgments[0].model}`);
     }catch(err){progress((snapshot?`수집 완료 · Jev 판단 ${judgments.length}/${snapshot.articles.length}건. `:'')+err.message,true);}
-    finally{busy=false;$('#run').disabled=false;}
+    finally{executionKey='';keyField.disabled=false;busy=false;$('#run').disabled=false;}
   };
 })();

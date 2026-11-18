@@ -136,8 +136,8 @@ export function pressAnswers(result,articles,roles){
     return {title:a.title,source:a.source,publishedAt:a.publishedAt,status,matches,importance:score.score,relevance:relevant,basis:a.body?"제목·승인 본문":"제목",model:result.model};
   });
 }
-export async function judgePress(input,env,fetcher=fetch){
-  if(!env.TYPESAFE_API_KEY)throw new PressError(503,"서버에 Jev 키가 연결되어야 실제 판단을 실행할 수 있습니다.");
+export async function judgePress(input,env,fetcher=fetch,personalKey=null){
+  if(!personalKey&&!env.TYPESAFE_API_KEY)throw new PressError(503,"서버에 Jev 키가 연결되어야 실제 판단을 실행할 수 있습니다.");
   const roles=pressRoles(input.roles),offset=input.offset;
   if(!/^[a-f0-9]{64}$/.test(input.id)||!Number.isInteger(offset)||offset<0||offset%PRESS_BATCH!==0)throw new PressError(400,"수집 결과와 실행 위치를 확인해 주세요.");
   const stored=await env.DB.prepare("SELECT payload FROM press_searches WHERE id=?").bind(input.id).first();
@@ -146,12 +146,19 @@ export async function judgePress(input,env,fetcher=fetch){
   if(batch.version!==input.version)throw new PressError(409,"기사 목록이 갱신되었습니다. 같은 기간을 다시 수집해 주세요.");
   const selected=batch.articles.slice(offset,offset+PRESS_BATCH);
   if(!selected.length)throw new PressError(400,"판단할 기사가 없습니다.");
+  const model=env.TYPESAFE_MODEL||"jev-latest";
+  if(personalKey){
+    // A visitor's TypeSafe account receives only the public feed metadata. Personal runs never share cached judgments.
+    const articles=selected.map(({title,source,publishedAt})=>({title,source,publishedAt}));
+    const response=await requestJson("https://api.typesafe.ai/v1/systemone",personalKey,pressQuestions(articles,roles,model),fetcher);
+    return {answers:pressAnswers(response,articles,roles),cached:false};
+  }
   const state=await Promise.all(selected.map(async a=>{
     const hit=await env.DB.prepare(`SELECT a.body FROM articles a JOIN source_permissions s ON s.id=a.source_id
       WHERE s.enabled=1 AND s.ai_allowed=1 AND s.body_allowed=1 AND a.source_id=? AND a.title=? AND a.published_at=? LIMIT 1`).bind(a.sourceId,a.title,a.publishedAt).first();
     return {title:a.title,source:a.source,publishedAt:a.publishedAt,...(hit?.body?{body:hit.body.slice(0,6000)}:{})};
   }));
-  const model=env.TYPESAFE_MODEL||"jev-latest",id=await pressHash(["press-judgment-v1",state,roles,model]);
+  const id=await pressHash(["press-judgment-v1",state,roles,model]);
   const old=await env.DB.prepare("SELECT result FROM press_checks WHERE id=?").bind(id).first();
   if(old?.result)return {answers:JSON.parse(old.result),cached:true};
   const started=new Date().toISOString(),lease=crypto.randomUUID(),since=new Date(Date.now()-120000).toISOString();

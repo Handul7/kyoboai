@@ -349,8 +349,17 @@ export async function handleApi(request,env) {
       if(request.headers.get('origin')!==url.origin)fail(403,'같은 사이트에서 요청해 주세요.');
       if(!env.DB)fail(503,'기사 저장소에 연결되지 않았습니다.');
       const input=await body(request);
-      try{return json(path.endsWith('/collect')?await searchPress(input,env):await judgePress(input,env));}
-      catch(e){if(e instanceof PressError)fail(e.status,e.message);if(e instanceof ProviderError)throw e;fail(502,'공급처 응답 또는 저장소를 확인할 수 없습니다. 잠시 후 다시 실행해 주세요.');}
+      let personalKey=null;
+      if(path.endsWith('/judge') && input.personal===true){
+        if(url.protocol!=='https:' && !['127.0.0.1','localhost','[::1]'].includes(url.hostname))fail(400,'개인 키는 HTTPS에서만 사용할 수 있습니다.');
+        const match=/^Bearer ([!-~]{1,512})$/i.exec(request.headers.get('authorization')||'');
+        if(!match)fail(400,'이번 실행에 사용할 Jev API 키 원본을 다시 입력해 주세요.');
+        personalKey=match[1];
+      }
+      try{return json(path.endsWith('/collect')?await searchPress(input,env):await judgePress(input,env,fetch,personalKey));}
+      catch(e){
+        if(personalKey && e instanceof ProviderError && e.code==='provider_authentication_failed')fail(401,'TypeSafe가 이번 실행의 키를 인증하지 못했습니다. 활성 상태인 키 원본을 다시 입력해 주세요.');
+        if(e instanceof PressError)fail(e.status,e.message);if(e instanceof ProviderError)throw e;fail(502,'공급처 응답 또는 저장소를 확인할 수 없습니다. 잠시 후 다시 실행해 주세요.');}
     }
     if(path==='/api/status'&&method==='GET') return json(await readiness(env));
     const user=await identity(request,env);
