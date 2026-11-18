@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
 import { mkdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -8,7 +9,7 @@ mkdirSync('.local-data',{recursive:true});
 const filename=resolve('.local-data/preview.sqlite');
 const DB=createDatabase(filename,!existsSync(filename));
 const previewAdmin=process.env.PREVIEW_ADMIN==='true';
-const env={...process.env,DB,...(previewAdmin?{ADMIN_USER_IDS:'local-preview-admin',ADMIN_EMAILS:''}:{})};
+const env={JEV_BROWSER_SEAL_KEY:randomBytes(32).toString("hex"),...process.env,DB,...(previewAdmin?{ADMIN_USER_IDS:'local-preview-admin',ADMIN_EMAILS:''}:{})};
 const port=Number(process.env.PREVIEW_PORT||4173);
 const server=createServer(async(req,res)=>{
   try{

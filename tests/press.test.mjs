@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDatabase } from './helpers/d1.mjs';
-import { searchPress, judgePress, pressRange, pressRoles, parsePressFeed } from '../server/press.mjs';
+import { searchPress, searchLinkedPress, judgePress, pressRange, pressRoles, parsePressFeed } from '../server/press.mjs';
 import { handleApi } from '../server/index.mjs';
 
 const when='Mon, 16 Nov 2026 14:59:59 GMT';
@@ -39,33 +39,58 @@ test('validates provider answers, uses saved roles and server-captured articles,
 });
 test('public settings expose only configuration state and regular cadence',async()=>{
   const response=await handleApi(new Request('https://example.com/api/press/settings'),{TYPESAFE_API_KEY:'test-only'});
-  const state=await response.json();assert.equal(state.jevConfigured,true);assert.deepEqual(state.regularDays,[1,4]);assert.equal(state.regularTime,'07:00');assert.ok(!JSON.stringify(state).includes('test-only'));
+  const state=await response.json();assert.equal(state.jevConfigured,false);assert.deepEqual(state.regularDays,[1,4]);assert.equal(state.regularTime,'07:00');assert.ok(!JSON.stringify(state).includes('test-only'));
   const crossed=await handleApi(new Request('https://example.com/api/press/judge',{method:'POST',headers:{Origin:'https://other.example'}}),{});assert.equal(crossed.status,403);
 });
 
-test('a personal run uses only the supplied key and public data, without persistent state or shared-key fallback',async t=>{
-  const env={DB:createDatabase(),TYPESAFE_API_KEY:'shared-unit-test'};
+test('browser credential persists for both modes, isolates visitors, rotates safely and is independently removable',async t=>{
+  const origin='https://example.com',key='test-first-device',other='test-second-device';
+  const env={DB:createDatabase(),TYPESAFE_API_KEY:'unused-admin',JEV_BROWSER_SEAL_KEY:'ef'.repeat(32)};
   t.after(()=>env.DB.sqlite.close());
-  const run=await searchPress({from:'2026-11-16',to:'2026-11-16'},env,async()=>new Response(rss));
-  const input={id:run.id,version:run.version,offset:0,roles:[],personal:true};
-  const key='unit-test-one-run';
-  const origin='https://example.com';
-  const send=(authorization,host=origin)=>handleApi(new Request(host+'/api/press/judge',{
-    method:'POST',headers:{'Content-Type':'application/json',Origin:host,...(authorization?{Authorization:authorization}:{})},body:JSON.stringify(input)
+  const src='https://www.insnews.co.kr/news/articleView.html?idxno=1';
+  const dates={from:'2026-11-16',to:'2026-11-16'};
+  const api=(path,payload,{cookie,token,host=origin,from=host}={})=>handleApi(new Request(host+'/api/press/'+path,{
+    method:payload?'POST':'GET',headers:{Origin:from,'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(payload?{body:JSON.stringify(payload)}:{})
   }),env);
-  let calls=0;
-  const accepted=Response.json({model:'test-model',answers:{insurance0:{type:'noul',noul:.95},value0:{type:'score',confidence:.8,score:2,probabilities:{0:0,1:0,2:1,3:0}}}});
-  t.mock.method(globalThis,'fetch',async(url,options)=>{
-    calls++;
-    assert.equal(url,'https://api.typesafe.ai/v1/systemone');assert.equal(options.redirect,'manual');
-    assert.deepEqual(Object.keys(JSON.parse(options.body).state.articles[0]).sort(),['publishedAt','source','title']);
-    assert.ok(!options.body.includes(key));assert.notEqual(options.headers.authorization,'Bearer '+env.TYPESAFE_API_KEY);
-    return options.headers.authorization==='Bearer '+key ? accepted.clone() : new Response('untrusted upstream text',{status:401});
+  const used=[];
+  t.mock.method(globalThis,'fetch',async(url,init)=>{
+    if(url===src)return new Response('<meta property="og:type" content="article"><meta property="og:title" content="보험금 제도 개선"><meta property="article:published_time" content="2026-11-16T15:00:00+09:00">',{headers:{'Content-Type':'text/html'}});
+    if(url.startsWith('https://news.google.com/rss/'))return new Response(rss);
+    assert.equal(init.redirect,'manual');
+    if(url.endsWith('/v1/models'))return [key,other].some(v=>init.headers.Authorization==='Bearer '+v)?Response.json({models:[{name:'jev-latest'}]}):new Response(null,{status:401});
+    assert.equal(url,'https://api.typesafe.ai/v1/systemone');used.push(init.headers.authorization);
+    const p=JSON.parse(init.body);assert.ok(!init.body.includes(key));const answers={};
+    for(const [name,spec] of Object.entries(p.questions))answers[name]=spec.type==='noul'?{type:'noul',noul:.9}:{type:'score',score:2,confidence:1,probabilities:{0:0,1:0,2:1,3:0}};
+    return Response.json({model:'test-jev',answers});
   });
-  assert.equal((await send()).status,400);assert.equal((await send('Basic invalid')).status,400);
-  assert.equal((await send('Bearer '+key,'http://example.com')).status,400);assert.equal(calls,0);
-  const success=await send('Bearer '+key);assert.equal(success.status,200);assert.equal((await success.json()).answers[0].basis,'제목');
-  const denied=await send('Bearer another-test-key');assert.equal(denied.status,401);assert.ok(!(await denied.text()).includes('another-test-key'));
-  assert.equal(calls,2);assert.equal(env.DB.sqlite.prepare('SELECT COUNT(*) AS n FROM press_checks').get().n,0);
-  assert.equal(env.TYPESAFE_API_KEY,'shared-unit-test');
+  const save=async token=>{
+    const res=await api('connection',{action:'save'},{token});assert.equal(res.status,200);const set=res.headers.get('set-cookie');
+    for(const flag of ['HttpOnly','Secure','SameSite=Strict','Max-Age=31536000','Path=/'])assert.ok(set.includes(flag));
+    assert.ok(!set.includes(token));assert.deepEqual(await res.json(),{connected:true});return set.split(';')[0];
+  };
+  const a=await save(key),b=await save(other);
+  const configured=async opts=>(await (await api('settings',null,opts)).json()).jevConfigured;
+  assert.equal(await configured({cookie:a}),true);assert.equal(await configured({}),false);
+  assert.equal(await configured({cookie:a,host:'https://other.example'}),false);
+  assert.equal(await configured({cookie:a.replace('=','=z')}),false);
+  assert.equal((await api('connection',{action:'save'},{cookie:a,token:'bad'})).headers.get('set-cookie'),null);
+  assert.equal((await api('connection',{action:'forget'},{cookie:a,from:'https://other.example'})).status,403);
+  for(const [op,payload,cookie] of [['link',{url:src},a],['collect',dates,b]]){
+    const snap=await (await api(op,payload,{cookie})).json();assert.equal(snap.jevConfigured,true);
+    const args={id:snap.id,version:snap.version,roles:[],offset:0};
+    assert.equal((await api('judge',args)).status,401);
+    const judgment=await api('judge',args,{cookie});assert.equal(judgment.status,200);
+    const {answers}=await judgment.json();
+    if(op==='link'){assert.equal(snap.articles[0].url,src);assert.equal(snap.kind,'link');assert.equal(answers[1].sameEvent,.9);}
+  }
+  assert.deepEqual(used,['Bearer '+key,'Bearer '+other]);
+  const forgotten=await api('connection',{action:'forget'},{cookie:a});assert.match(forgotten.headers.get('set-cookie'),/Max-Age=0/);
+  assert.equal(env.DB.sqlite.prepare('SELECT COUNT(*) AS n FROM press_checks').get().n,0);
+});
+test('linked article stays visible when related feed fails and an off-site redirect is refused',async t=>{
+  const env={DB:createDatabase()};t.after(()=>env.DB.sqlite.close());
+  const url='https://www.insnews.co.kr/news/articleView.html?idxno=1';
+  const snap=await searchLinkedPress({url},env,async target=>target===url?new Response('<meta property="og:type" content="article"><meta property="og:title" content="보험 이슈">',{headers:{'Content-Type':'text/html'}}):new Response(null,{status:503}));
+  assert.equal(snap.articles.length,1);assert.equal(snap.articles[0].publishedAt,null);assert.equal(snap.relatedUnavailable,true);
+  await assert.rejects(searchLinkedPress({url},env,async target=>{assert.equal(target,url);return new Response(null,{status:302,headers:{Location:'https://example.org/'}});}),e=>e.status===422);
 });

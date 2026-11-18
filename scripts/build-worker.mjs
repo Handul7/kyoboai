@@ -6,7 +6,7 @@ import { readPrototypeData, verifyPrototypeData } from './verify-prototype.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 verifyPrototypeData(await readPrototypeData());
 // Build one Worker ESM module; no dynamic imports or runtime build dependencies.
-const modules=['core.mjs','providers.mjs','scrape.mjs','config.mjs','press.mjs','index.mjs'];
+const modules=['core.mjs','providers.mjs','scrape.mjs','config.mjs','press.mjs','browser-key.mjs','index.mjs'];
 const source=(await Promise.all(modules.map(file=>readFile(resolve(root,'server',file),'utf8')))).map(code=>code.replace(/^import .*?;\s*$/gm,'').replace(/^export /gm,'')).join('\n');
 const release=JSON.parse(await readFile(resolve(root,'release.json'),'utf8'));
 const html=await readFile(resolve(root,'index.html'),'utf8');

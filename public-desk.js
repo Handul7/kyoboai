@@ -9,16 +9,18 @@
   const editions = [...new Set(PUBLISHED_NEWS.map(s=>s.date))].sort().reverse();
   const months = [...new Set(editions.map(d=>d.slice(0,7)))];
   const roleKey = 'kyobo.press.roles.v1';
-  let roles, snapshot, judgments = [], busy = false, settingsError = '';
+  let roles,settingsError='',mode='period',connected=false;
+  const emptyRun=()=>({snapshot:null,judgments:[],busy:false,message:'',attention:false});
+  const runs={period:emptyRun(),link:emptyRun()};
   try {const saved=JSON.parse(localStorage.getItem(roleKey)); if(Array.isArray(saved)) roles=saved;} catch {}
-  async function api(path,payload,executionKey) {
+  async function api(path,payload,credential) {
     const options = {cache:'no-store', mode:'same-origin', redirect:'error'};
     if(payload !== undefined){
       options.method='POST';
       options.headers={'Content-Type':'application/json'};
       options.body=JSON.stringify(payload);
     }
-    if(path==='judge' && executionKey) options.headers.Authorization='Bearer '+executionKey;
+    if(path==='connection' && credential) options.headers.Authorization='Bearer '+credential;
     const response = await fetch('/api/press/'+path,options);
     if(!response.headers.get('content-type')?.includes('json'))throw Error('뉴스 수집 서버에 연결할 수 없습니다.');
     const data=await response.json();
@@ -36,9 +38,9 @@
   function roleCount(){ $('#role-count').textContent=roles ? `적용할 부서 기준 ${roles.length}개` : settingsError || '부서 기준을 불러오는 중입니다.'; }
   const initialized=api('settings').then(data=>{
     roles??=data.roles;roleFields(roles);roleCount();
-    if(!data.jevConfigured) $('#jev-key-help').textContent='키를 입력하면 기사 제목을 판단합니다. 비워 두면 기사만 수집합니다. 키는 저장하지 않습니다.';
+    showConnection(data.jevConfigured);
   }).catch(e=>{
-    settingsError=e.message;roleFields(roles||[]);roleCount();$('#roles-message').textContent='서버 기본 역할을 불러올 수 없습니다. 직접 작성한 역할은 이 브라우저에 저장할 수 있습니다.';
+    $('#key-state').textContent='서버 확인 필요';settingsError=e.message;roleFields(roles||[]);roleCount();$('#roles-message').textContent='서버 기본 역할을 불러올 수 없습니다. 직접 작성한 역할은 이 브라우저에 저장할 수 있습니다.';
   });
   $('#add-role').onclick=()=>{const rows=readFields();if(rows.length<8){roleFields([...rows,{name:'',role:'',keywords:''}]);all('#role-fields input[name=name]').at(-1)?.focus();}};
   $('#role-fields').onclick=e=>{const button=e.target.closest('[data-remove]');if(button){const rows=readFields();rows.splice(Number(button.dataset.remove),1);roleFields(rows);}};
@@ -72,13 +74,18 @@
   research();
   function route(scroll=false){
     const hash=location.hash.slice(1);if(hash==='content')return;
-    let view=({roles:'roles',collect:'collect',process:'process','process/news':'process','process/operations':'collect',departments:'roles'})[hash]||'news';
+    let view=({roles:'roles',collect:'collect',link:'collect',connect:'collect',process:'process','process/news':'process','process/operations':'collect',departments:'roles'})[hash]||'news';
     if(hash.startsWith('issue/')){const story=PUBLISHED_NEWS.find(s=>s.id===hash.slice(6));if(story){view='detail';detail(story);}}
     for(const name of ['news','roles','collect','detail','process'])$('#'+name+'-screen').hidden=name!==view;
+    mode=hash==='link'||hash==='connect'?'link':'period';
+    if(hash==='connect')$('#key-settings').open=true;
+    $('#run-form').hidden=mode==='link';$('#link-form').hidden=mode!=='link';
+    for(const a of all('#collect-screen .tabs a')){if(a.hash===(mode==='link'?'#link':'#collect'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}
+    if(view==='collect')renderRun();
     $('#about').hidden=hash==='process/news';$('#research').hidden=hash!=='process/news';
     for(const a of all('.nav a'))a.toggleAttribute('aria-current',false);
     $(`.nav a[href="#${view==='detail'?'news':view}"]`)?.setAttribute('aria-current','page');
-    for(const a of all('.tabs a')){if(a.hash===(hash==='process/news'?'#process/news':'#process'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}
+    for(const a of all('#process-screen .tabs a')){if(a.hash===(hash==='process/news'?'#process/news':'#process'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}
     if(scroll){$('#content').focus({preventScroll:true});window.scrollTo(0,0);}
   }
   window.addEventListener('hashchange',()=>route(true));route();
@@ -86,52 +93,90 @@
   let edition=Date.parse(today+'T12:00:00+09:00');
   while(![1,4].includes(new Date(edition).getUTCDay()))edition-=day;
   $('#to').value=dateKst(edition-day);$('#from').value=dateKst(edition-day*(new Date(edition).getUTCDay()===1?4:3));$('#from').max=today;$('#to').max=today;
-  $('#direct-form').onsubmit=e=>{
-    e.preventDefault();const seed=$('#seed').value.trim();if(!seed)return;
-    const known=PUBLISHED_NEWS.find(s=>s.title===seed||s.sources.some(a=>a.title===seed||a.url===seed));
-    if(known){location.hash='issue/'+known.id;return;}
-    $('#topic').value=seed;location.hash='collect';
-  };
-  const resultMeta=a=>`${a.source} · ${dateKst(a.publishedAt)}`;
-  function judgmentText(j){
-    return j ? `${j.status} · 보고 가치 ${j.importance.toFixed(2)}/3 · 근거 ${j.basis}${j.matches.length?' · 관련 부서 '+j.matches.map(m=>m.name).join(', '):''}` : 'Jev 미판단';
+
+  function showConnection(value){
+    connected=value===true;
+    $('#key-state').textContent=connected?'이 브라우저에 저장됨':'키 등록 필요';
+    $('#key-forget').hidden=!connected;
+    $('#key-save').textContent=connected?'새 키 확인 후 교체':'키 확인 후 저장';
   }
-  function renderResults(){
-    if(!snapshot){$('#results').replaceChildren();return;}
-    const rows=snapshot.articles;
-    $('#results').innerHTML=`<div class="list-head"><h2>수집 기사 ${rows.length}건</h2>${rows.length?'<button class="secondary" id="download-list">수집 결과 PDF</button>':''}</div>
-      <p class="meta">${snapshot.from} ~ ${snapshot.to} · 중복 ${snapshot.duplicates}건 정리${snapshot.total>rows.length?' · 전체 '+snapshot.total+'건 중 최신 '+rows.length+'건':''}</p>
-      <div class="results-list">${rows.map((a,i)=>`<article class="news-row"><small>${escape(resultMeta(a))}</small><strong>${link(a.url,a.title)}</strong><div class="result-label">${escape(judgmentText(judgments[i]))}</div></article>`).join('')}</div>`;
-    if(rows.length)$('#download-list').onclick=e=>pdf(e.currentTarget,{title:'보험 뉴스 수집 결과',meta:`${snapshot.from} ~ ${snapshot.to} · ${rows.length}건`,sections:[{title:'기사별 판단',lines:rows.map((a,i)=>`[${i+1}] ${a.title} — ${judgmentText(judgments[i])}`)}],sources:rows.map(a=>({...a,publishedAt:dateKst(a.publishedAt)}))});
-  }
-  function progress(message,attention=false){const p=$('#progress');p.className='notice'+(attention?' alert':'');p.textContent=message;}
   const keyField=$('#jev-key');
   window.addEventListener('pagehide',()=>{keyField.value='';});
-  $('#run-form').onsubmit=async e=>{
-    e.preventDefault();if(busy)return;
-    const from=$('#from').value,to=$('#to').value,topic=$('#topic').value.trim();
-    if(!from||!to||from>to||to>today||Date.parse(to)-Date.parse(from)>=31*day){progress('오늘까지의 날짜를 1~31일 범위로 선택해 주세요.',true);return;}
-    let executionKey=keyField.value.trim();
-    if(executionKey && (!window.isSecureContext || !/^[!-~]{1,512}$/.test(executionKey))){
-      progress('HTTPS 화면에서 공백이나 가림 표시가 없는 API 키 원본을 입력해 주세요.',true);keyField.focus();return;
+  async function configureKey(action){
+    const saving=action==='save';
+    const key=saving?keyField.value.trim():null;
+    const msg=$('#key-message');
+    if(saving && (!window.isSecureContext||!/^[!-~]{1,512}$/.test(key))){
+      msg.textContent='HTTPS 화면에서 활성 키 원본을 입력해 주세요.';return;
     }
-    keyField.value='';keyField.disabled=true;
-    busy=true;$('#run').disabled=true;judgments=[];snapshot=null;renderResults();
+    await initialized;
+    keyField.value='';
+    const buttons=[$('#key-save'),$('#key-forget')];buttons.forEach(b=>b.disabled=true);
+    msg.textContent=saving?'TypeSafe에서 키를 확인하고 있습니다.':'저장한 키를 삭제하고 있습니다.';
     try{
-      progress('뉴스 검색 RSS에서 발행일과 매체를 확인하고 있습니다.');
+      await api('connection',{action},key);
+      const settings=await api('settings');showConnection(settings.jevConfigured);
+      if(connected!==saving)throw Error('브라우저 쿠키 설정을 확인한 뒤 다시 시도해 주세요.');
+      msg.textContent=saving?'저장했습니다. 뉴스 링크와 기간별 확인에서 바로 사용할 수 있습니다.':'이 브라우저에서 키를 삭제했습니다.';
+    }catch(e){msg.textContent=e.message;}
+    finally{buttons.forEach(b=>b.disabled=false);}
+  }
+  $('#key-form').onsubmit=e=>{e.preventDefault();configureKey('save');};
+  $('#key-forget').onclick=()=>configureKey('forget');
+  function judgmentText(j){
+    if(!j)return 'Jev 미판단';
+    const same=j.sameEvent===undefined?'':j.sameEvent>=.8?'같은 이슈 · ':j.sameEvent<=.2?'다른 이슈 · ':'동일 이슈 검토 필요 · ';
+    return `${same}${j.status} · 보고 가치 ${j.importance.toFixed(2)}/3 · 근거 ${j.basis}${j.matches.length?' · 관련 부서 '+j.matches.map(m=>m.name).join(', '):''}`;
+  }
+  function renderRun(){
+    const {snapshot,judgments,busy,message,attention}=runs[mode];
+    const progress=$('#progress');progress.className=message?'notice'+(attention?' alert':''):'';progress.textContent=message;
+    $(mode==='link'?'#check-link':'#run').disabled=busy;
+    if(!snapshot){$('#results').replaceChildren();return;}
+    const isLink=snapshot.kind==='link',rows=snapshot.articles;
+    const heading=isLink?'기사 확인 결과':`수집 기사 ${rows.length}건`;
+    const label=isLink?`입력 기사 1건 · 관련 보도 후보 ${rows.length-1}건`:`${snapshot.from} ~ ${snapshot.to} · 중복 ${snapshot.duplicates}건 정리${snapshot.total>rows.length?' · 전체 '+snapshot.total+'건 중 최신 '+rows.length+'건':''}`;
+    const story=isLink&&PUBLISHED_NEWS.find(s=>s.sources.some(a=>a.url===rows[0].url||a.title===rows[0].title));
+    $('#results').innerHTML=`<div class="list-head"><h2>${heading}</h2>${rows.length?'<button class="secondary" id="download-list">결과 PDF</button>':''}</div>
+      <p class="meta">${escape(label)}${isLink?` · 관련 보도 검색 ${escape(snapshot.from)} ~ ${escape(snapshot.to)}`:''}</p>
+      ${snapshot.relatedUnavailable?'<p class="hint">관련 보도 검색 공급처의 응답을 받지 못했습니다.</p>':''}
+      ${story?`<p class="report-match"><a href="#issue/${escape(story.id)}">이 이슈의 발행 보고서 보기</a></p>`:''}
+      <div class="results-list">${rows.map((a,i)=>`<article class="news-row"><small>${isLink?(i===0?'입력 기사':'관련 후보')+' · ':''}${escape(a.source)} · ${a.publishedAt?dateKst(a.publishedAt):'발행일 미확인'}</small><strong>${link(a.url,a.title)}</strong><div class="result-label">${escape(judgmentText(judgments[i]))}</div></article>`).join('')}</div>`;
+    if(rows.length)$('#download-list').onclick=e=>pdf(e.currentTarget,{title:isLink?rows[0].title:'보험 뉴스 수집 결과',meta:label,sections:[{title:'기사별 판단',lines:rows.map((a,i)=>`[${i+1}] ${a.title} — ${judgmentText(judgments[i])}`)}],sources:rows.map(a=>({...a,publishedAt:a.publishedAt?dateKst(a.publishedAt):'발행일 미확인'}))});
+  }
+  async function checkNews(type,payload){
+    const run=runs[type];if(run.busy)return;
+    Object.assign(run,emptyRun(),{busy:true});
+    const update=(message,attention=false)=>{
+      Object.assign(run,{message,attention});if(mode===type)renderRun();
+    };
+    try{
+      update(type==='link'?'입력 기사와 관련 보도를 확인하고 있습니다.':'기간에 해당하는 실제 기사를 수집하고 있습니다.');
       await initialized;
-      const criteria=roles?.map(r=>({...r}));snapshot=await api('collect',{from,to,topic});
-      renderResults();
-      if(!snapshot.articles.length){progress('이 기간과 검색 조건에 맞는 참고 매체 기사가 없습니다.');return;}
-      if(!executionKey && !snapshot.jevConfigured){progress(`실제 기사 ${snapshot.articles.length}건 수집 완료 · Jev 판단은 키를 입력한 뒤 실행해 주세요.`);return;}
-      if(!criteria){progress('기사 수집을 완료했습니다. 부서 기준을 불러온 뒤 다시 실행해 주세요.',true);return;}
-      for(let offset=0;offset<snapshot.articles.length;offset+=snapshot.batchSize){
-        progress(`실제 기사 ${snapshot.articles.length}건 수집 완료 · Jev 판단 중 (${offset}/${snapshot.articles.length})`);
-        const res=await api('judge',{id:snapshot.id,version:snapshot.version,roles:criteria,offset,personal:!!executionKey},executionKey);
-        judgments.push(...res.answers);renderResults();
+      const criteria=roles?.map(r=>({...r}));
+      const snap=await api(type==='link'?'link':'collect',payload);
+      run.snapshot=snap;
+      if(!snap.articles.length){update('검색 조건에 맞는 기사가 없습니다.');return;}
+      showConnection(snap.jevConfigured);
+      if(!connected){update('기사 확인 완료 · 위의 Jev 연결에서 키를 저장하면 기사 판단도 실행할 수 있습니다.');return;}
+      if(!criteria)throw Error('부서 역할을 불러올 수 없습니다. 화면을 새로고침해 주세요.');
+      for(let offset=0;offset<snap.articles.length;offset+=snap.batchSize){
+        update(`Jev 판단 중 · ${offset}/${snap.articles.length}건`);
+        const result=await api('judge',{id:snap.id,version:snap.version,roles:criteria,offset});
+        run.judgments.push(...result.answers);
       }
-      progress(`실제 기사 ${judgments.length}건 판단 완료 · 주요 후보 ${judgments.filter(j=>j.status==='주요 후보').length}건 · ${judgments[0].model}`);
-    }catch(err){progress((snapshot?`수집 완료 · Jev 판단 ${judgments.length}/${snapshot.articles.length}건. `:'')+err.message,true);}
-    finally{executionKey='';keyField.disabled=false;busy=false;$('#run').disabled=false;}
+      update(`Jev 판단 완료 · ${run.judgments.length}건 · ${run.judgments[0].model}`);
+    }catch(e){update((run.snapshot?`기사 확인 완료 · Jev 판단 ${run.judgments.length}/${run.snapshot.articles.length}건. `:'')+e.message,true);}
+    finally{run.busy=false;if(mode===type)renderRun();}
+  }
+  $('#link-form').onsubmit=e=>{e.preventDefault();checkNews('link',{url:$('#seed').value.trim()});};
+  $('#run-form').onsubmit=e=>{
+    e.preventDefault();
+    const from=$('#from').value,to=$('#to').value,topic=$('#topic').value.trim();
+    if(!from||!to||from>to||to>today||Date.parse(to)-Date.parse(from)>=31*day){
+      Object.assign(runs.period,{message:'오늘까지의 날짜를 1~31일 범위로 선택해 주세요.',attention:true});renderRun();return;
+    }
+    checkNews('period',{from,to,topic});
   };
+
 })();

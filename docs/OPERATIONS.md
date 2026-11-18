@@ -2,7 +2,9 @@
 
 ## 현재 공개 화면
 
-`GET /api/press/settings`는 기본 부서 역할과 Jev 연결 유무를 제공합니다. 공개 기간 수집은 `POST /api/press/collect`로 한국 시간의 시작일·종료일을 받아 실제 RSS를 조회합니다. `POST /api/press/judge`는 수집 ID·버전, 진행 위치와 부서 기준을 받아 저장한 기사로 Jev를 호출합니다. 서버 비밀값은 `TYPESAFE_API_KEY`입니다. 키 변경 후에는 해당 환경 설정으로 다시 배포합니다.
+`POST /api/press/connection`은 TypeSafe 모델 목록으로 개인 키를 검증하고, 사이트 주소에 묶인 AES-GCM 암호문을 Secure·HttpOnly 브라우저 쿠키에 저장합니다. 키 원본이나 암호문을 DB에 기록하지 않습니다. `JEV_BROWSER_SEAL_KEY`는 서버 전용 32바이트 무작위 키의 16진수 표기입니다. 이 값을 교체하면 모든 브라우저가 다시 등록해야 합니다.
+
+`GET /api/press/settings`는 현재 브라우저의 연결 상태를 반환합니다. 링크 확인은 `POST /api/press/link`, 기간별 확인은 `POST /api/press/collect`로 수집하고 두 경로 모두 `POST /api/press/judge`로 판단합니다. 개인 키의 저장·교체에는 재배포가 필요하지 않습니다.
 
 공개 화면의 PDF에는 출처 링크와 해당 시점의 판단 결과가 들어갑니다. 부서 기준은 브라우저별로 관리합니다. 월·목 정기 발행 시간과 날짜 테스트는 독립적입니다.
 

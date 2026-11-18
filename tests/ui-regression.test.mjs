@@ -14,7 +14,7 @@ test('public entry points use the current scripts, revision and guest navigation
   for(const route of ['news','collect','roles','process'])assert.ok(nav.includes('href="#'+route+'"') && html.includes('id="'+route+'-screen"'));
   assert.doesNotMatch(html,/login|로그인|src="\.\/(?:app|data|dossiers)\.js/);
   for(const src of html.matchAll(/<script defer src="\.\/([\w-]+\.js)/g))assert.ok(read(src[1]).length);
-  for(const id of ['from','to','run-form','roles-form','progress','edition','detail'])assert.ok(html.includes('id="'+id+'"'));
+  for(const id of ['from','to','run-form','roles-form','progress','edition','detail','link-form','key-form','key-forget'])assert.ok(html.includes('id="'+id+'"'));
   for(const name of ['엘','카밀라','루트','한들'])assert.ok(html.includes(name));
 });
 test('every published issue has an individual permalink, report sections, dated sources and a PDF route',()=>{
