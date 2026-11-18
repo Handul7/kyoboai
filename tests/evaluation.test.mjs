@@ -5,14 +5,14 @@ import {calculateMetrics,validateEvaluationFixture} from "../scripts/evaluate-je
 
 test("metrics compute relevance and multi-label department mistakes without model calls",()=>{
   const cases=[
-    {id:"a",label:{relevant:true,departments:["product","risk"],review:false}},
+    {id:"a",label:{relevant:true,departments:["actuarial","security"],review:false}},
     {id:"b",label:{relevant:false,departments:[],review:false}},
-    {id:"c",label:{relevant:true,departments:["digital"],review:true}},
+    {id:"c",label:{relevant:true,departments:["einsurance"],review:true}},
     {id:"d",label:{relevant:null,departments:[],review:true}}
   ];
   const predictions=[
-    {id:"a",relevance:.95,departments:["product","sales"],reviewRequired:false},
-    {id:"b",relevance:.9,departments:["product"],reviewRequired:false},
+    {id:"a",relevance:.95,departments:["actuarial","tm"],reviewRequired:false},
+    {id:"b",relevance:.9,departments:["actuarial"],reviewRequired:false},
     {id:"c",relevance:.5,departments:[],reviewRequired:true},
     {id:"d",relevance:.5,departments:[],reviewRequired:true}
   ];
@@ -33,7 +33,7 @@ test("metrics compute relevance and multi-label department mistakes without mode
   assert.deepEqual(metrics.mismatches.map(m=>m.id),["a","b","c"]);
 });
 test("missing predictions are failures and not perfect recall; undefined metrics are null",()=>{
-  const result=calculateMetrics([{id:"a",label:{relevant:true,departments:["risk"],review:false}}],[]);
+  const result=calculateMetrics([{id:"a",label:{relevant:true,departments:["security"],review:false}}],[]);
   assert.equal(result.completed,0);assert.equal(result.failed,1);
   assert.equal(result.relevance.precision,null);assert.equal(result.relevance.recall,null);
   assert.deepEqual(result.failedIds,["a"]);

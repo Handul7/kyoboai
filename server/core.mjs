@@ -1,7 +1,8 @@
 /** Deterministic policy and typed boundaries. No network or generated judgments here. */
-export const DEPARTMENT_IDS = Object.freeze(["strategy", "product", "sales", "asset", "risk", "digital"]);
-export const DEPARTMENT_NAMES = Object.freeze({strategy:"경영전략",product:"상품개발",sales:"영업마케팅",asset:"자산운용",risk:"리스크관리",digital:"디지털·IT"});
-export const POLICY_VERSION = "insurance-issue-v2";
+import departmentProfiles from '../department-profiles.json' with { type: 'json' };
+export const DEPARTMENT_IDS = Object.freeze(departmentProfiles.map(p=>p.id));
+export const DEPARTMENT_NAMES = Object.freeze(Object.fromEntries(departmentProfiles.map(p=>[p.id,p.name])));
+export const POLICY_VERSION = "insurance-issue-v3";
 // Starting routing thresholds only. They are not measured accuracy or a publication permission.
 export const JEV_THRESHOLDS = Object.freeze({yes:0.8,no:0.2,importanceConfidence:0.65,leadProbability:0.65,leadMargin:0.20,evidenceProbability:0.65,briefScore:1.5,urgentScore:2.6});
 const DAY = 86400000;
@@ -112,30 +113,16 @@ export function deduplicateArticles(articles) {
   return groups;
 }
 
-const DEPARTMENT_CRITERIA = {
-  strategy:"보험회사 경영, 경쟁 구도, 인수합병, 중장기 사업 전략, 보험업 정책과 산업 구조에 실질적인 시사점이 있다.",
-  product:"생명보험 또는 손해보험 상품의 보장, 요율, 약관, 고객 수요, 상품 개발·개선에 실질적인 시사점이 있다.",
-  sales:"보험 판매채널, 설계사·GA, 고객 유치·유지, 판매규제, 마케팅·고객 소통에 실질적인 시사점이 있다.",
-  asset:"보험회사의 자산운용, 금리·채권·주식·부동산 투자, 자산부채 관리 또는 투자수익에 실질적인 시사점이 있다.",
-  risk:"보험회사의 지급여력, 준비금·계리, 보험금·손해율, 보험사기, 준법·규제 대응·소비자보호 위험에 실질적인 시사점이 있다.",
-  digital:"보험회사의 IT, 보안, 데이터, AI, 자동화, 디지털 서비스·프로세스 개선에 실질적인 시사점이 있다."
-};
+const DEPARTMENT_CRITERIA = Object.fromEntries(departmentProfiles.map(p=>[p.id,p.role+" 참고 키워드: "+p.keywords+"."]));
 const LEAD_CRITERIA = Object.freeze({
-  strategy:"경영전략: 경쟁 구도, 인수합병, 중장기 사업·전사 경영 판단이 첫 조치다.",
-  product:"상품개발: 보장·요율·예정이율·약관 또는 신규 상품 설계의 검토가 첫 조치다.",
-  sales:"영업마케팅: 판매채널·설계사·고객 안내 또는 판매 절차 대응이 첫 조치다.",
-  asset:"자산운용: 투자 포트폴리오·금리 민감도·ALM 운용 대응이 첫 조치다.",
-  risk:"리스크관리: 지급여력·계리·손해율·보험사기·준법 위험 대응이 첫 조치다.",
-  digital:"디지털·IT: 시스템·보안·데이터 또는 디지털 서비스 대응이 첫 조치다.",
-  none:"보험 업무에 무관하거나 첫 대응의 책임 부서를 정할 근거가 부족하다."
+  ...Object.fromEntries(departmentProfiles.map(p=>[p.id,p.name+" — "+p.role])),
+  none:"네 부서 중 첫 대응의 책임 부서를 정할 근거가 부족하다."
 });
 export const ISSUE_ACTIONS = Object.freeze({
-  strategy:"경영 영향과 의사결정 조건을 정리합니다.",
-  product:"보장·요율·약관에 미치는 영향을 검토합니다.",
-  sales:"판매채널 영향과 고객 안내 변경점을 점검합니다.",
-  asset:"금리 민감도와 자산·부채 영향을 점검합니다.",
-  risk:"지급여력·준법·소비자 영향 중 관련 항목을 점검합니다.",
-  digital:"시스템·데이터와 현업 업무 흐름의 변경점을 확인합니다."
+  security:"영향을 받는 고객정보와 보호 조치를 확인합니다.",
+  actuarial:"위험률·해지율 가정과 준비금 산출에 미치는 영향을 점검합니다.",
+  tm:"전화 상담 동의, 설명 문구와 연락중지 처리 절차를 점검합니다.",
+  einsurance:"웹·앱의 보험료 계산부터 청약 완료까지 달라질 절차를 점검합니다."
 });
 export function evidenceCandidates(body) {
   return String(body??"").split(/\n+|(?<=[.!?。！？])\s+/u).map(s=>s.trim())

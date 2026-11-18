@@ -38,7 +38,7 @@ async function addArticle(env, suffix = '1', overrides = {}) {
 function draftPayload(article, options = {}) {
   return { title: '보험업 변화 보고서', summary: [{ text: '시험 문서에 기반한 핵심 내용입니다.', sourceIds: [article.id] }], insights: [], actions: [], sources: [{ id: article.id, title: article.title, url: article.url, source: '뉴시스', publishedAt: article.published_at, bodyHash: article.body_hash }], provenance: { factualReview: 'pending' }, ...options };
 }
-function insertReport(env, article, { id = 'report-test', dept = 'strategy', status = 'draft', key = `${WINDOW.id}:${dept}:${PIPELINE_VERSION}` } = {}) {
+function insertReport(env, article, { id = 'report-test', dept = 'security', status = 'draft', key = `${WINDOW.id}:${dept}:${PIPELINE_VERSION}` } = {}) {
   const payload = draftPayload(article);
   env.DB.sqlite.prepare('INSERT INTO reports (id,run_key,department_id,window_id,window_json,title,payload,status,published_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(id, key, dept, WINDOW.id, JSON.stringify(WINDOW), payload.title, JSON.stringify(payload), status, status === 'published' ? TIMESTAMP : null, TIMESTAMP, TIMESTAMP);
   return id;
@@ -49,10 +49,10 @@ function wireJev({ relevance = .98, uncertain = false, questions } = {}) {
   return { model: 'jev-test', answers: {
     relevance: { type: 'noul', noul: relevance },
     urgency: { type: 'noul', noul: .04 },
-    lead: choice([...DEPARTMENT_IDS,'none'],'strategy'),
+    lead: choice([...DEPARTMENT_IDS,'none'],'security'),
     ...(evidence.length?{evidence:choice(evidence,evidence[0])}:{}),
     importance: { type: 'score', score: 2, confidence: 1, probabilities: { 0: 0, 1: 0, 2: 1, 3: 0 } },
-    ...Object.fromEntries(DEPARTMENT_IDS.map(id => [`dept_${id}`, { type: 'noul', noul: id === 'strategy' ? (uncertain ? .5 : .98) : .02 }])),
+    ...Object.fromEntries(DEPARTMENT_IDS.map(id => [`dept_${id}`, { type: 'noul', noul: id === 'security' ? (uncertain ? .5 : .98) : .02 }])),
   }, usage: { input_tokens: 10, output_tokens: 10 } };
 }
 function providers(t, { citation = 'valid', uncertain = false, beforeJev } = {}) {
@@ -67,7 +67,7 @@ function providers(t, { citation = 'valid', uncertain = false, beforeJev } = {})
   };
   return calls;
 }
-const runRequest = env => request(env, '/api/admin/run', { method: 'POST', data: { reportDate: DATE, departmentId: 'strategy', kind: 'brief' } });
+const runRequest = env => request(env, '/api/admin/run', { method: 'POST', data: { reportDate: DATE, departmentId: 'security', kind: 'brief' } });
 
 test('approved HTML article scraping feeds Jev-only routing and scoped correction review', async t => {
   const env=fixture(t);
@@ -99,21 +99,21 @@ test('approved HTML article scraping feeds Jev-only routing and scoped correctio
   assert.equal(calls.filter(u=>u.includes('typesafe.ai')).length,1);
   assert.equal(calls.some(u=>u.includes('llm.example')),false);
   const [issue]=(await request(env,'/api/issues')).data.issues;
-  assert.equal(issue.lead,'strategy');assert.deepEqual(issue.support,[]);
+  assert.equal(issue.lead,'security');assert.deepEqual(issue.support,[]);
   assert.ok(item.body.includes(issue.evidence));assert.equal(issue.body,undefined);
   assert.deepEqual((await request(env,'/api/issues',{user:null})).data.issues,[]);
   const member=departmentId=>request(env,'/api/admin/members/member',{method:'PUT',data:{departmentId}});
-  const feedback=(origin=ORIGIN)=>request(env,`/api/issues/${issue.id}/feedback`,{method:'POST',origin,user:'member',data:{leadDepartmentId:'risk',note:'지급여력 규제 대응이 핵심입니다.'}});
-  await member('product');assert.equal((await feedback()).status,404);
-  await member('strategy');assert.equal((await feedback('https://another.example')).status,403);
+  const feedback=(origin=ORIGIN)=>request(env,`/api/issues/${issue.id}/feedback`,{method:'POST',origin,user:'member',data:{leadDepartmentId:'actuarial',note:'지급여력 규제 대응이 핵심입니다.'}});
+  await member('tm');assert.equal((await feedback()).status,404);
+  await member('security');assert.equal((await feedback('https://another.example')).status,403);
   assert.equal((await feedback()).status,200);assert.equal((await feedback()).status,409);
-  assert.equal((await request(env,'/api/admin/review')).data.articles[0].judgment.feedback.leadDepartmentId,'risk');
-  const update=data=>request(env,`/api/admin/review/${issue.id}`,{method:'PUT',data:{decision:'candidate',leadDepartmentId:'risk',supportDepartmentIds:['strategy'],...data}});
+  assert.equal((await request(env,'/api/admin/review')).data.articles[0].judgment.feedback.leadDepartmentId,'actuarial');
+  const update=data=>request(env,`/api/admin/review/${issue.id}`,{method:'PUT',data:{decision:'candidate',leadDepartmentId:'actuarial',supportDepartmentIds:['security'],...data}});
   assert.equal((await update({evidence:'원문에 없는 문장'})).status,400);
-  assert.equal((await update({supportDepartmentIds:['risk']})).status,400);
+  assert.equal((await update({supportDepartmentIds:['actuarial']})).status,400);
   assert.equal((await update({evidence:issue.evidence})).status,200);
   const [corrected]=(await request(env,'/api/issues',{user:'member'})).data.issues;
-  assert.equal(corrected.lead,'risk');assert.deepEqual(corrected.support,['strategy']);assert.equal(corrected.feedbackPending,false);
+  assert.equal(corrected.lead,'actuarial');assert.deepEqual(corrected.support,['security']);assert.equal(corrected.feedbackPending,false);
   await request(env,'/api/admin/sources/newsis',{method:'PUT',data:{enabled:false,bodyAllowed:false,aiAllowed:false,permissionNote:''}});
   assert.deepEqual((await request(env,'/api/issues')).data.issues,[]);
 });
@@ -135,16 +135,16 @@ test('candidate budget can be configured only within the bounded pilot range', a
 
 test('server enforces department isolation on lists and direct report/source detail', async t => {
   const env = fixture(t), article = await addArticle(env);
-  insertReport(env, article, { id: 'strategy-published', status: 'published' });
-  insertReport(env, article, { id: 'risk-published', dept: 'risk', status: 'published' });
-  insertReport(env, article, { id: 'strategy-draft', key: 'different-draft' });
-  env.DB.sqlite.prepare('INSERT INTO members VALUES (?,?,?)').run('member-1', 'strategy', TIMESTAMP);
-  const list = await request(env, '/api/reports?departmentId=risk', { user: 'member-1' });
-  assert.deepEqual(list.data.reports.map(r => r.id), ['strategy-published']);
-  assert.equal((await request(env, '/api/reports/strategy-published', { user: 'member-1' })).status, 200);
-  assert.equal((await request(env, '/api/reports/risk-published', { user: 'member-1' })).status, 404);
-  assert.equal((await request(env, '/api/reports/strategy-draft', { user: 'member-1' })).status, 404);
-  assert.equal((await request(env, '/api/reports/strategy-published', { user: null })).status, 404);
+  insertReport(env, article, { id: 'security-published', status: 'published' });
+  insertReport(env, article, { id: 'actuarial-published', dept: 'actuarial', status: 'published' });
+  insertReport(env, article, { id: 'security-draft', key: 'different-draft' });
+  env.DB.sqlite.prepare('INSERT INTO members VALUES (?,?,?)').run('member-1', 'security', TIMESTAMP);
+  const list = await request(env, '/api/reports?departmentId=actuarial', { user: 'member-1' });
+  assert.deepEqual(list.data.reports.map(r => r.id), ['security-published']);
+  assert.equal((await request(env, '/api/reports/security-published', { user: 'member-1' })).status, 200);
+  assert.equal((await request(env, '/api/reports/actuarial-published', { user: 'member-1' })).status, 404);
+  assert.equal((await request(env, '/api/reports/security-draft', { user: 'member-1' })).status, 404);
+  assert.equal((await request(env, '/api/reports/security-published', { user: null })).status, 404);
   assert.equal((await request(env, '/api/admin/reports', { user: 'member-1' })).status, 403);
   assert.equal((await request(env, '/api/admin/sources', { user: null })).status, 403);
 });
@@ -155,7 +155,7 @@ test('mutation requests require same-origin JSON and cannot use job credentials 
   assert.equal((await request(env, '/api/admin/import', { method: 'POST', data, origin: 'https://attacker.example.test' })).status, 403);
   assert.equal((await request(env, '/api/admin/import', { method: 'POST', data, headers: { 'Content-Type': 'text/plain' } })).status, 415);
   assert.equal((await request(env, '/api/admin/import', { method: 'POST', data, user: null, headers: { Authorization: 'Bearer job-secret' } })).status, 403);
-  const job = await request(env, '/api/jobs/run', { method: 'POST', user: null, origin: '', data: { reportDate: DATE, departmentId: 'strategy' }, headers: { Authorization: 'Bearer job-secret' } });
+  const job = await request(env, '/api/jobs/run', { method: 'POST', user: null, origin: '', data: { reportDate: DATE, departmentId: 'security' }, headers: { Authorization: 'Bearer job-secret' } });
   assert.equal(job.status, 200);
   assert.equal(job.data.status, 'blocked'); // Auth succeeded; no source permission is configured.
 });
@@ -251,7 +251,7 @@ test('uncertain classification is held for review; administrator correction enab
   assert.equal(held.data.status, 'blocked');
   const queue = await request(env, '/api/admin/review');
   assert.equal(queue.data.articles[0].id, article.id);
-  assert.equal((await request(env, `/api/admin/review/${article.id}`, { method: 'PUT', data: { decision: 'candidate', leadDepartmentId:'strategy',supportDepartmentIds:[] } })).status, 200);
+  assert.equal((await request(env, `/api/admin/review/${article.id}`, { method: 'PUT', data: { decision: 'candidate', leadDepartmentId:'security',supportDepartmentIds:[] } })).status, 200);
   assert.equal((await runRequest(env)).data.status, 'draft');
   assert.deepEqual(calls, ['jev', 'llm']);
 });
@@ -358,11 +358,11 @@ test('direct input, related coverage and a periodic briefing share one access-co
     }
     const p=JSON.parse(init.body);
     if(p.questions?.match0)return Response.json({answers:{match0:{type:'noul',noul:.96}}});
-    if(p.questions){const response=wireJev({questions:p.questions});response.answers.dept_risk.noul=.94;return Response.json(response);}
+    if(p.questions){const response=wireJev({questions:p.questions});response.answers.dept_actuarial.noul=.94;return Response.json(response);}
     summaries++;
     const supplied=JSON.parse(p.messages[1].content);
     assert.equal(supplied.articles.length,2);
-    const content={title:'이슈 보고서',summary:'변화 [1]',background:'관련 배경 [2]',impact:'예상 영향 [1]',uncertainty:'미확인 사항 [2]',teams:['strategy','risk'].map(id=>({id,why:'담당 사유 [1]',check:'확인할 사항 [2]'}))};
+    const content={title:'이슈 보고서',summary:'변화 [1]',background:'관련 배경 [2]',impact:'예상 영향 [1]',uncertainty:'미확인 사항 [2]',teams:['security','actuarial'].map(id=>({id,why:'담당 사유 [1]',check:'확인할 사항 [2]'}))};
     return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(content)}}]});
   };
   const submit=url=>request(env,'/api/admin/dossiers',{method:'POST',data:{url}});
@@ -374,22 +374,22 @@ test('direct input, related coverage and a periodic briefing share one access-co
   assert.equal(summaries,1);
   const draft=(await request(env,'/api/dossiers/'+id)).data.report;
   assert.deepEqual(draft.dates,[DATE]);assert.equal(draft.sources.length,2);assert.equal(draft.status,'draft');
-  for(const dept of ['risk','asset','strategy'])await request(env,'/api/admin/members/u-'+dept,{method:'PUT',data:{departmentId:dept}});
-  assert.equal((await request(env,'/api/dossiers/'+id,{user:'u-risk'})).status,404);
+  for(const dept of ['actuarial','einsurance','security'])await request(env,'/api/admin/members/u-'+dept,{method:'PUT',data:{departmentId:dept}});
+  assert.equal((await request(env,'/api/dossiers/'+id,{user:'u-actuarial'})).status,404);
   assert.equal((await request(env,'/api/admin/dossiers/'+id+'/publish',{method:'POST',data:{reviewed:true,revision:'old'}})).status,409);
   assert.equal((await request(env,'/api/admin/dossiers/'+id+'/publish',{method:'POST',data:{reviewed:true,revision:draft.revision}})).status,200);
-  for(const dept of ['risk','strategy']){
+  for(const dept of ['actuarial','security']){
     const view=await request(env,'/api/dossiers/'+id,{user:'u-'+dept});assert.equal(view.data.departmentId,dept);assert.equal(view.data.report.id,id);
     assert.equal((await request(env,'/api/dossiers/lookup?url='+encodeURIComponent(other.url),{user:'u-'+dept})).data.id,id);
   }
-  for(const user of [null,'u-asset']){
+  for(const user of [null,'u-einsurance']){
     assert.equal((await request(env,'/api/dossiers/'+id,{user})).status,404);
     assert.equal((await request(env,'/api/dossiers',{user})).data.reports.length,0);
   }
   assert.equal((await request(env,'/api/admin/reports')).data.reports.length,0);
   assert.equal((await request(env,'/api/reports/'+id)).status,404);
   await request(env,'/api/admin/sources/newsis',{method:'PUT',data:{enabled:false,bodyAllowed:false,aiAllowed:false,permissionNote:''}});
-  assert.equal((await request(env,'/api/dossiers/'+id,{user:'u-risk'})).status,404);
+  assert.equal((await request(env,'/api/dossiers/'+id,{user:'u-actuarial'})).status,404);
 });
 
 test('a briefing can originate a dossier and a later article lookup reuses it; unrelated coverage stays separate', async t=>{
@@ -402,7 +402,7 @@ test('a briefing can originate a dossier and a later article lookup reuses it; u
     if(p.questions?.match0){matchCalls++;return Response.json({answers:{match0:{type:'noul',noul:.22}}});}
     if(p.questions)return Response.json(wireJev({questions:p.questions}));
     summaries++;assert.equal(JSON.parse(p.messages[1].content).articles.length,1);
-    const content={title:'서로 다른 이슈',summary:'사실 [1]',background:'배경 [1]',impact:'영향 [1]',uncertainty:'조건 [1]',teams:[{id:'strategy',why:'사유 [1]',check:'항목 [1]'}]};
+    const content={title:'서로 다른 이슈',summary:'사실 [1]',background:'배경 [1]',impact:'영향 [1]',uncertainty:'조건 [1]',teams:[{id:'security',why:'사유 [1]',check:'항목 [1]'}]};
     return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(content)}}]});
   };
   const cycle=()=>request(env,'/api/admin/dossiers/cycle',{method:'POST',data:{reportDate:DATE}});
@@ -419,7 +419,7 @@ test('unverified LLM citations stop an issue draft at the boundary',async t=>{
   globalThis.fetch=async(url,init)=>{
     const p=JSON.parse(init.body);
     if(p.questions)return Response.json(wireJev({questions:p.questions}));
-    const content={title:'초안',summary:'없는 출처 [9]',background:'배경 [1]',impact:'영향 [1]',uncertainty:'조건 [1]',teams:[{id:'strategy',why:'사유 [1]',check:'항목 [1]'}]};
+    const content={title:'초안',summary:'없는 출처 [9]',background:'배경 [1]',impact:'영향 [1]',uncertainty:'조건 [1]',teams:[{id:'security',why:'사유 [1]',check:'항목 [1]'}]};
     return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(content)}}]});
   };
   const result=await request(env,'/api/admin/dossiers',{method:'POST',data:{url:seed.url}});

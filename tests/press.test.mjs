@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDatabase } from './helpers/d1.mjs';
-import { searchPress, searchLinkedPress, judgePress, pressRange, pressRoles, parsePressFeed } from '../server/press.mjs';
+import { searchPress, searchLinkedPress, judgePress, pressRange, pressRoles, pressDefaultRoles, parsePressFeed } from '../server/press.mjs';
 import { handleApi } from '../server/index.mjs';
 
 const when='Mon, 16 Nov 2026 14:59:59 GMT';
@@ -23,19 +23,29 @@ test('exact Korean calendar dates, allowed publishers, normalized duplicates and
 test('validates provider answers, uses saved roles and server-captured articles, reuses a completed judgment',async()=>{
   const env={DB:createDatabase(),TYPESAFE_API_KEY:'test-only'};
   const run=await searchPress({from:'2026-11-16',to:'2026-11-16'},env,async()=>new Response(rss));
-  const roles=[{name:'상품',role:'보장 범위 설계',keywords:'보장'}];
+  const roles=pressRoles([{name:'보험계리팀',role:'보장 개정에 따른 준비금 점검',keywords:'준비금'}]);
   const input={id:run.id,version:run.version,offset:0,roles};
   const provider=(url,init)=>{
     assert.equal(new URL(url).hostname,'api.typesafe.ai');
     const p=JSON.parse(init.body);assert.deepEqual(p.state.roles,roles);assert.equal(p.state.articles[0].title,'실손 보장 개정');
-    return Response.json({model:'test-model',answers:{insurance0:{type:'noul',noul:.95},value0:{type:'score',confidence:.8,score:2,probabilities:{0:0,1:0,2:1,3:0}},role0_0:{type:'noul',noul:.9}}});
+    return Response.json({model:'test-model',answers:{insurance0:{type:'noul',noul:.95},value0:{type:'score',confidence:.8,score:2,probabilities:{0:0,1:0,2:1,3:0}},...Object.fromEntries(roles.map((r,i)=>['role0_'+i,{type:'noul',noul:r.name==='보험계리팀'?.9:.1}]))}});
   };
   await assert.rejects(judgePress(input,env,async()=>Response.json({model:'test-model',answers:{}})),e=>e.status===502);
   const result=await judgePress(input,env,provider);
-  assert.equal(result.answers[0].basis,'제목');assert.equal(result.answers[0].status,'주요 후보');assert.equal(result.answers[0].matches[0].name,'상품');
+  assert.equal(result.answers[0].basis,'제목');assert.equal(result.answers[0].status,'주요 후보');assert.deepEqual(result.answers[0].matches,[{name:'보험계리팀',probability:.9}]);
   assert.equal((await judgePress(input,env,()=>assert.fail('unexpected provider call'))).cached,true);
   await assert.rejects(judgePress({...input,version:'changed'},env,provider),e=>e.status===409);
   env.DB.sqlite.close();
+});
+test('legacy criteria merge by exact team name and only the four current teams reach Jev',()=>{
+  const names=['정보보안팀','보험계리팀','다이렉트(TM영업)','e보험팀'];
+  const localEdit={name:'e보험팀',role:'전자청약 검토',keywords:'전자서명'};
+  const criteria=pressRoles([localEdit,{name:'상품개발',role:'상품 요율 점검',keywords:'상품'}]);
+  assert.deepEqual(criteria.map(r=>r.name),names);
+  assert.deepEqual(criteria[3],localEdit);
+  assert.deepEqual(criteria.slice(0,3),pressRoles([]).slice(0,3));
+  assert.ok(criteria.every(r=>Object.keys(r).length===3));
+  assert.ok(pressDefaultRoles.every(r=>r.sources.length>0 && r.keywords && r.role));
 });
 test('public settings expose only configuration state and regular cadence',async()=>{
   const response=await handleApi(new Request('https://example.com/api/press/settings'),{TYPESAFE_API_KEY:'test-only'});
@@ -59,7 +69,7 @@ test('browser credential persists for both modes, isolates visitors, rotates saf
     assert.equal(init.redirect,'manual');
     if(url.endsWith('/v1/models'))return [key,other].some(v=>init.headers.Authorization==='Bearer '+v)?Response.json({models:[{name:'jev-latest'}]}):new Response(null,{status:401});
     assert.equal(url,'https://api.typesafe.ai/v1/systemone');used.push(init.headers.authorization);
-    const p=JSON.parse(init.body);assert.ok(!init.body.includes(key));const answers={};
+    const p=JSON.parse(init.body);assert.deepEqual(p.state.roles,pressRoles([]));assert.ok(!init.body.includes(key));const answers={};
     for(const [name,spec] of Object.entries(p.questions))answers[name]=spec.type==='noul'?{type:'noul',noul:.9}:{type:'score',score:2,confidence:1,probabilities:{0:0,1:0,2:1,3:0}};
     return Response.json({model:'test-jev',answers});
   });

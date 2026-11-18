@@ -1,15 +1,9 @@
 import { canonicalUrl } from './core.mjs';
 import { SOURCES } from './config.mjs';
 import { requestJson } from './providers.mjs';
+import departmentProfiles from '../department-profiles.json' with { type: 'json' };
 const PRESS_LIMIT=180, PRESS_BATCH=4, PRESS_DAY=86400000;
-export const pressDefaultRoles=[
-  {name:"경영전략",role:"보험업 정책과 경쟁 구도가 사업 계획에 미치는 영향을 살핀다.",keywords:"경영 계획, 인수합병, 경쟁사 실적"},
-  {name:"상품개발",role:"보험상품의 보장 범위와 요율, 약관을 설계한다.",keywords:"신상품, 보험료, 특약"},
-  {name:"영업마케팅",role:"판매채널과 모집 과정의 운영·교육을 담당한다.",keywords:"설계사, GA, 모집 수수료"},
-  {name:"자산운용",role:"보험자산의 투자와 자산·부채 만기 관리를 담당한다.",keywords:"금리, 채권, ALM"},
-  {name:"리스크관리",role:"지급여력과 내부통제, 소비자보호 위험을 점검한다.",keywords:"K-ICS, 보험사기, 준법"},
-  {name:"디지털·IT",role:"보험 업무의 시스템·데이터·보안을 관리한다.",keywords:"디지털 청구, 인공지능, 정보보호"}
-];
+export const pressDefaultRoles=departmentProfiles;
 export class PressError extends Error {constructor(status,message){super(message);this.status=status;}}
 const pressDate=ms=>new Date(ms+9*3600000).toISOString().slice(0,10);
 function pressDay(value){
@@ -24,14 +18,16 @@ export function pressRange(from,to){
   return {start,stop};
 }
 export function pressRoles(input){
-  if(!Array.isArray(input)||input.length>8)throw new PressError(400,"부서는 최대 8곳까지 입력할 수 있습니다.");
-  const names=new Set();
-  return input.map(item=>{
+  // Older clients may still submit their previous eight-slot roster.
+  if(!Array.isArray(input)||input.length>8)throw new PressError(400,"부서 기준 형식을 확인해 주세요.");
+  const overrides=new Map();
+  for(const item of input){
     const bounds=(k,min,max)=>{const s=item?.[k];if(typeof s!=="string"||s.trim().length<min||s.length>max)throw new PressError(400,"부서 이름과 역할, 키워드의 길이를 확인해 주세요.");return s.trim();};
     const name=bounds("name",1,30),role=bounds("role",1,300),keywords=bounds("keywords",0,180);
-    if(names.has(name))throw new PressError(400,"같은 부서 이름이 두 번 입력됐습니다.");names.add(name);
-    return {name,role,keywords};
-  });
+    if(overrides.has(name))throw new PressError(400,"같은 부서 이름이 두 번 입력됐습니다.");
+    overrides.set(name,{name,role,keywords});
+  }
+  return pressDefaultRoles.map(({name,role,keywords})=>overrides.get(name)??{name,role,keywords});
 }
 async function pressHash(value){
   const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify(value)));

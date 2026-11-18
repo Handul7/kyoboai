@@ -25,15 +25,15 @@
   <meta name="twitter:image:alt" content="희경 조장님 팟팅!">
   <title>교보 뉴스브리핑 — 보험 뉴스 보고서</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=2026.11.19.5">
-  <script defer src="./news-research.js?v=2026.11.19.5"></script>
-  <script defer src="./published-news.js?v=2026.11.19.5"></script>
-  <script defer src="./dossier-pdf.js?v=2026.11.19.5"></script>
-  <script defer src="./public-desk.js?v=2026.11.19.5"></script>
+  <link rel="stylesheet" href="./styles.css?v=2026.11.19.6">
+  <script defer src="./news-research.js?v=2026.11.19.6"></script>
+  <script defer src="./published-news.js?v=2026.11.19.6"></script>
+  <script defer src="./dossier-pdf.js?v=2026.11.19.6"></script>
+  <script defer src="./public-desk.js?v=2026.11.19.6"></script>
 </head>
 <body>
   <a class="skip" href="#content">본문으로</a>
-  <header class="mast"><div class="mast-inner"><a class="brand" href="#news" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="교보생명"><b>뉴스브리핑</b></a><small>최종 수정 <time datetime="2026-11-19">2026.11.19</time><span> · 2026.11.19.5</span></small></div></header>
+  <header class="mast"><div class="mast-inner"><a class="brand" href="#news" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="교보생명"><b>뉴스브리핑</b></a><small>최종 수정 <time datetime="2026-11-19">2026.11.19</time><span> · 2026.11.19.6</span></small></div></header>
   <nav class="nav" aria-label="주요 메뉴"><div><a href="#news">브리핑</a><a href="#collect">뉴스 확인</a><a href="#roles">부서 역할</a><a href="#process">서비스 소개</a></div></nav>
   <main id="content" tabindex="-1">
     <section id="news-screen">
@@ -61,8 +61,15 @@
       <div id="progress" role="status" aria-live="polite"></div><div id="results"></div>
       <p class="method">코딩 · 기간·매체 확인과 중복 정리　/　Jev · 관련성·보고 가치 판단</p>
     </section>
-    <section id="roles-screen" hidden><p class="overline">Jev 판단에 쓰는 기준</p><h1>부서별 역할 입력</h1><p class="intro">부서가 맡은 일과 주요 키워드를 적어주세요. 저장한 기준은 이 브라우저의 다음 수집에 적용됩니다.</p>
-      <form id="roles-form"><div id="role-fields"></div><div class="form-foot"><button type="button" class="secondary" id="add-role">부서 추가</button><button type="submit" class="primary" id="save-roles">역할 저장</button></div></form><p id="roles-message" role="status"></p><p class="method">코딩 · 기준 저장　/　Jev · 기사와 업무의 관련성 판단</p></section>
+    <section id="roles-screen" hidden>
+      <div class="headline"><h1>부서별 검토 기준</h1><button type="button" class="secondary" id="edit-roles" disabled>기준 편집</button></div>
+      <p class="intro">교보생명 공개 자료를 바탕으로 정리했습니다. 뉴스 링크와 기간별 수집 모두 아래 네 부서의 업무를 기준으로 관련 기사를 찾습니다.</p>
+      <form id="roles-form">
+        <div id="role-fields" class="role-grid"></div>
+        <div class="form-foot" id="role-actions" hidden><button type="button" class="secondary" id="cancel-roles">취소</button><button type="submit" class="primary" id="save-roles">이 브라우저에 저장</button></div>
+      </form>
+      <p id="roles-message" role="status"></p><p class="method">코딩 · 부서 기준 저장　/　Jev · 기사와 업무의 관련성 판단</p>
+    </section>
     <section id="detail-screen" hidden><div id="detail"></div></section>
     <section id="process-screen" hidden><h1>서비스 소개</h1><p class="credits">조장 엘　·　조사 카밀라　·　CFO 루트　·　노가다 한들</p>
       <div class="tabs"><a href="#process">프로젝트 오버뷰</a><a href="#process/news">뉴스 매체</a></div>

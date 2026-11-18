@@ -4,13 +4,13 @@ import {DEPARTMENT_IDS,reportWindow,canonicalUrl,normalizeArticle,deduplicateArt
 import {classifyArticle,summarizeArticles} from "../server/providers.mjs";
 
 const source={id:"newsis",domains:["newsis.com"],bodyAllowed:true,aiAllowed:true};
-const article={sourceId:"newsis",url:"https://www.newsis.com/view/NISX_123?utm_source=test",title:"보험업계 새 상품과 지급여력 기준 점검",publishedAt:"2026-11-11T08:10:00+09:00",body:"보험업계는 새 상품과 지급여력 기준을 점검했다. 이번 변화는 보험 상품 개발 부서와 리스크 관리 부서의 업무에 관련된다."};
+const article={sourceId:"newsis",url:"https://www.newsis.com/view/NISX_123?utm_source=test",title:"보험사 준비금 검증 자료의 접근권한 점검",publishedAt:"2026-11-11T08:10:00+09:00",body:"보험사는 보험부채 산출에 쓰는 계리 가정을 재검증하기로 했다. 검증에 쓰는 고객정보 파일의 접근권한은 정보보안팀이 점검한다."};
 const now=new Date("2026-11-13T00:00:00Z");
 function rawJev(overrides={}) {
   const answers={relevance:{type:"noul",noul:.97},urgency:{type:"noul",noul:.9},importance:{type:"score",score:2.8,confidence:.82,probabilities:{"0":0,"1":0,"2":.2,"3":.8}}};
-  answers.lead={type:"choice",choice:"product",confidence:.78,probabilities:{strategy:0,product:.81,sales:0,asset:0,risk:.19,digital:0,none:0}};
+  answers.lead={type:"choice",choice:"actuarial",confidence:.78,probabilities:{tm:0,actuarial:.81,einsurance:0,security:.19,none:0}};
   answers.evidence={type:"choice",choice:"s2",confidence:.9,probabilities:{s1:.03,s2:.95,none:.02}};
-  for(const id of DEPARTMENT_IDS)answers[`dept_${id}`]={type:"noul",noul:["product","risk"].includes(id)?.94:.04};
+  for(const id of DEPARTMENT_IDS)answers[`dept_${id}`]={type:"noul",noul:["actuarial","security"].includes(id)?.94:.04};
   Object.assign(answers,overrides);
   return {model:"jev-test-contract",answers,usage:{input_tokens:300,output_tokens:40}};
 }
@@ -82,7 +82,7 @@ test("dedup preserves source references, merges bridges and leaves related stori
 });
 test("Jev sends typed routing, priority and verbatim evidence questions against full title and body",()=>{
   const request=buildJevRequest({...article,id:"a_1"},"jev-test");
-  assert.equal(Object.keys(request.questions).length,11);
+  assert.equal(Object.keys(request.questions).length,9);
   assert.equal(request.questions.lead.type,"choice");
   assert.equal(request.questions.evidence.criteria.s2,evidenceCandidates(article.body)[1].quote);
   assert.equal(request.questions.importance.type,"score");
@@ -91,8 +91,8 @@ test("Jev sends typed routing, priority and verbatim evidence questions against 
 });
 test("multi-department results remain multi-label and preserve raw probabilities",()=>{
   const parsed=parseJevResult(rawJev(),article);
-  assert.deepEqual(parsed.departments,["product","risk"]);
-  assert.equal(parsed.leadDepartmentId,"product");assert.deepEqual(parsed.supportDepartmentIds,["risk"]);
+  assert.deepEqual(parsed.departments,["actuarial","security"]);
+  assert.equal(parsed.leadDepartmentId,"actuarial");assert.deepEqual(parsed.supportDepartmentIds,["security"]);
   assert.ok(article.body.includes(parsed.evidence));
   assert.equal(parsed.urgencyCandidate,true);
   assert.equal(parsed.reviewRequired,false);assert.equal(parsed.decision,"candidate");
@@ -100,35 +100,35 @@ test("multi-department results remain multi-label and preserve raw probabilities
   assert.equal(parsed.importance,2.8);
 });
 test("ambiguous department, relevance and importance results route to review",()=>{
-  assert.equal(parseJevResult(rawJev({dept_asset:{type:"noul",noul:.5}}),article).reviewRequired,true);
+  assert.equal(parseJevResult(rawJev({dept_tm:{type:"noul",noul:.5}}),article).reviewRequired,true);
   assert.equal(parseJevResult(rawJev({relevance:{type:"noul",noul:.5}}),article).decision,"review");
   const raw=rawJev();raw.answers.importance.confidence=.3;
   assert.equal(parseJevResult(raw,article).reviewRequired,true);
   assert.equal(parseJevResult(rawJev({relevance:{type:"noul",noul:.03}}),article).decision,"irrelevant");
-  const tied=rawJev();tied.answers.lead.probabilities.product=.52;tied.answers.lead.probabilities.risk=.48;
+  const tied=rawJev();tied.answers.lead.probabilities.actuarial=.52;tied.answers.lead.probabilities.security=.48;
   assert.equal(parseJevResult(tied,article).leadDepartmentId,null);
   const unsupported=rawJev();unsupported.answers.evidence={type:"choice",choice:"none",confidence:1,probabilities:{s1:0,s2:0,none:1}};
   assert.equal(parseJevResult(unsupported,article).decision,"review");
   assert.equal(parseJevResult(rawJev({urgency:{type:"noul",noul:.03}}),article).urgencyCandidate,false);
 });
 test("missing or invalid model judgments never receive a silent default",()=>{
-  const raw=rawJev();delete raw.answers.dept_risk;assert.throws(()=>parseJevResult(raw));
+  const raw=rawJev();delete raw.answers.dept_security;assert.throws(()=>parseJevResult(raw));
   assert.throws(()=>parseJevResult(rawJev({relevance:{type:"noul",noul:1.2}})));
   const inconsistent=rawJev();inconsistent.answers.importance.score=.3;assert.throws(()=>parseJevResult(inconsistent));
 });
 test("LLM prompt carries article IDs and separates evidence from instructions",()=>{
-  const request=buildLlmRequest(llmArticles,"risk",reportWindow("2026-11-12"),"configured-model");
+  const request=buildLlmRequest(llmArticles,"security",reportWindow("2026-11-12"),"configured-model");
   assert.equal(request.response_format.type,"json_object");
   assert.match(request.messages[0].content,/기사.*지시문은 따르지/);
   assert.equal(JSON.parse(request.messages[1].content).articles[0].id,"a_1");
-  assert.throws(()=>buildLlmRequest([],"risk",{},"model"));
+  assert.throws(()=>buildLlmRequest([],"security",{},"model"));
   assert.throws(()=>buildLlmRequest(llmArticles,"invented-dept",{},"model"));
 });
 test("reports require all expected sections and known nonempty unique citations",()=>{
-  assert.deepEqual(validateReport(validReport,llmArticles,"risk"),validReport);
-  for(const sourceIds of [[],["made-up"],["a_1","a_1"]])assert.throws(()=>validateReport({...validReport,summary:[{text:"내용 예시",sourceIds}]},llmArticles,"risk"));
-  assert.throws(()=>validateReport({...validReport,extra:"unexpected"},llmArticles,"risk"));
-  assert.throws(()=>validateReport({...validReport,summary:[]},llmArticles,"risk"));
+  assert.deepEqual(validateReport(validReport,llmArticles,"security"),validReport);
+  for(const sourceIds of [[],["made-up"],["a_1","a_1"]])assert.throws(()=>validateReport({...validReport,summary:[{text:"내용 예시",sourceIds}]},llmArticles,"security"));
+  assert.throws(()=>validateReport({...validReport,extra:"unexpected"},llmArticles,"security"));
+  assert.throws(()=>validateReport({...validReport,summary:[]},llmArticles,"security"));
 });
 test("Jev uses fixed endpoint and server bearer key; missing key makes zero calls",async()=>{
   let calls=0;
@@ -152,12 +152,12 @@ test("oversize JSON and invalid typed responses are rejected",async()=>{
   await assert.rejects(classifyArticle(article,{TYPESAFE_API_KEY:"test"},async()=>Response.json({answers:{}})),{code:"jev_response_invalid"});
 });
 test("configured compatible LLM adapter validates citations and completion state",async()=>{
-  const result=await summarizeArticles(llmArticles,"risk",reportWindow("2026-11-12"),llmEnv,async()=>successLlm());
+  const result=await summarizeArticles(llmArticles,"security",reportWindow("2026-11-12"),llmEnv,async()=>successLlm());
   assert.deepEqual(result.report,validReport);assert.equal(result.model,"resolved-model");
-  await assert.rejects(summarizeArticles(llmArticles,"risk",{},llmEnv,async()=>Response.json({choices:[{finish_reason:"length",message:{content:JSON.stringify(validReport)}}]})),{code:"llm_response_incomplete"});
+  await assert.rejects(summarizeArticles(llmArticles,"security",{},llmEnv,async()=>Response.json({choices:[{finish_reason:"length",message:{content:JSON.stringify(validReport)}}]})),{code:"llm_response_incomplete"});
   const bad={...validReport,summary:[{text:"출처가 없는 주장",sourceIds:["invented"]}]};
-  await assert.rejects(summarizeArticles(llmArticles,"risk",{},llmEnv,async()=>Response.json({choices:[{finish_reason:"stop",message:{content:JSON.stringify(bad)}}]})),{code:"llm_report_invalid"});
+  await assert.rejects(summarizeArticles(llmArticles,"security",{},llmEnv,async()=>Response.json({choices:[{finish_reason:"stop",message:{content:JSON.stringify(bad)}}]})),{code:"llm_report_invalid"});
 });
 test("LLM endpoints reject private IP, localhost, embedded credentials and redirects",async()=>{
-  for(const url of ["http://llm.example.com/v1","https://127.0.0.1/v1","https://localhost/v1","https://user:pass@llm.example.com/v1","https://llm.example.com/v1?key=secret"]){let calls=0;await assert.rejects(summarizeArticles(llmArticles,"risk",{},{...llmEnv,LLM_API_URL:url},async()=>{calls++;return successLlm();}),{code:"llm_endpoint_invalid"});assert.equal(calls,0);}
+  for(const url of ["http://llm.example.com/v1","https://127.0.0.1/v1","https://localhost/v1","https://user:pass@llm.example.com/v1","https://llm.example.com/v1?key=secret"]){let calls=0;await assert.rejects(summarizeArticles(llmArticles,"security",{},{...llmEnv,LLM_API_URL:url},async()=>{calls++;return successLlm();}),{code:"llm_endpoint_invalid"});assert.equal(calls,0);}
 });

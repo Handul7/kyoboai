@@ -8,11 +8,12 @@
   const dateLabel = value => new Intl.DateTimeFormat('ko-KR',{month:'long',day:'numeric',weekday:'short',timeZone:'Asia/Seoul'}).format(new Date(value+'T12:00:00+09:00'));
   const editions = [...new Set(PUBLISHED_NEWS.map(s=>s.date))].sort().reverse();
   const months = [...new Set(editions.map(d=>d.slice(0,7)))];
-  const roleKey = 'kyobo.press.roles.v1';
+  const roleKey = 'kyobo.press.roles.v2';
+  const previousRoleKey = 'kyobo.press.roles.v1';
+  let profiles=[];
   let roles,settingsError='',mode='period',connected=false;
   const emptyRun=()=>({snapshot:null,judgments:[],busy:false,message:'',attention:false});
   const runs={period:emptyRun(),link:emptyRun()};
-  try {const saved=JSON.parse(localStorage.getItem(roleKey)); if(Array.isArray(saved)) roles=saved;} catch {}
   async function api(path,payload,credential) {
     const options = {cache:'no-store', mode:'same-origin', redirect:'error'};
     if(payload !== undefined){
@@ -27,28 +28,66 @@
     if(!response.ok)throw Error(data.error || `서버 응답 오류 (${response.status})`);
     return data;
   }
-  function roleFields(values) {
-    $('#role-fields').innerHTML=values.map((r,i)=>`<section class="role-card"><div class="role-head"><h2>부서 ${i+1}</h2><button class="small-button" type="button" data-remove="${i}" aria-label="${escape(r.name||'부서 '+(i+1))} 삭제">삭제</button></div>
-      <label>부서 이름<input name="name" value="${escape(r.name)}" maxlength="30" required></label>
-      <label>담당 업무<textarea name="role" rows="2" maxlength="300" required>${escape(r.role)}</textarea></label>
-      <label>주요 키워드<input name="keywords" value="${escape(r.keywords)}" maxlength="180" placeholder="쉼표로 구분"></label></section>`).join('');
-    $('#add-role').disabled=values.length>=8;
+  function loadRoles(defaults) {
+    let saved;
+    for (const key of [roleKey,previousRoleKey]) {
+      try {saved=JSON.parse(localStorage.getItem(key));} catch {continue;}
+      if(Array.isArray(saved))break;
+    }
+    const overrides=Array.isArray(saved)?saved:[];
+    return defaults.map(({name,role,keywords})=>{
+      const entry=overrides.find(item=>item?.name===name);
+      if(typeof entry?.role==='string' && entry.role.trim() && entry.role.length<=300 &&
+         typeof entry.keywords==='string' && entry.keywords.length<=180)
+        return {name,role:entry.role.trim(),keywords:entry.keywords.trim()};
+      return {name,role,keywords};
+    });
   }
-  const readFields=()=>all('#role-fields .role-card').map(card=>Object.fromEntries(['name','role','keywords'].map(k=>[k,card.querySelector(`[name="${k}"]`).value.trim()])));
+  function persistRoles(values) {
+    const edits=values.filter((r,i)=>r.role!==profiles[i].role || r.keywords!==profiles[i].keywords);
+    localStorage.setItem(roleKey,JSON.stringify(edits));
+    localStorage.removeItem(previousRoleKey);
+  }
+  function roleFields(editing=false) {
+    $('#edit-roles').hidden=editing;
+    $('#role-actions').hidden=!editing;
+    $('#role-fields').innerHTML=roles.map((r,i)=>{
+      const fields=editing
+        ? `<label>검토할 업무<textarea name="role" aria-label="${escape(r.name)} 검토할 업무" maxlength="300" rows="4" required>${escape(r.role)}</textarea></label>
+           <label>주요 키워드<textarea name="keywords" aria-label="${escape(r.name)} 주요 키워드" maxlength="180" rows="2" placeholder="쉼표로 구분">${escape(r.keywords)}</textarea></label>`
+        : `<p>${escape(r.role)}</p>${r.keywords?'<p class="role-terms"><b>주요 키워드</b> '+escape(r.keywords.split(',').map(k=>k.trim()).filter(Boolean).join(' · '))+'</p>':''}`;
+      return `<section class="role-card"><h2>${escape(r.name)}</h2>${fields}
+        <div class="role-sources">${profiles[i].sources.map(s=>link(s.url,s.label)).join(' · ')}</div></section>`;
+    }).join('');
+  }
   function roleCount(){ $('#role-count').textContent=roles ? `적용할 부서 기준 ${roles.length}개` : settingsError || '부서 기준을 불러오는 중입니다.'; }
-  const initialized=api('settings').then(data=>{
-    roles??=data.roles;roleFields(roles);roleCount();
-    showConnection(data.jevConfigured);
-  }).catch(e=>{
-    $('#key-state').textContent='서버 확인 필요';settingsError=e.message;roleFields(roles||[]);roleCount();$('#roles-message').textContent='서버 기본 역할을 불러올 수 없습니다. 직접 작성한 역할은 이 브라우저에 저장할 수 있습니다.';
+  const rosterReady=fetch('./department-profiles.json',{cache:'no-cache'}).then(async response=>{
+    if(!response.ok)throw Error();
+    profiles=await response.json();
+    roles=loadRoles(profiles);
+    try {if(localStorage.getItem(previousRoleKey)!==null)persistRoles(roles);} catch {}
+    roleFields();roleCount();$('#edit-roles').disabled=false;
+  }).catch(()=>{
+    settingsError='부서 기준을 불러오지 못했습니다. 새로고침해 주세요.';
+    $('#roles-message').textContent=settingsError;roleCount();
   });
-  $('#add-role').onclick=()=>{const rows=readFields();if(rows.length<8){roleFields([...rows,{name:'',role:'',keywords:''}]);all('#role-fields input[name=name]').at(-1)?.focus();}};
-  $('#role-fields').onclick=e=>{const button=e.target.closest('[data-remove]');if(button){const rows=readFields();rows.splice(Number(button.dataset.remove),1);roleFields(rows);}};
+  const initialized=Promise.all([rosterReady,api('settings').then(data=>showConnection(data.jevConfigured)).catch(()=>{
+    $('#key-state').textContent='서버 확인 필요';
+  })]);
+  $('#edit-roles').onclick=()=>{
+    roleFields(true);$('#roles-message').textContent='';
+    $('#role-fields textarea').focus();
+  };
+  $('#cancel-roles').onclick=()=>{roleFields();$('#edit-roles').focus();};
   $('#roles-form').onsubmit=e=>{
-    e.preventDefault();const values=readFields();
-    if(values.some(r=>!r.name||!r.role)||new Set(values.map(r=>r.name)).size!==values.length){$('#roles-message').textContent='서로 다른 부서 이름과 담당 업무를 입력해 주세요.';return;}
-    try{localStorage.setItem(roleKey,JSON.stringify(values));roles=values;roleCount();$('#roles-message').textContent=`부서 역할 ${values.length}개를 저장했습니다.`;}
-    catch{$('#roles-message').textContent='브라우저 저장 공간에 접근할 수 없습니다.';}
+    e.preventDefault();
+    const values=all('#role-fields .role-card').map((card,i)=>({
+      name:roles[i].name,role:card.querySelector('[name="role"]').value.trim(),keywords:card.querySelector('[name="keywords"]').value.trim()
+    }));
+    if(values.some(r=>!r.role)){$('#roles-message').textContent='각 부서가 검토할 업무를 입력해 주세요.';return;}
+    try {persistRoles(values);} catch {$('#roles-message').textContent='브라우저 저장 공간에 접근할 수 없습니다.';return;}
+    roles=values;roleFields();roleCount();$('#edit-roles').focus();
+    $('#roles-message').textContent='이 브라우저에 저장했습니다. 다음 뉴스 확인부터 적용됩니다.';
   };
   const shortDate = v => v.slice(0,10);
   function sources(rows) {return `<ol class="sources">${rows.map(s=>`<li>${link(s.url,s.title)} <small>${escape(s.source)} · ${escape(shortDate(s.publishedAt))}</small></li>`).join('')}</ol>`;}

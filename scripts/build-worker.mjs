@@ -11,10 +11,11 @@ const source=(await Promise.all(modules.map(file=>readFile(resolve(root,'server'
 const release=JSON.parse(await readFile(resolve(root,'release.json'),'utf8'));
 const html=await readFile(resolve(root,'index.html'),'utf8');
 if(!html.includes(release.version)||!html.includes(release.updatedAt))throw new Error('화면의 수정일·버전을 release.json과 일치시켜 주세요.');
-const files=['index.html','styles.css','public-desk.js','published-news.js','news-research.js','dossier-pdf.js','release.json',...(await readdir(resolve(root,'assets'))).map(f=>`assets/${f}`)];
+const profiles=await readFile(resolve(root,'department-profiles.json'),'utf8');
+const files=['index.html','styles.css','public-desk.js','published-news.js','news-research.js','dossier-pdf.js','release.json','department-profiles.json',...(await readdir(resolve(root,'assets'))).map(f=>`assets/${f}`)];
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.jpg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml'};
 const assets=Object.fromEntries(await Promise.all(files.map(async file=>['/'+file,{type:mime[extname(file)]||'application/octet-stream',data:(await readFile(resolve(root,file))).toString('base64')}])));
-const worker=`${source}\nconst STATIC_ASSETS=${JSON.stringify(assets)};
+const worker=`const departmentProfiles=${profiles};\n${source}\nconst STATIC_ASSETS=${JSON.stringify(assets)};
 export default { async fetch(request,env) {
   const path=new URL(request.url).pathname;
   if(path.startsWith('/api/'))return handleApi(request,env);
