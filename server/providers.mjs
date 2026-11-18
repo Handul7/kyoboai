@@ -36,7 +36,7 @@ async function readJson(response) {
   for(const part of parts){data.set(part,offset);offset+=part.length;}
   try {return JSON.parse(new TextDecoder().decode(data));}catch{throw new ProviderError("provider_response_invalid");}
 }
-async function requestJson(url,key,payload,fetchImpl) {
+export async function requestJson(url,key,payload,fetchImpl) {
   for(let attempt=0;attempt<MAX_ATTEMPTS;attempt++) {
     const abort=new AbortController();const timer=setTimeout(()=>abort.abort(),TIMEOUT_MS);
     try {

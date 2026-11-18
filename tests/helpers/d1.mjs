@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 export function createDatabase(filename = ':memory:', migrate = true) {
   const sqlite = new DatabaseSync(filename);
   if (migrate) sqlite.exec(readFileSync(new URL('../../drizzle/0000_insurance_pipeline.sql', import.meta.url), 'utf8'));
+  if(!sqlite.prepare("SELECT 1 FROM sqlite_master WHERE name='press_searches'").get())sqlite.exec(readFileSync(new URL('../../drizzle/0001_press_search_cache.sql',import.meta.url),'utf8'));
   function prepare(sql, args = []) {
     return {
       bind(...values) { return prepare(sql, values); },

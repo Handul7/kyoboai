@@ -1,3 +1,4 @@
+import { searchPress, judgePress, pressDefaultRoles, PressError } from './press.mjs';
 import { DEPARTMENT_IDS, JEV_THRESHOLDS, ISSUE_ACTIONS, reportWindow, canonicalUrl, normalizeArticle, deduplicateArticles, validateReport } from './core.mjs';
 import { scrapeArticle } from './scrape.mjs';
 import { classifyArticle, summarizeArticles, findSameEvent, writeIssueDossier, ProviderError } from './providers.mjs';
@@ -342,6 +343,15 @@ async function dossierCycle(input,env,operator) {
 export async function handleApi(request,env) {
   const url=new URL(request.url),path=url.pathname,method=request.method;
   try {
+    if(path==='/api/press/settings'&&method==='GET')return json({roles:pressDefaultRoles,jevConfigured:!!env.TYPESAFE_API_KEY,regularDays:[1,4],regularTime:'07:00',timezone:'Asia/Seoul',scheduleVerified:env.SCHEDULE_VERIFIED==='true'});
+    if(path==='/api/press/collect'||path==='/api/press/judge'){
+      if(method!=='POST')fail(405,'POST 요청이 필요합니다.');
+      if(request.headers.get('origin')!==url.origin)fail(403,'같은 사이트에서 요청해 주세요.');
+      if(!env.DB)fail(503,'기사 저장소에 연결되지 않았습니다.');
+      const input=await body(request);
+      try{return json(path.endsWith('/collect')?await searchPress(input,env):await judgePress(input,env));}
+      catch(e){if(e instanceof PressError)fail(e.status,e.message);if(e instanceof ProviderError)throw e;fail(502,'공급처 응답 또는 저장소를 확인할 수 없습니다. 잠시 후 다시 실행해 주세요.');}
+    }
     if(path==='/api/status'&&method==='GET') return json(await readiness(env));
     const user=await identity(request,env);
     if(path==='/api/session'&&method==='GET') return json(user);

@@ -78,3 +78,10 @@ export const auditLog = sqliteTable("audit_log", {
   target: text("target").notNull(),
   createdAt: text("created_at").notNull(),
 });
+
+export const pressSearches=sqliteTable("press_searches",{
+  id:text("id").primaryKey().notNull(), fetchedAt:text("fetched_at").notNull(), payload:text("payload").notNull()
+});
+export const pressChecks=sqliteTable("press_checks",{
+  id:text("id").primaryKey().notNull(), startedAt:text("started_at").notNull(), lease:text("lease").notNull(), result:text("result")
+}, table=>[index("press_checks_started_idx").on(table.startedAt)]);
