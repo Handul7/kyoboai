@@ -12,16 +12,34 @@
   const previousRoleKey = 'kyobo.press.roles.v1';
   let profiles=[];
   let roles,settingsError='',mode='period',connected=false;
+  const sessionSlot='kyobo.jev.tab.v2';
+  let tabSession='';
+  try {
+    // A fresh navigation (including a shared link) starts independently of a copied tab store.
+    if(performance.getEntriesByType('navigation')[0]?.type==='reload'){
+      tabSession=sessionStorage.getItem(sessionSlot)||'';
+    }else sessionStorage.removeItem(sessionSlot);
+  }catch{}
+  function setTabSession(value){
+    tabSession=value;
+    try {
+      if(value)sessionStorage.setItem(sessionSlot,value);
+      else sessionStorage.removeItem(sessionSlot);
+    }catch{} // Private storage restrictions still allow use in the current page.
+  }
   const emptyRun=()=>({snapshot:null,judgments:[],busy:false,message:'',attention:false});
   const runs={period:emptyRun(),link:emptyRun()};
-  async function api(path,payload,credential) {
-    const options = {cache:'no-store', mode:'same-origin', redirect:'error'};
+  async function api(path,payload,{apiKey,session=tabSession,signal}={}) {
+    const options = {cache:'no-store', mode:'same-origin', redirect:'error',signal};
     if(payload !== undefined){
       options.method='POST';
       options.headers={'Content-Type':'application/json'};
       options.body=JSON.stringify(payload);
     }
-    if(path==='connection' && credential) options.headers.Authorization='Bearer '+credential;
+    if(session || apiKey){
+      options.headers??={};
+      options.headers.Authorization=path==='connection' && apiKey?'Bearer '+apiKey:'JevSession '+session;
+    }
     const response = await fetch('/api/press/'+path,options);
     if(!response.headers.get('content-type')?.includes('json'))throw Error('뉴스 수집 서버에 연결할 수 없습니다.');
     const data=await response.json();
@@ -72,7 +90,7 @@
     $('#roles-message').textContent=settingsError;roleCount();
   });
   const initialized=Promise.all([rosterReady,api('settings').then(data=>showConnection(data.jevConfigured)).catch(()=>{
-    $('#key-state').textContent='서버 확인 필요';
+    $('#key-message').textContent='Jev 연결 상태를 확인할 수 없습니다.';
   })]);
   $('#edit-roles').onclick=()=>{
     roleFields(true);$('#roles-message').textContent='';
@@ -127,13 +145,26 @@
     }).join('')}`;
   }
   research();
+  const keyDialog=$('#jev-dialog'),keyField=$('#jev-key');
+  let keyOperation;
+  function openKeyDialog(){
+    if(keyDialog.open)return;
+    $('#key-message').textContent='';
+    keyDialog.showModal();
+    $(connected?'#key-forget':'#jev-key').focus();
+  }
+  $('#open-jev').onclick=openKeyDialog;
+  $('#close-jev').onclick=()=>keyDialog.close();
+  keyDialog.onclose=()=>{
+    keyField.value='';
+    keyOperation?.abort();
+  };
   function route(scroll=false){
     const hash=location.hash.slice(1);if(hash==='content')return;
     let view=({roles:'roles',collect:'collect',link:'collect',connect:'collect',process:'process','process/news':'process','process/operations':'collect',departments:'roles'})[hash]||'news';
     if(hash.startsWith('issue/')){const story=PUBLISHED_NEWS.find(s=>s.id===hash.slice(6));if(story){view='detail';detail(story);}}
     for(const name of ['news','roles','collect','detail','process'])$('#'+name+'-screen').hidden=name!==view;
     mode=hash==='link'||hash==='connect'?'link':'period';
-    if(hash==='connect')$('#key-settings').open=true;
     $('#run-form').hidden=mode==='link';$('#link-form').hidden=mode!=='link';
     for(const a of all('#collect-screen .tabs a')){if(a.hash===(mode==='link'?'#link':'#collect'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}
     if(view==='collect')renderRun();
@@ -142,6 +173,7 @@
     $(`.nav a[href="#${view==='detail'?'news':view}"]`)?.setAttribute('aria-current','page');
     for(const a of all('#process-screen .tabs a')){if(a.hash===(hash==='process/news'?'#process/news':'#process'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}
     if(scroll){$('#content').focus({preventScroll:true});window.scrollTo(0,0);}
+    if(hash==='connect')openKeyDialog();
   }
   window.addEventListener('hashchange',()=>route(true));route();
   const monthField=$('#week-month'), weekField=$('#collection-week');
@@ -188,34 +220,55 @@
   updateWeeks();
 
   function showConnection(value){
-    connected=value===true;
-    $('#key-state').textContent=connected?'이 브라우저에 저장됨':'키 등록 필요';
+    connected=!!tabSession && value===true;
+    if(!connected)setTabSession('');
+    $('#open-jev').textContent=connected?'Jev 연결됨':'Jev 키 입력';
+    $('#key-entry').hidden=connected;
+    $('#jev-key').disabled=connected;
+    $('#key-save').hidden=connected;
+    $('#key-state').hidden=!connected;
     $('#key-forget').hidden=!connected;
-    $('#key-save').textContent=connected?'새 키 확인 후 교체':'키 확인 후 저장';
   }
-  const keyField=$('#jev-key');
   window.addEventListener('pagehide',()=>{keyField.value='';});
   async function configureKey(action){
-    const saving=action==='save';
-    const key=saving?keyField.value.trim():null;
-    const msg=$('#key-message');
-    if(saving && (!window.isSecureContext||!/^[!-~]{1,512}$/.test(key))){
+    if(keyOperation)return;
+    const connecting=action==='connect',msg=$('#key-message');
+    let key=connecting?keyField.value.trim():'';
+    if(connecting && (!window.isSecureContext||!/^[!-~]{1,512}$/.test(key))){
       msg.textContent='HTTPS 화면에서 활성 키 원본을 입력해 주세요.';return;
     }
-    await initialized;
     keyField.value='';
-    const buttons=[$('#key-save'),$('#key-forget')];buttons.forEach(b=>b.disabled=true);
-    msg.textContent=saving?'TypeSafe에서 키를 확인하고 있습니다.':'저장한 키를 삭제하고 있습니다.';
+    const controller=new AbortController();
+    keyOperation=controller;
+    const {signal}=controller;
+    const buttons=[$('#key-save'),$('#key-forget')];
+    buttons.forEach(b=>b.disabled=true);
+    msg.textContent=connecting?'TypeSafe에서 키를 확인하고 있습니다.':'연결을 해제하고 있습니다.';
     try{
-      await api('connection',{action},key);
-      const settings=await api('settings');showConnection(settings.jevConfigured);
-      if(connected!==saving)throw Error('브라우저 쿠키 설정을 확인한 뒤 다시 시도해 주세요.');
-      msg.textContent=saving?'저장했습니다. 뉴스 링크와 주차별 확인에서 바로 사용할 수 있습니다.':'이 브라우저에서 키를 삭제했습니다.';
-    }catch(e){msg.textContent=e.message;}
-    finally{buttons.forEach(b=>b.disabled=false);}
+      await initialized;
+      if(signal.aborted)return;
+      if(!connecting){
+        const pending=api('connection',{action});
+        showConnection(false);
+        await pending;
+        keyDialog.close();return;
+      }
+      const request=api('connection',{action},{apiKey:key,signal});
+      key='';
+      const result=await request;
+      if(!result.connected||!result.session)throw Error('세션을 시작할 수 없습니다. 다시 연결해 주세요.');
+      const state=await api('settings',undefined,{session:result.session,signal});
+      if(signal.aborted || !keyDialog.open)return;
+      if(!state.jevConfigured)throw Error('이 사이트의 쿠키를 허용한 뒤 다시 연결해 주세요.');
+      setTabSession(result.session);
+      showConnection(true);
+      keyDialog.close();
+    }catch(e){
+      if(!signal.aborted)msg.textContent=connecting?e.message:'이 탭의 연결을 종료했습니다. 서버의 해제 응답은 확인하지 못했습니다.';
+    }finally{keyOperation=null;buttons.forEach(b=>b.disabled=false);}
   }
-  $('#key-form').onsubmit=e=>{e.preventDefault();configureKey('save');};
-  $('#key-forget').onclick=()=>configureKey('forget');
+  $('#key-form').onsubmit=e=>{e.preventDefault();configureKey('connect');};
+  $('#key-forget').onclick=()=>configureKey('disconnect');
   function judgmentText(j){
     if(!j)return 'Jev 미판단';
     const same=j.sameEvent===undefined?'':j.sameEvent>=.8?'같은 이슈 · ':j.sameEvent<=.2?'다른 이슈 · ':'동일 이슈 검토 필요 · ';
@@ -246,14 +299,16 @@
     try{
       update(type==='link'?'입력 기사와 관련 보도를 확인하고 있습니다.':'기간에 해당하는 실제 기사를 수집하고 있습니다.');
       await initialized;
-      const criteria=roles?.map(r=>({...r}));
+      const criteria=roles?.map(r=>({...r})),runSession=tabSession;
       const snap=await api(type==='link'?'link':'collect',payload);
       run.snapshot=snap;
       if(!snap.articles.length){update('검색 조건에 맞는 기사가 없습니다.');return;}
+      if(runSession!==tabSession){update('Jev 연결이 변경되었습니다. 다시 실행해 주세요.');return;}
       showConnection(snap.jevConfigured);
-      if(!connected){update('기사 확인 완료 · 위의 Jev 연결에서 키를 저장하면 기사 판단도 실행할 수 있습니다.');return;}
+      if(!connected){update('기사 확인 완료 · 상단의 ‘Jev 키 입력’에서 연결하면 기사 판단도 실행할 수 있습니다.');return;}
       if(!criteria)throw Error('부서 역할을 불러올 수 없습니다. 화면을 새로고침해 주세요.');
       for(let offset=0;offset<snap.articles.length;offset+=snap.batchSize){
+        if(runSession!==tabSession){update('Jev 연결이 변경되어 추가 판단을 중단했습니다.');return;}
         update(`Jev 판단 중 · ${offset}/${snap.articles.length}건`);
         const result=await api('judge',{id:snap.id,version:snap.version,roles:criteria,offset});
         run.judgments.push(...result.answers);

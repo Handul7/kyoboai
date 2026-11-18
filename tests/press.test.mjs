@@ -53,14 +53,14 @@ test('public settings expose only configuration state and regular cadence',async
   const crossed=await handleApi(new Request('https://example.com/api/press/judge',{method:'POST',headers:{Origin:'https://other.example'}}),{});assert.equal(crossed.status,403);
 });
 
-test('browser credential persists for both modes, isolates visitors, rotates safely and is independently removable',async t=>{
+test('tab sessions require both credentials, isolate tabs in one browser and ignore the old persistent cookie',async t=>{
   const origin='https://example.com',key='test-first-device',other='test-second-device';
   const env={DB:createDatabase(),TYPESAFE_API_KEY:'unused-admin',JEV_BROWSER_SEAL_KEY:'ef'.repeat(32)};
   t.after(()=>env.DB.sqlite.close());
   const src='https://www.insnews.co.kr/news/articleView.html?idxno=1';
   const dates={from:'2026-11-16',to:'2026-11-16'};
-  const api=(path,payload,{cookie,token,host=origin,from=host}={})=>handleApi(new Request(host+'/api/press/'+path,{
-    method:payload?'POST':'GET',headers:{Origin:from,'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(payload?{body:JSON.stringify(payload)}:{})
+  const api=(path,payload,{cookie,token,session,host=origin,from=host}={})=>handleApi(new Request(host+'/api/press/'+path,{
+    method:payload?'POST':'GET',headers:{Origin:from,'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{}),...(token?{Authorization:'Bearer '+token}:session?{Authorization:'JevSession '+session}:{})},...(payload?{body:JSON.stringify(payload)}:{})
   }),env);
   const used=[];
   t.mock.method(globalThis,'fetch',async(url,init)=>{
@@ -73,28 +73,41 @@ test('browser credential persists for both modes, isolates visitors, rotates saf
     for(const [name,spec] of Object.entries(p.questions))answers[name]=spec.type==='noul'?{type:'noul',noul:.9}:{type:'score',score:2,confidence:1,probabilities:{0:0,1:0,2:1,3:0}};
     return Response.json({model:'test-jev',answers});
   });
-  const save=async token=>{
-    const res=await api('connection',{action:'save'},{token});assert.equal(res.status,200);const set=res.headers.get('set-cookie');
-    for(const flag of ['HttpOnly','Secure','SameSite=Strict','Max-Age=31536000','Path=/'])assert.ok(set.includes(flag));
-    assert.ok(!set.includes(token));assert.deepEqual(await res.json(),{connected:true});return set.split(';')[0];
+  const connect=async token=>{
+    const res=await api('connection',{action:'connect'},{token});assert.equal(res.status,200);
+    const set=res.headers.get('set-cookie'),data=await res.json();
+    for(const flag of ['HttpOnly','Secure','SameSite=Strict','Path=/'])assert.ok(set.includes(flag));
+    assert.doesNotMatch(set,/Max-Age|Expires/i);
+    assert.ok(!set.includes(token) && !data.session.includes(token));
+    assert.ok(data.connected);return {cookie:set.split(';')[0],session:data.session};
   };
-  const a=await save(key),b=await save(other);
+  const a=await connect(key),b=await connect(other),jar=[a.cookie,b.cookie].join('; ');
   const configured=async opts=>(await (await api('settings',null,opts)).json()).jevConfigured;
-  assert.equal(await configured({cookie:a}),true);assert.equal(await configured({}),false);
-  assert.equal(await configured({cookie:a,host:'https://other.example'}),false);
-  assert.equal(await configured({cookie:a.replace('=','=z')}),false);
-  assert.equal((await api('connection',{action:'save'},{cookie:a,token:'bad'})).headers.get('set-cookie'),null);
-  assert.equal((await api('connection',{action:'forget'},{cookie:a,from:'https://other.example'})).status,403);
-  for(const [op,payload,cookie] of [['link',{url:src},a],['collect',dates,b]]){
-    const snap=await (await api(op,payload,{cookie})).json();assert.equal(snap.jevConfigured,true);
+  assert.equal(await configured({cookie:jar}),false);
+  assert.equal(await configured({session:a.session}),false);
+  assert.equal(await configured({cookie:b.cookie,session:a.session}),false);
+  assert.equal(await configured({...a,host:'https://other.example'}),false);
+  assert.equal(await configured({...a,cookie:a.cookie.replace('=','=z')}),false);
+  assert.equal(await configured({session:a.session+'x',cookie:jar}),false);
+  assert.equal(await configured({session:a.session,cookie:jar}),true);
+  const migrated=await api('settings',null,{cookie:'__Host-kyobo-jev=old-sealed-key'});
+  assert.equal((await migrated.json()).jevConfigured,false);
+  assert.match(migrated.headers.get('set-cookie'),/__Host-kyobo-jev=; Max-Age=0/);
+  assert.equal((await api('connection',{action:'connect'},{...a,token:'bad'})).headers.get('set-cookie'),null);
+  assert.equal((await api('connection',{action:'disconnect'},{...a,from:'https://other.example'})).status,403);
+  for(const [op,payload,tab] of [['link',{url:src},a],['collect',dates,a],['collect',dates,b]]){
+    const opts={cookie:jar,session:tab.session};
+    const snap=await (await api(op,payload,opts)).json();assert.equal(snap.jevConfigured,true);
     const args={id:snap.id,version:snap.version,roles:[],offset:0};
-    assert.equal((await api('judge',args)).status,401);
-    const judgment=await api('judge',args,{cookie});assert.equal(judgment.status,200);
+    assert.equal((await api('judge',args,{cookie:jar})).status,401);
+    const judgment=await api('judge',args,opts);assert.equal(judgment.status,200);
     const {answers}=await judgment.json();
     if(op==='link'){assert.equal(snap.articles[0].url,src);assert.equal(snap.kind,'link');assert.equal(answers[1].sameEvent,.9);}
   }
-  assert.deepEqual(used,['Bearer '+key,'Bearer '+other]);
-  const forgotten=await api('connection',{action:'forget'},{cookie:a});assert.match(forgotten.headers.get('set-cookie'),/Max-Age=0/);
+  assert.deepEqual(used,['Bearer '+key,'Bearer '+key,'Bearer '+other]);
+  const forgotten=await api('connection',{action:'disconnect'},{cookie:jar,session:a.session});
+  assert.ok(forgotten.headers.get('set-cookie').startsWith(a.cookie.split('=')[0]+'=; Max-Age=0;'));
+  assert.equal(await configured(b),true);
   assert.equal(env.DB.sqlite.prepare('SELECT COUNT(*) AS n FROM press_checks').get().n,0);
 });
 test('linked article stays visible when related feed fails and an off-site redirect is refused',async t=>{

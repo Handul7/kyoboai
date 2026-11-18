@@ -25,15 +25,36 @@
   <meta name="twitter:image:alt" content="희경 조장님 팟팅!">
   <title>교보 뉴스브리핑 — 보험 뉴스 보고서</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=2026.11.19.8">
-  <script defer src="./news-research.js?v=2026.11.19.8"></script>
-  <script defer src="./published-news.js?v=2026.11.19.8"></script>
-  <script defer src="./dossier-pdf.js?v=2026.11.19.8"></script>
-  <script defer src="./public-desk.js?v=2026.11.19.8"></script>
+  <link rel="stylesheet" href="./styles.css?v=2026.11.19.9">
+  <script defer src="./news-research.js?v=2026.11.19.9"></script>
+  <script defer src="./published-news.js?v=2026.11.19.9"></script>
+  <script defer src="./dossier-pdf.js?v=2026.11.19.9"></script>
+  <script defer src="./public-desk.js?v=2026.11.19.9"></script>
 </head>
 <body>
   <a class="skip" href="#content">본문으로</a>
-  <header class="mast"><div class="mast-inner"><a class="brand" href="#news" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="교보생명"><b>뉴스브리핑</b></a><small>최종 수정 <time datetime="2026-11-19">2026.11.19</time><span> · 2026.11.19.8</span></small></div></header>
+  <header class="mast">
+    <div class="mast-inner">
+      <a class="brand" href="#news" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="교보생명"><b>뉴스브리핑</b></a>
+      <div class="mast-session">
+        <small class="updated">최종 수정 <time datetime="2026-11-19">2026.11.19</time><span> · 2026.11.19.9</span></small>
+        <button type="button" id="open-jev" class="secondary" aria-haspopup="dialog" aria-controls="jev-dialog">Jev 키 입력</button>
+      </div>
+    </div>
+  </header>
+  <dialog id="jev-dialog" aria-labelledby="jev-title" aria-describedby="key-help">
+    <div class="dialog-heading"><h2 id="jev-title">Jev 연결</h2><button type="button" id="close-jev" aria-label="팝업 닫기">닫기</button></div>
+    <p id="key-help">이 탭에서 뉴스 링크와 주차별 확인에 함께 사용합니다. 탭을 닫으면 연결이 종료됩니다.</p>
+    <form id="key-form" method="post" autocomplete="off">
+      <div id="key-entry"><label for="jev-key">Jev API 키</label>
+        <input id="jev-key" type="password" placeholder="API 키 입력" required maxlength="512" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+      </div>
+      <p id="key-state" hidden>이 탭에 Jev가 연결되어 있습니다.</p>
+      <button class="primary" type="submit" id="key-save">키 확인 후 연결</button>
+      <button class="secondary" type="button" id="key-forget" hidden>Jev 연결 해제</button>
+    </form>
+    <p id="key-message" role="status" aria-live="polite"></p>
+  </dialog>
   <nav class="nav" aria-label="주요 메뉴"><div><a href="#news">브리핑</a><a href="#collect">뉴스 확인</a><a href="#roles">부서 역할</a><a href="#process">서비스 소개</a></div></nav>
   <main id="content" tabindex="-1">
     <section id="news-screen">
@@ -45,12 +66,6 @@
     <section id="collect-screen" hidden>
       <h1>뉴스 확인</h1>
       <div class="tabs" aria-label="뉴스 확인 방식"><a href="#link">뉴스 링크 확인</a><a href="#collect">주차별 확인</a></div>
-      <details class="panel" id="key-settings"><summary>Jev 연결 <span class="key-state" id="key-state">확인 중</span></summary>
-        <form id="key-form" method="post"><label for="jev-key">Jev API 키</label>
-        <input id="jev-key" type="password" required maxlength="512" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="key-help" placeholder="API 키 붙여넣기">
-        <p class="hint" id="key-help">이 브라우저에 한 번 저장하면 두 확인 기능에서 1년간 사용합니다. 다른 기기나 브라우저에서는 각자 등록해 주세요.</p>
-        <div class="actions"><button type="submit" class="secondary" id="key-save">키 확인 후 저장</button><button type="button" class="small-button" id="key-forget" hidden>이 브라우저에서 삭제</button></div></form>
-        <p id="key-message" role="status" aria-live="polite"></p></details>
       <form id="link-form" class="panel" method="post" hidden><label for="seed">뉴스 기사 링크</label><input id="seed" type="url" required maxlength="2048" placeholder="https:// 언론사 기사 주소">
         <p class="hint">기사 제목과 발행일을 읽고 관련 보도를 찾습니다. Jev가 보험업 관련성, 보고 가치와 부서별 관련성을 판단합니다.</p>
         <button class="primary" id="check-link" type="submit">링크 확인하기</button></form>

@@ -1,4 +1,4 @@
-import { browserConnection, savedBrowserKey } from './browser-key.mjs';
+import { browserConnection, sessionJevKey, expireLegacyConnection } from './browser-key.mjs';
 import { searchLinkedPress, searchPress, judgePress, pressDefaultRoles, PressError } from './press.mjs';
 import { DEPARTMENT_IDS, JEV_THRESHOLDS, ISSUE_ACTIONS, reportWindow, canonicalUrl, normalizeArticle, deduplicateArticles, validateReport } from './core.mjs';
 import { scrapeArticle } from './scrape.mjs';
@@ -344,7 +344,7 @@ async function dossierCycle(input,env,operator) {
 export async function handleApi(request,env) {
   const url=new URL(request.url),path=url.pathname,method=request.method;
   try {
-    if(path==='/api/press/settings'&&method==='GET')return json({roles:pressDefaultRoles,jevConfigured:!!await savedBrowserKey(request,env),regularDays:[1,4],regularTime:'07:00',timezone:'Asia/Seoul',scheduleVerified:env.SCHEDULE_VERIFIED==='true'});
+    if(path==='/api/press/settings'&&method==='GET')return expireLegacyConnection(request,json({roles:pressDefaultRoles,jevConfigured:!!await sessionJevKey(request,env),regularDays:[1,4],regularTime:'07:00',timezone:'Asia/Seoul',scheduleVerified:env.SCHEDULE_VERIFIED==='true'}));
     if(['/api/press/connection','/api/press/link','/api/press/collect','/api/press/judge'].includes(path)){
       if(method!=='POST')fail(405,'POST 요청이 필요합니다.');
       if(request.headers.get('origin')!==url.origin)fail(403,'같은 사이트에서 요청해 주세요.');
@@ -352,15 +352,15 @@ export async function handleApi(request,env) {
       try{
         if(path.endsWith('/connection'))return await browserConnection(request,input,env);
         if(!env.DB)fail(503,'기사 저장소에 연결되지 않았습니다.');
-        const key=await savedBrowserKey(request,env);
+        const key=await sessionJevKey(request,env);
         if(path.endsWith('/judge')){
-          if(!key)fail(401,'이 브라우저에 Jev 키를 먼저 저장해 주세요.');
+          if(!key)fail(401,'이 탭에서 Jev 키를 먼저 연결해 주세요.');
           return json(await judgePress(input,env,fetch,key));
         }
         const result=path.endsWith('/link')?await searchLinkedPress(input,env):await searchPress(input,env);
         return json({...result,jevConfigured:!!key});
       }catch(e){
-        if(e instanceof ProviderError && e.code==='provider_authentication_failed')fail(401,'저장한 키를 TypeSafe에서 인증하지 못했습니다. Jev 연결에서 키를 교체해 주세요.');
+        if(e instanceof ProviderError && e.code==='provider_authentication_failed')fail(401,'연결한 키를 TypeSafe에서 인증하지 못했습니다. Jev 연결에서 키를 교체해 주세요.');
         if(e instanceof PressError)fail(e.status,e.message);
         if(e instanceof HttpError||e instanceof ProviderError)throw e;
         fail(502,'공급처 응답 또는 저장소를 확인할 수 없습니다. 잠시 후 다시 실행해 주세요.');
