@@ -92,15 +92,31 @@
   const shortDate = v => v.slice(0,10);
   function sources(rows) {return `<ol class="sources">${rows.map(s=>`<li>${link(s.url,s.title)} <small>${escape(s.source)} · ${escape(shortDate(s.publishedAt))}</small></li>`).join('')}</ol>`;}
   $('#edition').innerHTML=editions.map(d=>`<option value="${d}">${dateLabel(d)}</option>`).join('')+months.map(m=>`<option value="${m}">${m.replace('-','년 ')}월 전체</option>`).join('');
+  const reviewer = review => review.department ? review.department+(review.referenceOnly?' · 참고':'') : '공통 참고';
+  function reviewRows(reviews, detailed=false) {
+    return reviews.map(review=>`<div class="brief-review">
+      <div class="review-line"><b class="review-team${!review.department||review.referenceOnly?' reference':''}">${escape(reviewer(review))}</b>
+      <span class="review-item">${escape(review.item)}</span></div>
+      ${detailed?`<p class="review-detail">${escape(review.detail)}</p>`:''}</div>`).join('');
+  }
   function stories(){
     const selected=$('#edition').value;
-    $('#stories').innerHTML=`<div class="stories">${PUBLISHED_NEWS.filter(s=>s.date.startsWith(selected)).map(s=>`<a class="story" href="#issue/${escape(s.id)}"><strong>${escape(s.title)}</strong><p>${escape(s.summary.split(/(?<=다\.) /)[0])}</p><span>${dateLabel(s.date)} 발행 · 근거 뉴스 ${s.sources.length}건</span></a>`).join('')}</div>`;
+    const issues=PUBLISHED_NEWS.filter(s=>s.date.startsWith(selected));
+    $('#stories').innerHTML=`<div class="stories">${issues.map(s=>`<a class="story" href="#issue/${escape(s.id)}">
+      <strong>${escape(s.title)}</strong>
+      ${reviewRows(s.reviews)}
+      <p>${escape(s.summary.split(/(?<=다\.) /)[0])}</p>
+      <small>${dateLabel(s.date)} 발행 · 근거 뉴스 ${s.sources.length}건</small></a>`).join('')}</div>`;
   }
   $('#edition').onchange=stories;stories();
   const sections=s=>[['핵심 요약',s.summary],['주요 인사이트',s.impact],['분석과 확인할 일',s.background+' '+s.check]];
   function detail(s){
-    $('#detail').innerHTML=`<a href="#news">← 브리핑 목록</a><article class="report"><div class="meta">${dateLabel(s.date)} 발행 · 근거 뉴스 ${s.sources.length}건</div><h1>${escape(s.title)}</h1>${sections(s).map(([heading,p])=>`<h2>${heading}</h2><p>${escape(p)}</p>`).join('')}<h2>뉴스 출처</h2>${sources(s.sources)}<button class="secondary pdf" id="download-detail">보고서 PDF 다운로드</button></article>`;
-    $('#download-detail').onclick=e=>pdf(e.currentTarget,{title:s.title,meta:`교보 뉴스브리핑 · ${s.date}`,sections:sections(s).map(([title,p])=>({title,lines:[p]})),sources:s.sources});
+    const heading='부서별 검토 항목';
+    $('#detail').innerHTML=`<a href="#news">← 브리핑 목록</a><article class="report"><div class="meta">${dateLabel(s.date)} 발행 · 근거 뉴스 ${s.sources.length}건</div><h1>${escape(s.title)}</h1>
+      <section class="report-reviews"><h2>${heading}</h2>${reviewRows(s.reviews,true)}</section>
+      ${sections(s).map(([title,p])=>`<h2>${title}</h2><p>${escape(p)}</p>`).join('')}<h2>뉴스 출처</h2>${sources(s.sources)}<button class="secondary pdf" id="download-detail">보고서 PDF 다운로드</button></article>`;
+    const reviewSection={title:heading,lines:s.reviews.flatMap(r=>[reviewer(r)+' — '+r.item,r.detail])};
+    $('#download-detail').onclick=e=>pdf(e.currentTarget,{title:s.title,meta:`교보 뉴스브리핑 · ${s.date}`,sections:[reviewSection,...sections(s).map(([title,p])=>({title,lines:[p]}))],sources:s.sources});
   }
   async function pdf(button,data){button.disabled=true;try{await window.downloadIssuePdf(data);}catch{window.alert('PDF를 생성하지 못했습니다. 다시 시도해 주세요.');}finally{button.disabled=false;}}
   function research(){

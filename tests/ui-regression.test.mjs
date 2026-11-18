@@ -19,11 +19,18 @@ test('public entry points use the current scripts, revision and guest navigation
 });
 test('every published issue has an individual permalink, report sections, dated sources and a PDF route',()=>{
   const reports=runInNewContext(read('published-news.js')+'; PUBLISHED_NEWS');
+  const departments=new Set(JSON.parse(read('department-profiles.json')).map(d=>d.name));
   assert.ok(reports.length>0);assert.equal(new Set(reports.map(r=>r.id)).size,reports.length);
   for(const r of reports){
     assert.match(r.id,/^[a-z0-9-]+$/);
     assert.ok([1,4].includes(new Date(r.date).getUTCDay()));
     for(const field of ['title','summary','background','impact','check'])assert.ok(r[field]?.trim());
+    assert.ok(Array.isArray(r.reviews) && r.reviews.length>0, r.id+' needs a review item for the briefing');
+    assert.equal(new Set(r.reviews.map(v=>v.department)).size,r.reviews.length);
+    for(const review of r.reviews){
+      assert.ok(departments.has(review.department) || (review.department===null && r.reviews.length===1));
+      assert.ok(review.item.trim() && review.detail.trim());
+    }
     assert.ok(r.sources.length>0);
     for(const s of r.sources){assert.match(s.url,/^https:\/\//);assert.ok(s.title && s.source && s.publishedAt<=r.date);}
   }

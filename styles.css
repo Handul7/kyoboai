@@ -21,3 +21,11 @@ label{display:block;color:var(--ink);font-weight:600}label small{font-weight:400
 .role-sources a{display:inline-block;padding-block:4px}
 #role-actions{margin-top:14px;justify-content:flex-end}
 #roles-message:empty{display:none}
+.brief-review{margin:8px 0}
+.review-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+.review-team{padding:2px 8px;border-radius:5px;background:#e6f3eb;color:#185637;font-size:14px}
+.review-team.reference{background:#eaf0f5;color:#475c70}
+.review-line .review-item{flex:1 1 15ch;min-width:0;font-size:16px;font-weight:600;line-height:1.5;color:var(--ink);word-break:keep-all;overflow-wrap:anywhere}
+.report-reviews{margin-block:16px 20px;padding:12px 16px;border-left:3px solid var(--green);background:var(--wash)}
+.report-reviews h2{margin:0 0 8px;font-size:17px}
+.report-reviews .brief-review:last-child,.report-reviews .review-detail{margin-bottom:0}
