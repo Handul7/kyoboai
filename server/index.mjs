@@ -1,6 +1,6 @@
 import { DEPARTMENT_IDS, JEV_THRESHOLDS, ISSUE_ACTIONS, reportWindow, canonicalUrl, normalizeArticle, deduplicateArticles, validateReport } from './core.mjs';
 import { scrapeArticle } from './scrape.mjs';
-import { classifyArticle, summarizeArticles } from './providers.mjs';
+import { classifyArticle, summarizeArticles, findSameEvent, writeIssueDossier, ProviderError } from './providers.mjs';
 import { LIMITS, SOURCES, PIPELINE_VERSION, validEndpoint, configuredLimits } from './config.mjs';
 
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
@@ -174,6 +174,171 @@ async function generate(input,env,user) {
   }
 }
 
+// The reports table keeps a single document per event. Team membership selects a reading order.
+const dossierKind='issue';
+const dossierMembers="json_each(r.payload,'$.members')";
+const currentDossier=`NOT EXISTS (SELECT 1 FROM json_each(r.payload,'$.sources') ref
+  LEFT JOIN articles a ON a.id=json_extract(ref.value,'$.id')
+  LEFT JOIN source_permissions p ON p.id=a.source_id
+  WHERE a.id IS NULL OR COALESCE(p.enabled*p.body_allowed*p.ai_allowed,0)!=1
+  OR a.body_hash!=json_extract(ref.value,'$.bodyHash') OR a.title!=json_extract(ref.value,'$.title')
+  OR a.published_at!=json_extract(ref.value,'$.publishedAt'))
+  AND EXISTS (SELECT 1 FROM judgments j JOIN articles a ON a.id=j.article_id AND a.body_hash=j.body_hash
+    WHERE j.article_id=json_extract(r.payload,'$.seedId') AND j.pipeline_version=?
+    AND json_extract(j.payload,'$.decision')='candidate' AND json_extract(j.payload,'$.reviewRequired')=0
+    AND json_extract(j.payload,'$.feedback') IS NULL
+    AND json_extract(j.payload,'$.leadDepartmentId')=json_extract(r.payload,'$.teams[0].id')
+    AND json_extract(j.payload,'$.supportDepartmentIds')=json_extract(r.payload,'$.support'))`;
+
+function dossierDate(iso) {
+  const date=new Date(Date.parse(iso)+9*3600000);
+  do {date.setUTCDate(date.getUTCDate()+1);} while(![1,4].includes(date.getUTCDay()));
+  return date.toISOString().slice(0,10);
+}
+
+async function dossierList(env,user,id=null) {
+  if(user.role==='guest')return [];
+  const where=[`r.department_id='issue'`,currentDossier],args=[PIPELINE_VERSION];
+  if(id){where.push('r.id=?');args.push(id);}
+  if(user.role!=='admin'){
+    where.push("r.status='published' AND EXISTS(SELECT 1 FROM json_each(r.payload,'$.teams') t WHERE json_extract(t.value,'$.id')=?)");
+    args.push(user.departmentId);
+  }
+  const result=await rows(env.DB,`SELECT r.id,r.payload,r.status,r.updated_at FROM reports r WHERE ${where.join(' AND ')} ORDER BY r.updated_at DESC LIMIT 150`,...args);
+  return result.map(r=>{
+    const {members,seedId,support,sources,...content}=JSON.parse(r.payload);
+    const publicSources=sources.map(({url,title,source,publishedAt})=>({url,title,source,publishedAt}));
+    const common={id:r.id,status:r.status,dates:content.dates,title:content.title,summary:content.summary,teams:content.teams,priority:content.priority,sourceCount:sources.length};
+    return id?{...content,...common,sources:publicSources,seedId,revision:r.updated_at}:common;
+  });
+}
+
+async function existingDossier(env,articleIds) {
+  return first(env.DB,`SELECT r.* FROM reports r WHERE r.department_id='issue'
+    AND EXISTS(SELECT 1 FROM ${dossierMembers} WHERE value IN (SELECT value FROM json_each(?)))
+    ORDER BY r.created_at,r.id LIMIT 1`,JSON.stringify(articleIds));
+}
+
+async function dossierJudgment(seed,env) {
+  const saved=await first(env.DB,'SELECT * FROM judgments WHERE article_id=?',seed.id);
+  const fingerprint=JSON.stringify([seed.title,seed.bodyHash,seed.sourceId,seed.publishedAt,env.TYPESAFE_MODEL||'jev-latest']);
+  const old=saved&&JSON.parse(saved.payload);
+  if(saved?.pipeline_version===PIPELINE_VERSION&&old?.stateFingerprint===fingerprint)return old;
+  const judgment={...await classifyArticle(seed,env),stateFingerprint:fingerprint};
+  await run(env.DB,`INSERT INTO judgments(article_id,body_hash,pipeline_version,payload,updated_at) VALUES(?,?,?,?,?)
+    ON CONFLICT(article_id) DO UPDATE SET body_hash=excluded.body_hash,pipeline_version=excluded.pipeline_version,payload=excluded.payload,updated_at=excluded.updated_at
+    WHERE judgments.payload=?`,seed.id,seed.bodyHash,PIPELINE_VERSION,JSON.stringify(judgment),now(),saved?.payload||'');
+  const current=await first(env.DB,'SELECT payload FROM judgments WHERE article_id=?',seed.id);
+  return JSON.parse(current.payload);
+}
+
+// Search recent, approved articles first; an optional contracted search feed can extend coverage.
+async function dossierCandidates(seed,env,operator,registry,cutoff,external) {
+  const horizon=14*86400000;
+  const start=new Date(Date.parse(seed.publishedAt)-horizon).toISOString();
+  const end=new Date(Math.min(Date.parse(seed.publishedAt)+horizon,Date.parse(cutoff))).toISOString();
+  if(external&&env.NEWS_SEARCH_URL){
+    if(!validEndpoint(env.NEWS_SEARCH_URL,true))fail(503,'관련 기사 검색 API 주소를 확인해 주세요.');
+    const u=new URL(env.NEWS_SEARCH_URL);
+    for(const [k,v] of Object.entries({q:seed.title,from:start,to:end,limit:'10'}))u.searchParams.set(k,v);
+    const response=await fetch(u,{headers:{Accept:'application/json',...(env.NEWS_SEARCH_KEY?{Authorization:'Bearer '+env.NEWS_SEARCH_KEY}:{})},redirect:'error',signal:AbortSignal.timeout(18000)});
+    if(!response.ok)fail(502,'관련 기사 공급 API가 응답하지 않았습니다. 다시 시도해 주세요.');
+    const data=await body(response);
+    if(!Array.isArray(data.articles)||data.articles.length>10)fail(422,'검색 공급 응답 형식을 확인해 주세요.');
+    const articles=data.articles.filter(a=>a&&registry.some(s=>s.id===a.sourceId&&s.enabled&&s.canSummarize)&&Date.parse(a.publishedAt)>=Date.parse(start)&&Date.parse(a.publishedAt)<Date.parse(end)&&a.url!==seed.url);
+    if(articles.length)await importArticles({articles,permissionNote:'승인된 관련 기사 검색 공급 API로 수집'},env,operator);
+  }
+  const pool=await rows(env.DB,`SELECT a.* FROM articles a JOIN source_permissions s ON s.id=a.source_id
+    WHERE s.enabled*s.body_allowed*s.ai_allowed=1 AND a.id!=? AND a.published_at>=? AND a.published_at<?
+    ORDER BY ABS(julianday(a.published_at)-julianday(?)),a.id LIMIT 160`,seed.id,start,end,seed.publishedAt);
+  const grams=s=>{const out=new Set();for(const word of s.toLowerCase().match(/[\p{L}\p{N}]+/gu)||[]){for(let i=1;i<word.length;i++)out.add(word.slice(i-1,i+1));}return out;};
+  const seedWords=grams(seed.title);
+  const ranked=pool.map(articleRecord).map(a=>({a,score:[...grams(a.title)].filter(w=>seedWords.has(w)).length})).sort((a,b)=>b.score-a.score||a.a.id.localeCompare(b.a.id));
+  const exact=ranked.filter(({a})=>a.bodyHash===seed.bodyHash).map(x=>x.a);
+  const related=await findSameEvent(seed,ranked.filter(({a})=>a.bodyHash!==seed.bodyHash).slice(0,8).map(x=>x.a),env);
+  return [...exact,...related].slice(0,7);
+}
+
+async function createDossier(seed,env,operator,registry,cutoff=now(),external=false) {
+  const checkExisting=async ids=>{
+    const old=await existingDossier(env,ids);
+    if(!old)return null;
+    const [current]=await dossierList(env,operator,old.id);
+    if(!current)return {stale:old};
+    if(!JSON.parse(old.payload).members.includes(seed.id)){
+      await run(env.DB,`UPDATE reports SET payload=json_insert(payload,'$.members[#]',?) WHERE id=?
+        AND NOT EXISTS(SELECT 1 FROM json_each(payload,'$.members') WHERE value=?)`,seed.id,old.id,seed.id);
+    }
+    return {id:old.id,reused:true};
+  };
+  const prior=await checkExisting([seed.id]);
+  if(prior?.id)return prior;
+  const j=await dossierJudgment(seed,env);
+  if(j.decision!=='candidate'||j.reviewRequired||j.feedback)fail(422,j.decision==='irrelevant'?'보험업 이슈로 선정되지 않았습니다.':'부서와 기사 근거를 관리자 검토함에서 확인한 뒤 다시 생성해 주세요.');
+  const related=await dossierCandidates(seed,env,operator,registry,cutoff,external);
+  const articles=[seed,...related],members=articles.map(a=>a.id);
+  const match=await checkExisting(members);
+  if(match?.id)return match;
+  const stale=match?.stale||prior?.stale;
+  const d=await writeIssueDossier(articles,j,env);
+  const date=dossierDate(seed.publishedAt),id=stale?.id||'issue_'+seed.id.slice(2);
+  const payload={...d,seedId:seed.id,members,support:j.supportDepartmentIds,priority:j.importance,dates:external?[]:[date],evidence:j.evidence,sources:articles.map(a=>({id:a.id,title:a.title,url:a.url,publishedAt:a.publishedAt,bodyHash:a.bodyHash,source:registry.find(s=>s.id===a.sourceId).name}))};
+  const timestamp=now(),serialized=JSON.stringify(payload),window=reportWindow(date);
+  let saved;
+  if(stale){
+    saved=await run(env.DB,"UPDATE reports SET title=?,payload=?,window_id=?,window_json=?,status='draft',published_at=NULL,updated_at=? WHERE id=? AND payload=?",d.title,serialized,window.id,JSON.stringify(window),timestamp,id,stale.payload);
+  }else{
+    saved=await run(env.DB,`INSERT INTO reports(id,run_key,department_id,window_id,window_json,title,payload,status,published_at,created_at,updated_at)
+      SELECT ?,?,?,?,?,?,?,'draft',NULL,?,? WHERE NOT EXISTS(SELECT 1 FROM reports r,${dossierMembers} m
+      WHERE r.department_id='issue' AND m.value IN(SELECT value FROM json_each(?))) ON CONFLICT DO NOTHING`,
+      id,'dossier:'+seed.id,dossierKind,window.id,JSON.stringify(window),d.title,serialized,timestamp,timestamp,JSON.stringify(members));
+  }
+  if(!saved.meta?.changes){const winner=await checkExisting(members);if(winner?.id)return winner;fail(409,'같은 이슈가 변경되었습니다. 다시 열어 주세요.');}
+  await audit(env,operator.userId,'issue.draft',id);
+  return {id,reused:false};
+}
+
+async function dossierInput(input,env,operator) {
+  const registry=await sources(env);
+  const url=canonicalUrl(input.url);
+  const source=registry.find(s=>s.enabled&&s.canSummarize&&s.domains.includes(new URL(url).hostname));
+  if(!source)fail(400,'이용이 승인된 매체의 기사 주소가 필요합니다.');
+  let seed=await first(env.DB,'SELECT * FROM articles WHERE url=?',url);
+  if(!seed){
+    let article;try{article=await scrapeArticle(url,source);}catch{fail(422,'기사의 공개 본문과 발행일을 읽을 수 없습니다.');}
+    await importArticles({articles:[article],permissionNote:'승인된 매체의 직접 입력 기사'},env,operator);
+    seed=await first(env.DB,'SELECT * FROM articles WHERE url=?',url);
+  }
+  return createDossier(articleRecord(seed),env,operator,registry,now(),true);
+}
+
+// One bounded creation per step. Successful event documents are reusable on retries and across teams.
+async function dossierCycle(input,env,operator) {
+  const window=reportWindow(input.reportDate);
+  const classified=await generate({...input,kind:'brief',classifyOnly:true},env,operator);
+  if(classified.status!=='classified')return classified;
+  const registry=await sources(env);
+  const found=await rows(env.DB,`SELECT a.*,j.payload FROM articles a JOIN judgments j ON j.article_id=a.id AND j.body_hash=a.body_hash
+    JOIN source_permissions s ON s.id=a.source_id AND s.enabled*s.body_allowed*s.ai_allowed=1
+    WHERE a.published_at>=? AND a.published_at<? AND j.pipeline_version=? AND json_extract(j.payload,'$.decision')='candidate'
+    AND json_extract(j.payload,'$.feedback') IS NULL AND (json_extract(j.payload,'$.importance')>=? OR json_extract(j.payload,'$.reviewedBy') IS NOT NULL)
+    ORDER BY json_extract(j.payload,'$.importance') DESC,a.published_at DESC,a.id`,window.start,window.end,PIPELINE_VERSION,JEV_THRESHOLDS.briefScore);
+  if(found.length){
+    const memberIds=JSON.stringify(found.map(a=>a.id));
+    const selected=`r.department_id='issue' AND ${currentDossier} AND EXISTS(SELECT 1 FROM ${dossierMembers} m WHERE m.value IN(SELECT value FROM json_each(?)))`;
+    await run(env.DB,`UPDATE reports AS r SET payload=json_insert(payload,'$.dates[#]',?)
+      WHERE ${selected} AND NOT EXISTS(SELECT 1 FROM json_each(payload,'$.dates') WHERE value=?)`,window.reportDate,PIPELINE_VERSION,memberIds,window.reportDate);
+    const covered=await rows(env.DB,`SELECT DISTINCT m.value AS id FROM reports r,${dossierMembers} m WHERE ${selected}`,PIPELINE_VERSION,memberIds);
+    const processed=new Set(covered.map(r=>r.id));
+    const row=found.find(article=>!processed.has(article.id));
+    if(row){
+      const result=await createDossier(articleRecord(row),env,operator,registry,window.end);
+      return {status:'pending',reportId:result.id,message:'이슈 보고서를 저장했습니다. 다음 주요 기사를 확인합니다.'};
+    }
+  }
+  return {status:'complete',message:'회차의 주요 이슈를 정리했습니다. 이슈 보고서 초안을 열어 검수·발행해 주세요.'};
+}
+
 export async function handleApi(request,env) {
   const url=new URL(request.url),path=url.pathname,method=request.method;
   try {
@@ -186,6 +351,27 @@ export async function handleApi(request,env) {
     if(path.startsWith('/api/admin/')||path.startsWith('/api/jobs/')) {
       if(operator.role!=='admin') fail(403,'등록된 관리자 계정으로 로그인해 주세요.');
       if(method!=='GET'&&!service&&request.headers.get('origin')!==url.origin) fail(403,'같은 사이트에서 요청해 주세요.');
+    }
+    if(path==='/api/dossiers'&&method==='GET')return json({reports:await dossierList(env,user),viewer:user.role,departmentId:user.departmentId||null});
+    if(path==='/api/dossiers/lookup'&&method==='GET'){
+      if(user.role==='guest')fail(403,'등록된 구성원으로 로그인해 주세요.');
+      const a=await first(env.DB,'SELECT id FROM articles WHERE url=?',canonicalUrl(url.searchParams.get('url')));
+      const r=a&&await existingDossier(env,[a.id]);
+      return json({id:r&&(await dossierList(env,user,r.id)).length?r.id:null});
+    }
+    const dossierPath=path.match(/^\/api\/dossiers\/(issue_[0-9a-f]{64})$/);
+    if(dossierPath&&method==='GET'){
+      const [report]=await dossierList(env,user,dossierPath[1]);if(!report)fail(404,'열람할 수 있는 이슈 보고서가 없습니다.');
+      return json({report,departmentId:user.departmentId||null});
+    }
+    if(path==='/api/admin/dossiers'&&method==='POST')return json(await dossierInput(await body(request),env,operator));
+    if(['/api/admin/dossiers/cycle','/api/jobs/dossiers/cycle'].includes(path)&&method==='POST')return json(await dossierCycle(await body(request),env,operator));
+    const publishDossier=path.match(/^\/api\/admin\/dossiers\/(issue_[0-9a-f]{64})\/publish$/);
+    if(publishDossier&&method==='POST'){
+      const p=await body(request);if(p.reviewed!==true)fail(400,'기사와 분석을 검수해 주세요.');
+      const saved=await run(env.DB,`UPDATE reports AS r SET status='published',published_at=?,updated_at=? WHERE r.id=? AND r.department_id='issue' AND r.status='draft' AND r.updated_at=? AND ${currentDossier}`,now(),now(),publishDossier[1],String(p.revision||''),PIPELINE_VERSION);
+      if(!saved.meta.changes)fail(409,'출처·배분·발행 상태가 바뀌었습니다. 최신 보고서를 확인해 주세요.');
+      await audit(env,operator.userId,'issue.publish',publishDossier[1]);return json({published:true});
     }
     if(path==='/api/admin/sources'&&method==='GET') return json({sources:await sources(env)});
     if(path==='/api/jobs/check'&&method==='POST') {
@@ -286,7 +472,7 @@ export async function handleApi(request,env) {
       if(user.role==='guest') return json({reports:[],message:'로그인 후 관리자가 부서를 배정하면 실제 보고서를 볼 수 있습니다.'});
       const dept=user.role==='admin'?url.searchParams.get('departmentId'):user.departmentId;
       const month=url.searchParams.get('month');if(dept) department(dept);if(month&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) fail(400,'월을 YYYY-MM 형식으로 지정해 주세요.');
-      let sql='SELECT * FROM reports WHERE 1=1';const params=[];
+      let sql="SELECT * FROM reports WHERE department_id!='issue'";const params=[];
       if(dept){sql+=' AND department_id=?';params.push(dept);}if(user.role!=='admin'||path==='/api/reports'){sql+=" AND status='published'";}
       if(month){sql+=" AND json_extract(window_json,'$.reportDate') LIKE ?";params.push(`${month}%`);}
       sql+=' ORDER BY created_at DESC LIMIT 100';return json({reports:(await rows(env.DB,sql,...params)).map(r=>reportRecord(r))});
@@ -294,7 +480,7 @@ export async function handleApi(request,env) {
     const pub=path.match(/^\/api\/admin\/reports\/([^/]+)\/publish$/);
     if(pub&&method==='POST') {
       const p=await body(request);if(p.reviewed!==true) fail(400,'출처와 본문을 검토한 뒤 발행해 주세요.');
-      const r=await first(env.DB,'SELECT * FROM reports WHERE id=?',pub[1]);if(!r) fail(404,'보고서가 없습니다.');
+      const r=await first(env.DB,'SELECT * FROM reports WHERE id=?',pub[1]);if(!r||r.department_id==='issue') fail(404,'보고서가 없습니다.');
       if(r.status==='published') return json({report:reportRecord(r,true)});
       const payload=JSON.parse(r.payload),registry=await sources(env);const allowed=new Set(registry.filter(s=>s.enabled&&s.canSummarize).map(s=>s.id));
       for(const s of payload.sources) {const a=await first(env.DB,'SELECT source_id,body_hash,title FROM articles WHERE id=?',s.id);if(!a||!allowed.has(a.source_id)) fail(409,'이용 권한이 변경된 출처가 있어 발행할 수 없습니다.');if(a.body_hash!==s.bodyHash||a.title!==s.title)fail(409,'근거 기사가 수정되었습니다. 기존 초안을 삭제하고 다시 생성·검토해 주세요.');}
@@ -303,9 +489,9 @@ export async function handleApi(request,env) {
       await audit(env,user.userId,'report.publish',r.id);return json({report:reportRecord(await first(env.DB,'SELECT * FROM reports WHERE id=?',r.id),true)});
     }
     const detail=path.match(/^\/api\/reports\/([^/]+)$/);
-    if(detail&&method==='GET') {const r=await first(env.DB,'SELECT * FROM reports WHERE id=?',detail[1]);if(!r) fail(404,'보고서가 없습니다.');authorizeReport(user,r);return json({report:reportRecord(r,true)});}
+    if(detail&&method==='GET') {const r=await first(env.DB,'SELECT * FROM reports WHERE id=?',detail[1]);if(!r||r.department_id==='issue') fail(404,'보고서가 없습니다.');authorizeReport(user,r);return json({report:reportRecord(r,true)});}
     const draft=path.match(/^\/api\/admin\/reports\/([^/]+)$/);
-    if(draft&&method==='DELETE') {const p=await body(request);if(p.confirm!==true)fail(400,'초안 삭제를 확인해 주세요.');const r=await first(env.DB,'SELECT * FROM reports WHERE id=?',draft[1]);if(!r||r.status!=='draft')fail(409,'초안만 삭제할 수 있습니다. 발행본은 유지합니다.');await run(env.DB,"DELETE FROM reports WHERE id=? AND status='draft'",r.id);await audit(env,user.userId,'report.draft.delete',r.id);return json({deleted:true});}
+    if(draft&&method==='DELETE') {const p=await body(request);if(p.confirm!==true)fail(400,'초안 삭제를 확인해 주세요.');const r=await first(env.DB,'SELECT * FROM reports WHERE id=?',draft[1]);if(!r||r.department_id==='issue'||r.status!=='draft')fail(409,'초안만 삭제할 수 있습니다. 발행본은 유지합니다.');await run(env.DB,"DELETE FROM reports WHERE id=? AND status='draft'",r.id);await audit(env,user.userId,'report.draft.delete',r.id);return json({deleted:true});}
     fail(404,'요청한 API가 없습니다.');
-  } catch(e) { return json({error:e instanceof HttpError?e.message:'요청을 처리하지 못했습니다. 입력 또는 서버 연결 상태를 확인해 주세요.'},e instanceof HttpError?e.status:400); }
+  } catch(e) { if(e instanceof ProviderError)return json({error:'모델 연결 또는 응답을 확인해 주세요. ('+e.code+')'},e.status); return json({error:e instanceof HttpError?e.message:'요청을 처리하지 못했습니다. 입력 또는 서버 연결 상태를 확인해 주세요.'},e instanceof HttpError?e.status:400); }
 }

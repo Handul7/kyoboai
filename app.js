@@ -222,7 +222,7 @@ function updateArchiveFilter(key, value) {
 function renderOverview(){
   $("#directory-team-count").textContent = `${allowedDepartments().length}개 팀`;
   const sorted=allowedDepartments().sort((a,b)=>Number(state.interests.includes(b.id))-Number(state.interests.includes(a.id)));
-  $("#department-overview").innerHTML=sorted.map(d=>`<button class="department-choice" data-department="${d.id}" aria-label="${d.name} 보고서 목록"><span class="directory-icon" style="--dept-bg:${d.bg};--dept-text:${d.text}">${icon(d.icon)}</span><span class="directory-name">${d.name}</span><span class="directory-count">보고서 ${departmentPublications(d.id).filter(publication => publication.kind === state.archiveKind && filteredReports().some(report => report.id === publication.collectionId)).length}개</span>${icon("chevron","directory-arrow")}</button>`).join("");
+  $("#department-overview").innerHTML=sorted.map(d=>`<button class="department-choice" data-department="${d.id}" aria-label="${d.name} 보고서 목록"><span class="directory-icon" style="--dept-bg:${d.bg};--dept-text:${d.text}">${icon(d.icon)}</span><span class="directory-name">${d.name}</span><span class="directory-count">보고서 ${state.archiveKind==="period"&&window.teamDossierCount?window.teamDossierCount(d.id):departmentPublications(d.id).filter(publication => publication.kind === state.archiveKind && filteredReports().some(report => report.id === publication.collectionId)).length}개</span>${icon("chevron","directory-arrow")}</button>`).join("");
 }
 function renderDepartmentList() {
   if (!canViewDepartment(state.session, state.briefDepartment)) return;
@@ -231,6 +231,7 @@ function renderDepartmentList() {
   const publications = departmentPublications(department.id).filter(publication => publication.kind === state.archiveKind && reportIds.includes(publication.collectionId));
   $("#department-report-list").innerHTML = `
     ${state.session.role === "admin" ? `<button class="back-link" data-view="today">${icon("arrow")} 전체 팀</button>` : ""}
+    ${state.archiveKind==="period"?'<details class="sample-news"><summary>이전 형식의 부서별 샘플 보고서</summary>':""}
     <p class="archive-count">보고서 ${publications.length}개</p>
     <div class="publication-list">${publications.map(publication => {
       const {report: collection, articles} = publicationContent(publication);
@@ -240,7 +241,7 @@ function renderDepartmentList() {
         <span class="publication-copy"><strong>${publication.title}</strong>
           <span class="publication-date">${publication.publishedAt.replaceAll("-", ".")} 발행 · 근거 뉴스 ${count}건</span>
         </span>${icon("chevron", "publication-arrow")}</button>`;
-    }).join("") || '<div class="empty-state"><h3>해당 기간의 보고서가 없습니다.</h3><p>발행 월이나 날짜를 바꿔보세요.</p><button class="outline-button" id="reset-archive-empty">전체 기간 보기</button></div>'}</div>
+    }).join("") || '<div class="empty-state"><h3>해당 기간의 보고서가 없습니다.</h3><p>발행 월이나 날짜를 바꿔보세요.</p><button class="outline-button" id="reset-archive-empty">전체 기간 보기</button></div>'}</div>${state.archiveKind==="period"?"</details>":""}
     `;
 }
 function openPublication(id,scroll=true,replace=false){
@@ -317,13 +318,14 @@ function renderNewsResearch() {
 function renderHeading() {
   const title = {
     today: "팀별 보고서",
-    news: "전체 뉴스",
+    news: "보험 뉴스 보고서",
+    issue: "이슈 보고서",
     departments: `${departmentById(state.briefDepartment).name}팀 보고서`,
     report: "요약 보고서",
     saved: "나의 스크랩",
     process: "과제 2 · 작동 방식"
   }[state.view];
-  $(".page-heading").hidden = state.view === "report";
+  $(".page-heading").hidden = ["report","issue"].includes(state.view);
   $("#page-title").textContent = title;
   $("#breadcrumb-current").textContent = title;
   document.title = `${title} — 교보 뉴스브리핑`;
@@ -333,9 +335,10 @@ function renderImplementationNote() {
   $("#implementation-note").hidden = !PRESENTATION_MODE;
   if (!PRESENTATION_MODE) return;
   const notes = {
+    issue: {code:"공통 보고서 조회·팀별 읽기 순서·PDF 다운로드",jev:"같은 사건 여부와 주관·협조팀 판단",llm:"근거 기사로 배경·영향·확인 사항 작성"},
     today: {code:"팀 선택·열람 범위·보고서 목록", jev:"기사의 관련 부서 판단", llm:"부서별 보고서 작성"},
     departments: {code:"팀별 조회·월간/회차·날짜 필터", jev:"기사의 관련 부서 판단", llm:"보고서 제목·요약 작성"},
-    news: {code:"수집·중복 정리·이슈 표시", jev:"보험업 관련성·주관/협조 배분·긴급도 판단", llm:"선정 기사로 정기 브리핑 작성"},
+    news: {code:"수집·중복 정리·이슈 표시", jev:"보험업 관련성·주관/협조 배분·긴급도 판단", llm:"같은 사건의 기사로 이슈 보고서 작성"},
     report: {code:"기간 집계·근거 기사 연결", jev:"보고서에 넣을 기사 선별·부서 분류", llm:"핵심 요약·인사이트·분석 레포트"},
     saved: {code:"스크랩 저장·검색·내보내기", jev:"저장 화면에서는 호출하지 않음", llm:"저장 화면에서는 호출하지 않음"},
     process: {code:"수집·화면·저장·권한 처리", jev:"보험 관련성·보고 가치·부서 판단", llm:"선정 기사 요약·업무 시사점 작성"}
@@ -347,7 +350,7 @@ function renderImplementationNote() {
     ? "실제 서버의 연결 상태를 표시합니다. Jev·LLM은 서버 API 설정 후 관리자 실행에서 호출합니다."
     : research
       ? "뉴스 매체 비교는 공개 기사를 직접 조사한 표본입니다. Jev·LLM 자동 수집 결과가 아닙니다."
-      : "현재 일반 뉴스·팀 보고서는 샘플입니다. Jev·LLM 판단·요약은 작성한 예시이며 이 화면에서 모델을 호출하지 않습니다.";
+      : "과제 예시는 사람이 작성했습니다. 실제 운영에서는 승인된 매체의 기사에 Jev와 LLM을 적용하고 검수 후 발행합니다.";
   $("#implementation-note").innerHTML = `<details>
     <summary><span>발표용</span><span class="implementation-tag">코딩</span><span class="implementation-tag jev-tag">Jev</span><span class="implementation-tag llm-tag">LLM</span>${icon("down")}</summary>
     <div><p><strong>코딩</strong> ${note.code}</p><p><strong>Jev</strong> ${note.jev}</p><p><strong>LLM</strong> ${note.llm}</p><p class="implementation-fixture">${explanation}</p></div>
@@ -359,6 +362,9 @@ function renderAll() {
   (state.view==="news"?$("#sample-news > summary"):$("#archive-home")).after(archive);
   $$("main>.view").forEach(el => el.hidden = el.id !== `${state.view}-view`);
   renderFeed(); renderSaved();
+  window.renderDossierLists?.();
+  if(state.view==="issue") window.renderDossierDetail?.(state.issueId); else window.clearDossier?.();
+  $("#dossier-teams").hidden=state.archiveKind==="monthly";
   if(state.view==="departments") renderDepartmentList(); else $("#department-report-list").innerHTML="";
   if(state.view==="report") renderReportDetail(); else $("#department-content").innerHTML="";
   const showResearch = state.view === "process" && state.processTab === "news";
@@ -366,7 +372,7 @@ function renderAll() {
   $("#overview-panel").hidden = showResearch || showOperations;
   $("#research-panel").hidden = !showResearch;
   $("#operations-panel").hidden = !showOperations;
-  $(".ops-live-entry").hidden = showOperations || state.view === "news";
+  $(".ops-live-entry").hidden = showOperations || ["news","issue"].includes(state.view);
   if (showOperations) renderOperations();
   $("#overview-tab").setAttribute("aria-current", showResearch || showOperations ? "false" : "page");
   $("#research-tab").setAttribute("aria-current", showResearch ? "page" : "false");
@@ -374,7 +380,7 @@ function renderAll() {
 }
 
 function navigate(view,department,scroll=true,replace=false,processTab="overview"){
-  if(!["today","news","departments","report","saved","process"].includes(view)) view="today";
+  if(!["today","news","departments","report","issue","saved","process"].includes(view)) view="today";
   if (view === "today") {
     if (!state.session) view = "news";
     else if (state.session.role === "team") { view = "departments"; department = state.session.departmentId; }
@@ -398,7 +404,7 @@ function navigate(view,department,scroll=true,replace=false,processTab="overview
   state.view=view;
   state.processTab=processTab;
   if(view!=="report") state.publicationId=null;
-  const route=view==="departments"?`department/${state.briefDepartment}`:view==="report"?`report/${state.publicationId}`:view==="process"&&["news","operations"].includes(processTab)?`process/${processTab}`:view;
+  const route=view==="issue"?`issue/${state.issueId}`:view==="departments"?`department/${state.briefDepartment}`:view==="report"?`report/${state.publicationId}`:view==="process"&&["news","operations"].includes(processTab)?`process/${processTab}`:view;
   if(location.hash!==`#${route}`) history[replace?"replaceState":"pushState"](null,"",`#${route}`);
   renderAll();
   if(scroll){window.scrollTo({top:0,behavior:"instant"});$("#main-content").focus({preventScroll:true});}
@@ -590,6 +596,7 @@ $$('dialog').forEach(dialog => {
 function readHash(){
   const hash=location.hash.slice(1);
   const parts=hash.split("/");
+  if(parts[0]==="issue"&&parts.length===2&&/^(sample-[a-z0-9-]+|issue_[a-f0-9]{64})$/.test(parts[1])){state.issueId=parts[1];navigate("issue",null,true,true);return;}
   if(hash==="process/news"){navigate("process",null,false,true,"news");return;}
   if(hash==="process/operations"){navigate("process",null,false,true,"operations");return;}
   if(parts[0]==="department"&&parts.length===2&&DEPARTMENTS.some(d=>d.id===parts[1])){navigate("departments",parts[1],false,true);return;}
@@ -607,4 +614,5 @@ window.addEventListener("hashchange",readHash);
 renderNewsResearch();
 readHash();
 window.bootIssueDesk?.();
+window.refreshDossiers?.();
 

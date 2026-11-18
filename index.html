@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#121c72">
-  <meta name="description" content="생명보험 뉴스를 모으고, 부서의 인사이트로. Jev 분류와 LLM 부서별 브리핑을 제안하는 대학원 과제용 인터랙티브 샘플.">
+  <meta name="description" content="보험 뉴스를 이슈별로 읽고, 우리 팀이 확인할 일을 근거 기사와 함께 살펴보는 보고서 도우미.">
   <link rel="canonical" href="https://kyoboai.handul.dev/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ko_KR">
   <meta property="og:site_name" content="교보 뉴스브리핑">
   <meta property="og:title" content="희경 조장님 팟팅!">
-  <meta property="og:description" content="교보 뉴스브리핑 · 부서별 보험 뉴스 요약 보고서">
+  <meta property="og:description" content="교보 뉴스브리핑 · 보험 이슈 보고서 도우미">
   <meta property="og:url" content="https://kyoboai.handul.dev/">
   <meta property="og:image" content="https://kyoboai.handul.dev/assets/og-cheer-v1.png">
   <meta property="og:image:secure_url" content="https://kyoboai.handul.dev/assets/og-cheer-v1.png">
@@ -20,19 +20,22 @@
   <meta property="og:image:alt" content="희경 조장님 팟팅! 네이비와 그린 색상의 응원 메시지">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="희경 조장님 팟팅!">
-  <meta name="twitter:description" content="교보 뉴스브리핑 · 부서별 보험 뉴스 요약 보고서">
+  <meta name="twitter:description" content="교보 뉴스브리핑 · 보험 이슈 보고서 도우미">
   <meta name="twitter:image" content="https://kyoboai.handul.dev/assets/og-cheer-v1.png">
   <meta name="twitter:image:alt" content="희경 조장님 팟팅!">
   <title>교보 뉴스브리핑 — 보험 이슈와 팀 대응</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-subset.css">
-  <link rel="stylesheet" href="./styles.css?v=2026.11.14.3">
-  <script defer src="./data.js?v=2026.11.14.3"></script>
-  <script defer src="./news-research.js?v=2026.11.14.3"></script>
-  <script defer src="./issues.js?v=2026.11.14.3"></script>
-  <script defer src="./operations.js?v=2026.11.14.3"></script>
-  <script defer src="./app.js?v=2026.11.14.3"></script>
+  <link rel="stylesheet" href="./styles.css?v=2026.11.19.1">
+  <script defer src="./data.js?v=2026.11.19.1"></script>
+  <script defer src="./news-research.js?v=2026.11.19.1"></script>
+  <script defer src="./issue-examples.js?v=2026.11.19.1"></script>
+  <script defer src="./dossier-pdf.js?v=2026.11.19.1"></script>
+  <script defer src="./dossiers.js?v=2026.11.19.1"></script>
+  <script defer src="./issues.js?v=2026.11.19.1"></script>
+  <script defer src="./operations.js?v=2026.11.19.1"></script>
+  <script defer src="./app.js?v=2026.11.19.1"></script>
 </head>
 <body>
   <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -79,7 +82,7 @@
   </aside>
 
   <div class="app-shell">
-    <div class="revision-bar" data-release="2026.11.14.3">최종 수정 <time datetime="2026-11-14">2026.11.14</time><span class="release-id">버전 2026.11.14.3</span></div>
+    <div class="revision-bar" data-release="2026.11.19.1">최종 수정 <time datetime="2026-11-19">2026.11.19</time><span class="release-id">버전 2026.11.19.1</span></div>
     <header class="topbar">
       <div class="mobile-identity"><a class="mobile-brand" href="#today" aria-label="교보 뉴스브리핑 홈"><img src="./assets/kyobo-logo.png" alt="KYOBO 교보생명" width="150" height="44"></a><span class="mobile-service-name">뉴스브리핑</span></div>
 <div class="breadcrumb"><strong id="breadcrumb-current">전체 뉴스</strong></div>
@@ -97,7 +100,12 @@
       <section id="today-view" class="view"><div class="directory-heading"><h2>팀을 선택하세요</h2><span id="directory-team-count">6개 팀</span></div><div class="department-directory" id="department-overview"></div><div class="directory-footer"><span><svg><use href="#i-clock"/></svg>월·목요일, 주 2회 발행</span><button class="text-button" data-view="news">전체 뉴스 보기 <svg><use href="#i-arrow"/></svg></button></div></section>
 
       <div id="news-view" class="view" hidden>
-        <section id="issue-desk" class="issue-desk" aria-label="보험 이슈와 부서 배분"></section>
+        <section id="briefing-picks" class="briefing-picks" aria-label="월·목 브리핑"></section>
+        <details class="dossier-input-panel" open><summary>기사 직접 입력</summary>
+          <form id="dossier-input"><label for="seed-input">기사 주소 또는 예시 제목</label><div class="seed-field"><input id="seed-input" type="text" inputmode="text" autocapitalize="none" autocomplete="off" spellcheck="false" required maxlength="2048" placeholder="기사 주소 붙여넣기"><button class="outline-button" type="submit">보고서 열기</button></div>
+          <p id="input-scope" class="dossier-caption"></p><button type="button" class="text-button" id="try-input">예시 기사로 체험</button><div id="input-result" role="status"></div></form></details>
+        <div id="live-team-dossiers"></div><div id="dossier-drafts"></div>
+        <details class="sample-news"><summary>기사 배분 근거와 오분류 신고</summary><section id="issue-desk" class="issue-desk" aria-label="보험 이슈와 부서 배분"></section></details>
         <details id="sample-news" class="sample-news">
         <summary>회차별 샘플 기사 보기</summary>
         <section class="news-section" id="news-section">
@@ -115,7 +123,8 @@
         </details>
       </div>
 
-      <section id="departments-view" class="view" hidden><div id="department-report-list"></div></section>
+      <section id="departments-view" class="view" hidden><section id="dossier-teams" class="dossier-team-list"></section><div id="department-report-list"></div></section>
+      <section id="issue-view" class="view" hidden><div id="dossier-detail"></div></section>
       <section id="report-view" class="view" hidden><div id="department-content"></div></section>
       <section id="saved-view" class="view" hidden><div class="section-heading"><h2>저장한 기사 <span id="saved-total" class="count-label">0</span></h2><button class="outline-button" id="export-saved"><svg><use href="#i-download"/></svg>텍스트로 내보내기</button></div><p class="saved-description">다시 읽고 싶은 뉴스를 한곳에. 스크랩은 이 브라우저에 저장됩니다.</p><div id="saved-list" class="article-list saved-articles"></div></section>
       <section id="process-view" class="view" hidden>
@@ -129,17 +138,17 @@
           <a id="operations-tab" href="#process/operations">연동 준비</a>
         </nav>
         <div id="overview-panel" aria-labelledby="overview-tab">
-          <div class="process-intro"><h2>기사 한 건이<br>팀의 대응으로 이어지기까지.</h2><p>과제 1은 보험 뉴스 수집과 이슈 배분 서비스입니다. 과제 2는 수집·판단·보고가 어떻게 이어지며 오분류를 어떻게 고치는지 설명합니다.</p><a class="text-button" href="#news">과제 1 · 이슈 화면 보기 <svg><use href="#i-arrow"/></svg></a></div>
+          <div class="process-intro"><h2>기사 한 건이<br>팀의 대응으로 이어지기까지.</h2><p>월·목 브리핑에서 이슈를 고르거나 기사 주소로 시작합니다. 두 경로 모두 같은 이슈 보고서를 열고, 담당 부서에는 관련 이유와 확인할 일을 먼저 보여줍니다. 과제 2는 수집·판단·보고가 어떻게 이어지며 오분류를 어떻게 고치는지 설명합니다.</p><a class="text-button" href="#news">과제 1 · 이슈 화면 보기 <svg><use href="#i-arrow"/></svg></a></div>
           <div class="process-steps">
             <article><span class="step-icon"><svg><use href="#i-paper"/></svg></span><span class="eyebrow">코딩</span><h3>기사 수집·정리</h3><p>허용된 출처에서 제목·원문 링크·발행일·본문을 받습니다. 회차별 날짜를 적용하고 동일 URL·동일 본문을 정리합니다.</p></article>
             <article><span class="step-icon"><svg><use href="#i-flow"/></svg></span><span class="eyebrow">TypeSafe Jev</span><h3>주관 1팀·협조 여러 팀</h3><p>제목과 본문에서 보험업 관련성, 첫 대응 책임, 다른 팀이 제공할 검토·자료를 판단합니다. 근거가 부족한 배분은 검토로 넘깁니다.</p></article>
-            <article><span class="step-icon"><svg><use href="#i-spark"/></svg></span><span class="eyebrow">LLM</span><h3>브리핑 초안 작성</h3><p>확정된 팀 배분과 기사 ID를 받아 요약·시사점·공동 검토 제안을 작성합니다. 관리자가 근거를 확인한 뒤 발행합니다.</p></article>
+            <article><span class="step-icon"><svg><use href="#i-spark"/></svg></span><span class="eyebrow">LLM</span><h3>이슈 보고서 작성</h3><p>같은 사건의 근거 기사와 주관·협조팀을 받아 요약, 배경, 영향, 미확인 사항과 팀별 확인 사항을 작성합니다. 관리자가 근거를 확인한 뒤 발행합니다.</p></article>
           </div>
           <section class="jev-guide" aria-labelledby="jev-guide-title">
             <h3 id="jev-guide-title">Jev 판단 기준</h3>
             <p>이슈를 어떻게 배분할지 세 가지 출력으로 판단합니다. 아래 숫자는 초기 운영 기준이며, 실제 성능은 검토한 기사로 평가합니다.</p>
             <div class="jev-types">
-              <article><h4><a href="https://docs.typesafe.ai/primitives/noul">Noul</a><small>예 / 아니오 확률</small></h4><p>보험업에 관련 있나? 이 팀이 구체적으로 도울 일이 있나? 다음 브리핑 전에 확인해야 하나?</p><p><strong>0.80 이상</strong> 채택 · <strong>0.20 이하</strong> 제외 · 그 사이는 배분 검토. 긴급 확률은 긴급 후보를 고를 때만 사용합니다.</p></article>
+              <article><h4><a href="https://docs.typesafe.ai/primitives/noul">Noul</a><small>예 / 아니오 확률</small></h4><p>보험업에 관련 있나? 이 팀이 구체적으로 도울 일이 있나? 다음 브리핑 전에 확인해야 하나? 관련 보도 후보가 같은 사건일 확률 0.85 이상이면 함께 검토합니다.</p><p><strong>0.80 이상</strong> 채택 · <strong>0.20 이하</strong> 제외 · 그 사이는 배분 검토. 긴급 확률은 긴급 후보를 고를 때만 사용합니다.</p></article>
               <article><h4><a href="https://docs.typesafe.ai/primitives/choice">Choice</a><small>한 가지 선택</small></h4><p>첫 대응을 책임질 주관팀 한 곳 또는 판단 불가를 고릅니다. 근거도 원문 문장 후보 중 하나를 고릅니다.</p><p>주관 확률 <strong>0.65 이상</strong>, 2순위와 <strong>0.20 이상 차이</strong>, 해당 팀의 Noul 통과가 필요합니다. 근거 선택 확률은 0.65 이상입니다.</p></article>
               <article><h4><a href="https://docs.typesafe.ai/primitives/score">Score</a><small>보고 가치 0~3</small></h4><p>0 무관 · 1 참고 · 2 업무 검토 · 3 대응 필요. 네 단계의 확률로 점수를 계산합니다.</p><p><strong>1.5 이상</strong> 정기 후보. <strong>2.6 이상</strong>에 긴급 Noul 0.80 이상, 근거와 배분 통과 시 긴급 후보. 신뢰도 0.65 미만은 검토합니다.</p></article>
             </div>

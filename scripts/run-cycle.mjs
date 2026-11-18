@@ -5,7 +5,7 @@ const kind=args.includes('--monthly')?'monthly':'brief';
 const date=args.find(a=>/^\d{4}-\d{2}(?:-\d{2})?$/.test(a));
 if(!date){console.log('Usage: node scripts/run-cycle.mjs YYYY-MM-DD [--monthly] [--live]\nDefault: plan only, no HTTP requests. --monthly accepts YYYY-MM.');process.exit(0);}
 const window=reportWindow(date,kind);
-if(!args.includes('--live')){console.log(JSON.stringify({dryRun:true,window,departments:DEPARTMENT_IDS,steps:['collect','classify and draft each department','human review and publish']},null,2));process.exit(0);}
+if(!args.includes('--live')){console.log(JSON.stringify({dryRun:true,window,departments:DEPARTMENT_IDS,steps:['collect',kind==='brief'?'classify and draft one report per issue':'draft monthly department reports','human review and publish']},null,2));process.exit(0);}
 const base=new URL(process.env.SITE_URL||'');
 if(base.protocol!=='https:'||base.username||base.password||!process.env.JOB_TOKEN)throw Error('Configure HTTPS SITE_URL and server-only JOB_TOKEN.');
 const headers={'Content-Type':'application/json',Authorization:`Bearer ${process.env.JOB_TOKEN}`};
@@ -18,5 +18,6 @@ const maxSteps=Math.min(51,Math.ceil((serverState.limits?.maxArticles||40)/8)+1)
 const collection=await post('/api/jobs/collect',{reportDate:date,kind});
 console.log(JSON.stringify({stage:'collect',stored:collection.stored}));
 let failed=false;
-for(const departmentId of DEPARTMENT_IDS){let result;for(let step=0;step<maxSteps;step++){result=await post('/api/jobs/run',{reportDate:date,kind,departmentId});if(result.status!=='pending')break;}console.log(JSON.stringify({departmentId,status:result.status,counts:result.counts,reportId:result.reportId}));if(['failed','blocked','pending'].includes(result.status))failed=true;}
+if(kind==='brief'){let result;for(let i=0;i<(serverState.limits?.maxArticles||40)+maxSteps+1;i++){result=await post('/api/jobs/dossiers/cycle',{reportDate:date});if(result.status!=='pending')break;}console.log(JSON.stringify({stage:'issue dossiers',status:result.status}));if(result.status!=='complete')process.exitCode=1;}
+else for(const departmentId of DEPARTMENT_IDS){let result;for(let step=0;step<maxSteps;step++){result=await post('/api/jobs/run',{reportDate:date,kind,departmentId});if(result.status!=='pending')break;}console.log(JSON.stringify({departmentId,status:result.status,counts:result.counts,reportId:result.reportId}));if(['failed','blocked','pending'].includes(result.status))failed=true;}
 if(failed)process.exitCode=1;

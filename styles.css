@@ -843,3 +843,30 @@ html:has(dialog[open]) { overflow: hidden; }
   .issue-card dl > div { grid-template-columns: minmax(0,1fr); gap: 1px; }
   .issue-at-a-glance > span { display: block; margin-left: 0; }
 }
+
+/* One issue document, shared by the briefing and the team inbox. */
+.briefing-picks,.dossier-input-panel,.dossier-team-list,#dossier-detail,#dossier-drafts,#live-team-dossiers{max-width:800px;color:#23354a;margin-bottom:1.35rem}
+.dossier-list-head,.dossier-tools,.seed-field{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.dossier-list-head h2,.dossier-team-list h2{font-size:1.3rem;margin:0;color:#17265d}
+.dossier-list-head select,.seed-field input,.dossier-tools button,.dossier-tools a{font:inherit;font-size:16px;min-height:44px;padding:8px 12px;border:1px solid #ccd6df;border-radius:8px;background:#fff;color:#243a60}
+.dossier-caption{font-size:14px;line-height:1.6;color:#536577;margin:8px 0}
+.dossier-list{border-block:1px solid #c8d3da;background:#fff}
+.dossier-row{display:flex;gap:1em;align-items:center;justify-content:space-between;text-decoration:none;padding:16px 12px;color:#183165;border-bottom:1px solid #dfe6e9}
+.dossier-row:last-child{border-bottom:0}.dossier-row:hover,.dossier-row:focus-visible{background:#f0f7f5}
+.dossier-row-text{display:grid;gap:5px;min-width:0;overflow-wrap:anywhere}.dossier-row-text strong{font-size:19px;line-height:1.45}.dossier-row-text>span{font-size:16px;color:#364958;line-height:1.6}.dossier-row-text small{font-size:14px;color:#52677d}.dossier-row>.dossier-row-text+span{font-size:24px;color:#54718c}
+.dossier-input-panel,#publish-dossier{background:white;border:1px solid #cfdde0;border-radius:10px;padding:16px}
+.dossier-input-panel summary,#dossier-drafts summary,#live-team-dossiers summary,.dossier-list summary{cursor:pointer;font-weight:650;font-size:17px;min-height:44px;align-content:center;color:#173c55}
+#dossier-input label{display:block;margin:8px 0;font-size:15px}.seed-field input{min-width:0;flex:1 1 180px}.seed-field button,#try-input{min-height:44px;font-size:16px}
+#input-result{line-height:1.65;overflow-wrap:anywhere}#input-result:empty,#dossier-notice:empty{display:none}
+.dossier-tools{margin-bottom:12px}.dossier-tools a,.dossier-tools button{display:inline-flex;align-items:center;cursor:pointer}.dossier-tools a{border-color:transparent;background:none;text-decoration:none}.dossier-tools button{color:#124939;border-color:#a4c9b5}
+.dossier-paper{max-width:760px;background:#fff;padding:clamp(16px,4vw,40px);border-radius:12px;border:1px solid #dae2e6;overflow-wrap:anywhere;word-break:keep-all}
+.dossier-paper header h1{font-size:clamp(25px,4vw,34px);color:#18245a;line-height:1.4;margin:6px 0 20px}
+.dossier-paper section{margin:20px 0 0}.dossier-paper h2{font-size:19px;color:#1f4053;line-height:1.45;margin:0 0 5px}.dossier-paper p{font-size:16px;line-height:1.75;margin:3px 0;color:#344957}
+.dossier-paper .team-focus{background:#eff7f2;border-inline-start:3px solid #3c8761;padding:12px 14px}
+.dossier-paper .dossier-caption,.dossier-notes{font-size:14px;color:#4c6375;line-height:1.65}.dossier-notes{padding-left:20px}.dossier-notes a,.dossier-cite{color:#1b5590;text-decoration:underline;text-underline-offset:2px}.dossier-cite{background:none;border:0}
+#publish-dossier{display:grid;gap:10px;margin-top:16px}#publish-dossier input{width:20px;height:20px;vertical-align:middle}
+@media(max-width:400px){.dossier-list-head h2{font-size:19px}.seed-field{gap:6px}.dossier-row{padding:14px 8px}}
+@media print{body:has(#issue-view:not([hidden])) :is(.sidebar,.topbar,.revision-bar,.mobile-nav,.page-footer,.implementation-note,.dossier-tools,#publish-dossier,#dossier-notice){display:none!important}body:has(#issue-view:not([hidden])) :is(main,.main-area,.main-wrapper,#dossier-detail,.dossier-paper){margin:0!important;padding:0!important;max-width:none!important;border:0!important}}
+
+.briefing-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0 12px}.briefing-meta .text-button{font-size:14px;min-height:44px}
+.dossier-list-head .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}

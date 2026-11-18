@@ -344,3 +344,84 @@ test('feed collection sends exact period bounds and refuses partial or out-of-wi
   payload = { articles: [inputArticle()] };
   assert.equal((await collect()).data.stored, 1);
 });
+
+test('direct input, related coverage and a periodic briefing share one access-controlled issue document', async t => {
+  const env=fixture(t), seed=await addArticle(env,'seed');
+  const other=inputArticle('followup');
+  env.NEWS_SEARCH_URL='https://licensed.example.test/search';
+  let summaries=0, searches=0;
+  const original=globalThis.fetch;t.after(()=>{globalThis.fetch=original;});
+  globalThis.fetch=async(url,init)=>{
+    if(String(url).startsWith(env.NEWS_SEARCH_URL)){
+      searches++;assert.equal(new URL(url).searchParams.get('q'),seed.title);
+      return Response.json({articles:[other]});
+    }
+    const p=JSON.parse(init.body);
+    if(p.questions?.match0)return Response.json({answers:{match0:{type:'noul',noul:.96}}});
+    if(p.questions){const response=wireJev({questions:p.questions});response.answers.dept_risk.noul=.94;return Response.json(response);}
+    summaries++;
+    const supplied=JSON.parse(p.messages[1].content);
+    assert.equal(supplied.articles.length,2);
+    const content={title:'이슈 보고서',summary:'변화 [1]',background:'관련 배경 [2]',impact:'예상 영향 [1]',uncertainty:'미확인 사항 [2]',teams:['strategy','risk'].map(id=>({id,why:'담당 사유 [1]',check:'확인할 사항 [2]'}))};
+    return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(content)}}]});
+  };
+  const submit=url=>request(env,'/api/admin/dossiers',{method:'POST',data:{url}});
+  const firstResult=await submit(seed.url);assert.equal(firstResult.status,200,JSON.stringify(firstResult));
+  const id=firstResult.data.id;assert.match(id,/^issue_/);
+  assert.equal((await submit(other.url)).data.id,id);assert.equal(summaries,1);assert.equal(searches,1);
+  const cycle=await request(env,'/api/jobs/dossiers/cycle',{method:'POST',data:{reportDate:DATE}});
+  assert.equal(cycle.data.status,'complete',JSON.stringify(cycle.data));
+  assert.equal(summaries,1);
+  const draft=(await request(env,'/api/dossiers/'+id)).data.report;
+  assert.deepEqual(draft.dates,[DATE]);assert.equal(draft.sources.length,2);assert.equal(draft.status,'draft');
+  for(const dept of ['risk','asset','strategy'])await request(env,'/api/admin/members/u-'+dept,{method:'PUT',data:{departmentId:dept}});
+  assert.equal((await request(env,'/api/dossiers/'+id,{user:'u-risk'})).status,404);
+  assert.equal((await request(env,'/api/admin/dossiers/'+id+'/publish',{method:'POST',data:{reviewed:true,revision:'old'}})).status,409);
+  assert.equal((await request(env,'/api/admin/dossiers/'+id+'/publish',{method:'POST',data:{reviewed:true,revision:draft.revision}})).status,200);
+  for(const dept of ['risk','strategy']){
+    const view=await request(env,'/api/dossiers/'+id,{user:'u-'+dept});assert.equal(view.data.departmentId,dept);assert.equal(view.data.report.id,id);
+    assert.equal((await request(env,'/api/dossiers/lookup?url='+encodeURIComponent(other.url),{user:'u-'+dept})).data.id,id);
+  }
+  for(const user of [null,'u-asset']){
+    assert.equal((await request(env,'/api/dossiers/'+id,{user})).status,404);
+    assert.equal((await request(env,'/api/dossiers',{user})).data.reports.length,0);
+  }
+  assert.equal((await request(env,'/api/admin/reports')).data.reports.length,0);
+  assert.equal((await request(env,'/api/reports/'+id)).status,404);
+  await request(env,'/api/admin/sources/newsis',{method:'PUT',data:{enabled:false,bodyAllowed:false,aiAllowed:false,permissionNote:''}});
+  assert.equal((await request(env,'/api/dossiers/'+id,{user:'u-risk'})).status,404);
+});
+
+test('a briefing can originate a dossier and a later article lookup reuses it; unrelated coverage stays separate', async t=>{
+  const env=fixture(t), seed=await addArticle(env,'window');
+  await addArticle(env,'unrelated');
+  let matchCalls=0,summaries=0;
+  const previous=globalThis.fetch;t.after(()=>{globalThis.fetch=previous;});
+  globalThis.fetch=async(url,init)=>{
+    const p=JSON.parse(init.body);
+    if(p.questions?.match0){matchCalls++;return Response.json({answers:{match0:{type:'noul',noul:.22}}});}
+    if(p.questions)return Response.json(wireJev({questions:p.questions}));
+    summaries++;assert.equal(JSON.parse(p.messages[1].content).articles.length,1);
+    const content={title:'서로 다른 이슈',summary:'사실 [1]',background:'배경 [1]',impact:'영향 [1]',uncertainty:'조건 [1]',teams:[{id:'strategy',why:'사유 [1]',check:'항목 [1]'}]};
+    return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(content)}}]});
+  };
+  const cycle=()=>request(env,'/api/admin/dossiers/cycle',{method:'POST',data:{reportDate:DATE}});
+  assert.equal((await cycle()).data.status,'pending');assert.equal((await cycle()).data.status,'pending');assert.equal((await cycle()).data.status,'complete');
+  const list=(await request(env,'/api/dossiers')).data.reports;
+  assert.equal(list.length,2);assert.ok(list.every(r=>r.sourceCount===1&&r.dates.includes(DATE)));
+  const direct=await request(env,'/api/admin/dossiers',{method:'POST',data:{url:seed.url}});
+  assert.ok(list.some(r=>r.id===direct.data.id));assert.equal(summaries,2);assert.equal(matchCalls,2);
+});
+
+test('unverified LLM citations stop an issue draft at the boundary',async t=>{
+  const env=fixture(t),seed=await addArticle(env,'bad-citation');
+  const original=globalThis.fetch;t.after(()=>{globalThis.fetch=original;});
+  globalThis.fetch=async(url,init)=>{
+    const p=JSON.parse(init.body);
+    if(p.questions)return Response.json(wireJev({questions:p.questions}));
+    const content={title:'초안',summary:'없는 출처 [9]',background:'배경 [1]',impact:'영향 [1]',uncertainty:'조건 [1]',teams:[{id:'strategy',why:'사유 [1]',check:'항목 [1]'}]};
+    return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(content)}}]});
+  };
+  const result=await request(env,'/api/admin/dossiers',{method:'POST',data:{url:seed.url}});
+  assert.equal(result.status,502);assert.equal((await request(env,'/api/dossiers')).data.reports.length,0);
+});
