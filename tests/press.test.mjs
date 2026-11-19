@@ -117,3 +117,60 @@ test('linked article stays visible when related feed fails and an off-site redir
   assert.equal(snap.articles.length,1);assert.equal(snap.articles[0].publishedAt,null);assert.equal(snap.relatedUnavailable,true);
   await assert.rejects(searchLinkedPress({url},env,async target=>{assert.equal(target,url);return new Response(null,{status:302,headers:{Location:'https://example.org/'}});}),e=>e.status===422);
 });
+
+test('GPT and Jev connect independently and GPT summarizes only the articles in the selected snapshot',async t=>{
+  const origin='https://example.com',env={DB:createDatabase(),JEV_BROWSER_SEAL_KEY:'f1'.repeat(32),LLM_API_KEY:'unused-admin'};
+  t.after(()=>env.DB.sqlite.close());
+  const api=(path,payload,authorization='',cookie='')=>handleApi(new Request(origin+'/api/press/'+path,{
+    method:payload?'POST':'GET',headers:{Origin:origin,'Content-Type':'application/json',Authorization:authorization,Cookie:cookie},
+    ...(payload?{body:JSON.stringify(payload)}:{})
+  }),env);
+  const linked='https://www.insnews.co.kr/news/articleView.html?idxno=2';
+  let citation=1;
+  const calls=[];
+  t.mock.method(globalThis,'fetch',async(url,options)=>{
+    if(url===linked)return new Response('<meta property="og:type" content="article"><meta property="og:title" content="실손 보험 보장 기준"><meta property="article:published_time" content="2026-11-16T12:00:00+09:00">',{headers:{'Content-Type':'text/html'}});
+    if(url.startsWith('https://news.google.com/rss/'))return new Response(rss);
+    if(url==='https://api.typesafe.ai/v1/models'){
+      assert.equal(options.headers.Authorization,'Bearer local-jev');
+      return Response.json({models:[{name:'jev-latest'}]});
+    }
+    if(url==='https://api.openai.com/v1/models/gpt-4.1-mini')return options.headers.Authorization==='Bearer local-gpt'?Response.json({id:'gpt-4.1-mini'}):new Response(null,{status:401});
+    assert.equal(url,'https://api.openai.com/v1/chat/completions');
+    assert.equal(options.headers.authorization,'Bearer local-gpt');
+    const prompt=JSON.parse(options.body);assert.equal(prompt.store,false);
+    const input=JSON.parse(prompt.messages[1].content);
+    assert.ok(input.articles.every(a=>Object.keys(a).sort().join(',')==='number,publishedAt,source,title'));
+    assert.doesNotMatch(options.body,/ignored-client-content|local-gpt/);
+    calls.push(input);
+    return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({items:[{text:'실손 보장 기준 검토',sources:[citation]}]})}}]});
+  });
+  async function connect(provider){
+    const res=await api('connection',{action:'connect',provider},'Bearer local-'+provider);
+    assert.equal(res.status,200);
+    const {session}=await res.json(),cookie=res.headers.get('set-cookie').split(';')[0];
+    return {session,cookie,auth:(provider==='gpt'?'GptSession ':'JevSession ')+session};
+  }
+  assert.equal((await api('connection',{action:'connect',provider:'gpt'},'Bearer invalid')).status,401);
+  const gpt=await connect('gpt'),jev=await connect('jev'),jar=gpt.cookie+'; '+jev.cookie;
+  for(const [token,expectedGpt,expectedJev] of [[gpt.auth,true,false],[jev.auth,false,true],['GptSession '+jev.session,false,false]]){
+    const state=await (await api('settings',null,token,jar)).json();
+    assert.equal(state.gptConfigured,expectedGpt);assert.equal(state.jevConfigured,expectedJev);
+  }
+  for(const [path,payload] of [['collect',{from:'2026-11-16',to:'2026-11-16'}],['link',{url:linked}]]){
+    const snap=await (await api(path,payload)).json(),input={id:snap.id,version:snap.version,articles:['ignored-client-content']};
+    assert.equal((await api('summary',input,'',jar)).status,401);
+    assert.equal((await api('summary',input,gpt.auth,jev.cookie)).status,401);
+    assert.equal((await api('summary',input,jev.auth,jar)).status,401);
+    assert.equal((await api('judge',input,gpt.auth,jar)).status,401);
+    assert.equal((await api('summary',{...input,version:'changed'},gpt.auth,jar)).status,409);
+    const res=await api('summary',input,gpt.auth,jar);assert.equal(res.status,200);
+    assert.deepEqual((await res.json()).items[0].sources,[1]);
+    assert.equal(calls.at(-1).articles[0].title,snap.articles[0].title);
+    citation=999;assert.equal((await api('summary',input,gpt.auth,jar)).status,502);citation=1;
+  }
+  assert.deepEqual(calls.map(c=>c.selection),['주간','주간','링크','링크']);
+  const off=await api('connection',{action:'disconnect',provider:'gpt'},gpt.auth,jar);
+  assert.ok(off.headers.get('set-cookie').startsWith(gpt.cookie.split('=')[0]+'=; Max-Age=0'));
+  assert.equal((await (await api('settings',null,jev.auth,jev.cookie)).json()).jevConfigured,true);
+});

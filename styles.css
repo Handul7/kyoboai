@@ -34,16 +34,21 @@ label{display:block;color:var(--ink);font-weight:600}label small{font-weight:400
 
 .mast-session,.dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .mast-session .updated{white-space:nowrap}
-#open-jev{min-height:44px;padding:6px 12px;font-size:15px;white-space:nowrap}
-#jev-dialog{color:var(--fg);background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,4vw,26px);width:min(25rem,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;box-shadow:0 12px 45px #16263436}
-#jev-dialog::backdrop{background:rgb(18 33 51 / 44%)}
+#open-api-keys{min-height:44px;padding:6px 12px;font-size:15px;white-space:nowrap}
+#api-dialog{color:var(--fg);background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,4vw,26px);width:min(25rem,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;box-shadow:0 12px 45px #16263436}
+#api-dialog::backdrop{background:rgb(18 33 51 / 44%)}
 .dialog-heading h2{margin:0}
-#close-jev{font-size:15px;min-height:44px;min-width:44px;background:transparent;border:0;color:var(--muted)}
+#close-api-keys{font-size:15px;min-height:44px;min-width:44px;background:transparent;border:0;color:var(--muted)}
 #key-help{margin:4px 0 16px}
-#key-save,#key-forget{width:100%}
-#key-state{color:var(--green);font-weight:650}
-#key-message{margin:12px 0 0;color:var(--fg)}
-#key-message:empty{display:none}
+.provider-form{border-top:1px solid var(--line);padding:13px 0 4px}
+.provider-form .hint{margin:0 0 6px}
+.provider-controls{display:flex;align-items:center;gap:8px;min-width:0}
+.provider-controls input{margin:0;flex:1;min-width:0;font-size:16px}
+.provider-controls button{flex-shrink:0}
+.provider-controls span{flex:1;color:var(--green);font-weight:600}
+.provider-message{margin:6px 0 0;font-size:14px}
+.provider-message:empty{display:none}
+.gpt-result li{margin-block:6px;overflow-wrap:anywhere}
 @media(max-width:700px){
   .mast-inner{flex-wrap:wrap;gap:2px 12px;padding-block:8px}
   .mast-session{gap:8px;margin-left:auto}
@@ -54,3 +59,5 @@ label{display:block;color:var(--ink);font-weight:600}label small{font-weight:400
   .mast-inner{display:grid;gap:4px}
   .mast-session{margin:0;justify-content:flex-start}
 }
+
+.press-summary{margin:12px 0 16px;padding:12px 16px;background:var(--paper);border:1px solid var(--line);border-radius:11px}.press-summary h3{margin:0 0 8px}.press-summary h3 small{font-size:.85rem;font-weight:400;color:var(--muted)}.press-summary ul{margin:0;padding-inline-start:1.2em}.press-summary li+li{margin-top:.35em}

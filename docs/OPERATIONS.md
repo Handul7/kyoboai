@@ -2,11 +2,11 @@
 
 ## 현재 공개 화면
 
-`POST /api/press/connection`의 `connect`는 TypeSafe 모델 목록으로 개인 키를 검증합니다. 서버는 `JEV_BROWSER_SEAL_KEY`(32바이트 무작위 서버 비밀값의 16진수 표기)로 키를 AES-GCM 암호화합니다. 탭에는 암호화한 세션 토큰, HttpOnly·Secure·SameSite=Strict 세션 쿠키에는 별도의 무작위 값이 들어갑니다. 서버는 사이트 주소와 이 두 값을 함께 확인합니다. DB에는 개인 키나 세션을 쓰지 않습니다.
+`POST /api/press/connection`의 `connect`는 요청의 provider에 따라 TypeSafe 모델 목록 또는 OpenAI의 gpt-4.1-mini 모델 접근 권한을 확인합니다. 서버는 `JEV_BROWSER_SEAL_KEY`(32바이트 무작위 서버 비밀값의 16진수 표기)로 키를 AES-GCM 암호화합니다. 탭에는 암호화한 세션 토큰, HttpOnly·Secure·SameSite=Strict 세션 쿠키에는 별도의 무작위 값이 들어갑니다. 서버는 공급자, 사이트 주소와 이 두 값을 함께 확인합니다. DB에는 개인 키나 세션을 쓰지 않습니다.
 
 `GET /api/press/settings`는 탭의 연결 상태를 반환하고 이전 장기 쿠키가 있으면 만료시킵니다. 공개 화면은 같은 탭의 새로고침에서만 세션 토큰을 복구합니다. 새로 연 링크에서는 토큰을 비웁니다. `disconnect`는 해당 세션 쿠키를 만료시키고 화면은 탭에 보관한 토큰을 지웁니다. 기사 링크는 `POST /api/press/link`, 주차별 뉴스는 `POST /api/press/collect`로 수집하며 두 기능 모두 `POST /api/press/judge`에서 같은 탭의 연결을 사용합니다.
 
-공개 화면의 PDF에는 출처 링크와 해당 시점의 판단 결과가 들어갑니다. 부서 기준은 브라우저별로 관리합니다. 월·목 정기 발행 시간과 날짜 테스트는 독립적입니다.
+두 수집 방식 모두 결과에서 GPT 요약을 요청할 수 있습니다. `POST /api/press/summary`는 해당 탭의 GPT 연결을 확인하고, 서버에 수집된 제목·매체·발행일만 OpenAI에 전달합니다. 출처 번호를 검증한 요약은 현재 화면에 표시하며 결과 PDF에도 포함합니다. 부서 기준은 브라우저별로 관리합니다. 월·목 정기 발행 시간과 날짜 테스트는 독립적입니다.
 
 ## 기존 관리 API 운영 참고
 

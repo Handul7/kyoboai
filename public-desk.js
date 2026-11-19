@@ -11,25 +11,26 @@
   const roleKey = 'kyobo.press.roles.v2';
   const previousRoleKey = 'kyobo.press.roles.v1';
   let profiles=[];
-  let roles,settingsError='',mode='period',connected=false;
-  const sessionSlot='kyobo.jev.tab.v2';
-  let tabSession='';
-  try {
-    // A fresh navigation (including a shared link) starts independently of a copied tab store.
-    if(performance.getEntriesByType('navigation')[0]?.type==='reload'){
-      tabSession=sessionStorage.getItem(sessionSlot)||'';
-    }else sessionStorage.removeItem(sessionSlot);
-  }catch{}
-  function setTabSession(value){
-    tabSession=value;
-    try {
-      if(value)sessionStorage.setItem(sessionSlot,value);
-      else sessionStorage.removeItem(sessionSlot);
-    }catch{} // Private storage restrictions still allow use in the current page.
+  let roles,settingsError='',mode='period';
+  const providers={gpt:'GPT',jev:'Jev'};
+  const sessions={gpt:'',jev:''};
+  const slot=provider=>'kyobo.'+provider+'.tab.v2';
+  for(const provider of Object.keys(providers)){
+    try{
+      if(performance.getEntriesByType('navigation')[0]?.type==='reload')sessions[provider]=sessionStorage.getItem(slot(provider))||'';
+      else sessionStorage.removeItem(slot(provider));
+    }catch{}
   }
-  const emptyRun=()=>({snapshot:null,judgments:[],busy:false,message:'',attention:false});
+  function setTabSession(provider,value){
+    sessions[provider]=value;
+    try{
+      if(value)sessionStorage.setItem(slot(provider),value);
+      else sessionStorage.removeItem(slot(provider));
+    }catch{}
+  }
+  const emptyRun=()=>({snapshot:null,judgments:[],summary:null,summaryBusy:false,summaryError:'',busy:false,message:'',attention:false});
   const runs={period:emptyRun(),link:emptyRun()};
-  async function api(path,payload,{apiKey,session=tabSession,signal}={}) {
+  async function api(path,payload,{provider='jev',apiKey,session=sessions[provider],signal}={}) {
     const options = {cache:'no-store', mode:'same-origin', redirect:'error',signal};
     if(payload !== undefined){
       options.method='POST';
@@ -38,7 +39,7 @@
     }
     if(session || apiKey){
       options.headers??={};
-      options.headers.Authorization=path==='connection' && apiKey?'Bearer '+apiKey:'JevSession '+session;
+      options.headers.Authorization=path==='connection' && apiKey?'Bearer '+apiKey:(provider==='gpt'?'GptSession ':'JevSession ')+session;
     }
     const response = await fetch('/api/press/'+path,options);
     if(!response.headers.get('content-type')?.includes('json'))throw Error('뉴스 수집 서버에 연결할 수 없습니다.');
@@ -89,9 +90,14 @@
     settingsError='부서 기준을 불러오지 못했습니다. 새로고침해 주세요.';
     $('#roles-message').textContent=settingsError;roleCount();
   });
-  const initialized=Promise.all([rosterReady,api('settings').then(data=>showConnection(data.jevConfigured)).catch(()=>{
-    $('#key-message').textContent='Jev 연결 상태를 확인할 수 없습니다.';
-  })]);
+  async function refreshKey(provider){
+    try{
+      const state=await api('settings',undefined,{provider});
+      if(!state[provider+'Configured'])setTabSession(provider,'');
+      showConnection(provider);
+    }catch{$('#'+provider+'-message').textContent='연결 상태를 확인할 수 없습니다.';}
+  }
+  const initialized=Promise.all([rosterReady,refreshKey('jev'),sessions.gpt?refreshKey('gpt'):Promise.resolve()]);
   $('#edit-roles').onclick=()=>{
     roleFields(true);$('#roles-message').textContent='';
     $('#role-fields textarea').focus();
@@ -145,20 +151,19 @@
     }).join('')}`;
   }
   research();
-  const keyDialog=$('#jev-dialog'),keyField=$('#jev-key');
-  let keyOperation;
-  function openKeyDialog(){
-    if(keyDialog.open)return;
-    $('#key-message').textContent='';
-    keyDialog.showModal();
-    $(connected?'#key-forget':'#jev-key').focus();
+  const keyDialog=$('#api-dialog'),keyOperations=new Map();
+  function openKeyDialog(provider='gpt'){
+    if(!keyDialog.open)keyDialog.showModal();
+    $('#'+provider+(sessions[provider]?'-forget':'-key')).focus();
   }
-  $('#open-jev').onclick=openKeyDialog;
-  $('#close-jev').onclick=()=>keyDialog.close();
-  keyDialog.onclose=()=>{
-    keyField.value='';
-    keyOperation?.abort();
-  };
+  $('#open-api-keys').onclick=()=>openKeyDialog();
+  $('#close-api-keys').onclick=()=>keyDialog.close();
+  function clearKeyInputs(){
+    for(const provider of Object.keys(providers))$('#'+provider+'-key').value='';
+    for(const operation of keyOperations.values())operation.abort();
+  }
+  keyDialog.onclose=clearKeyInputs;
+  window.addEventListener('pagehide',clearKeyInputs);
   function route(scroll=false){
     const hash=location.hash.slice(1);if(hash==='content')return;
     let view=({roles:'roles',collect:'collect',link:'collect',connect:'collect',process:'process','process/news':'process','process/operations':'collect',departments:'roles'})[hash]||'news';
@@ -219,63 +224,60 @@
   window.addEventListener('focus',updateWeeks);
   updateWeeks();
 
-  function showConnection(value){
-    connected=!!tabSession && value===true;
-    if(!connected)setTabSession('');
-    $('#open-jev').textContent=connected?'Jev 연결됨':'Jev 키 입력';
-    $('#key-entry').hidden=connected;
-    $('#jev-key').disabled=connected;
-    $('#key-save').hidden=connected;
-    $('#key-state').hidden=!connected;
-    $('#key-forget').hidden=!connected;
+  function showConnection(provider){
+    const connected=!!sessions[provider],field=$('#'+provider+'-key');
+    field.hidden=connected;field.disabled=connected;
+    $('#'+provider+'-save').hidden=connected;
+    $('#'+provider+'-state').hidden=!connected;
+    $('#'+provider+'-forget').hidden=!connected;
   }
-  window.addEventListener('pagehide',()=>{keyField.value='';});
-  async function configureKey(action){
-    if(keyOperation)return;
-    const connecting=action==='connect',msg=$('#key-message');
-    let key=connecting?keyField.value.trim():'';
+  async function configureKey(provider,action){
+    if(keyOperations.has(provider))return;
+    const connecting=action==='connect',field=$('#'+provider+'-key'),msg=$('#'+provider+'-message');
+    let key=connecting?field.value.trim():'';
     if(connecting && (!window.isSecureContext||!/^[!-~]{1,512}$/.test(key))){
       msg.textContent='HTTPS 화면에서 활성 키 원본을 입력해 주세요.';return;
     }
-    keyField.value='';
-    const controller=new AbortController();
-    keyOperation=controller;
-    const {signal}=controller;
-    const buttons=[$('#key-save'),$('#key-forget')];
+    field.value='';
+    const controller=new AbortController(),{signal}=controller;
+    keyOperations.set(provider,controller);
+    const buttons=[$('#'+provider+'-save'),$('#'+provider+'-forget')];
     buttons.forEach(b=>b.disabled=true);
-    msg.textContent=connecting?'TypeSafe에서 키를 확인하고 있습니다.':'연결을 해제하고 있습니다.';
+    msg.textContent=connecting?'키를 확인하고 있습니다.':'연결을 해제하고 있습니다.';
     try{
       await initialized;
       if(signal.aborted)return;
       if(!connecting){
-        const pending=api('connection',{action});
-        showConnection(false);
-        await pending;
-        keyDialog.close();return;
+        const pending=api('connection',{action,provider},{provider});
+        setTabSession(provider,'');showConnection(provider);
+        await pending;msg.textContent='연결을 해제했습니다.';return;
       }
-      const request=api('connection',{action},{apiKey:key,signal});
+      const request=api('connection',{action,provider},{provider,apiKey:key,signal});
       key='';
       const result=await request;
       if(!result.connected||!result.session)throw Error('세션을 시작할 수 없습니다. 다시 연결해 주세요.');
-      const state=await api('settings',undefined,{session:result.session,signal});
-      if(signal.aborted || !keyDialog.open)return;
-      if(!state.jevConfigured)throw Error('이 사이트의 쿠키를 허용한 뒤 다시 연결해 주세요.');
-      setTabSession(result.session);
-      showConnection(true);
-      keyDialog.close();
+      const state=await api('settings',undefined,{provider,session:result.session,signal});
+      if(signal.aborted||!keyDialog.open)return;
+      if(!state[provider+'Configured'])throw Error('이 사이트의 쿠키를 허용한 뒤 다시 연결해 주세요.');
+      setTabSession(provider,result.session);showConnection(provider);msg.textContent='';
     }catch(e){
       if(!signal.aborted)msg.textContent=connecting?e.message:'이 탭의 연결을 종료했습니다. 서버의 해제 응답은 확인하지 못했습니다.';
-    }finally{keyOperation=null;buttons.forEach(b=>b.disabled=false);}
+    }finally{
+      keyOperations.delete(provider);buttons.forEach(b=>b.disabled=false);
+      if(runs[mode].snapshot)renderRun();
+    }
   }
-  $('#key-form').onsubmit=e=>{e.preventDefault();configureKey('connect');};
-  $('#key-forget').onclick=()=>configureKey('disconnect');
+  for(const provider of Object.keys(providers)){
+    $('#'+provider+'-form').onsubmit=e=>{e.preventDefault();configureKey(provider,'connect');};
+    $('#'+provider+'-forget').onclick=()=>configureKey(provider,'disconnect');
+  }
   function judgmentText(j){
     if(!j)return 'Jev 미판단';
     const same=j.sameEvent===undefined?'':j.sameEvent>=.8?'같은 이슈 · ':j.sameEvent<=.2?'다른 이슈 · ':'동일 이슈 검토 필요 · ';
     return `${same}${j.status} · 보고 가치 ${j.importance.toFixed(2)}/3 · 근거 ${j.basis}${j.matches.length?' · 관련 부서 '+j.matches.map(m=>m.name).join(', '):''}`;
   }
   function renderRun(){
-    const {snapshot,judgments,busy,message,attention}=runs[mode];
+    const {snapshot,judgments,summary,summaryBusy,summaryError,busy,message,attention}=runs[mode];
     const progress=$('#progress');progress.className=message?'notice'+(attention?' alert':''):'';progress.textContent=message;
     $(mode==='link'?'#check-link':'#run').disabled=busy;
     if(!snapshot){$('#results').replaceChildren();return;}
@@ -287,8 +289,27 @@
       <p class="meta">${escape(label)}${isLink?` · 관련 보도 검색 ${escape(snapshot.from)} ~ ${escape(snapshot.to)}`:''}</p>
       ${snapshot.relatedUnavailable?'<p class="hint">관련 보도 검색 공급처의 응답을 받지 못했습니다.</p>':''}
       ${story?`<p class="report-match"><a href="#issue/${escape(story.id)}">이 이슈의 발행 보고서 보기</a></p>`:''}
+      ${rows.length?`<section class="press-summary"><h3>GPT 요약 <small>기사 제목 기준</small></h3>
+        ${summary?`<ul>${summary.items.map(item=>`<li>${escape(item.text)} ${item.sources.map(n=>link(rows[n-1].url,'['+n+']')).join(' ')}</li>`).join('')}</ul>`:
+          `<button type="button" class="secondary" id="make-summary" ${summaryBusy?'disabled':''}>${summaryBusy?'요약 중…':sessions.gpt?'GPT 요약 생성':'GPT 키 연결'}</button>`}
+        ${summaryError?`<p class="hint" role="status">${escape(summaryError)}</p>`:''}</section>`:''}
       <div class="results-list">${rows.map((a,i)=>`<article class="news-row"><small>${isLink?(i===0?'입력 기사':'관련 후보')+' · ':''}${escape(a.source)} · ${a.publishedAt?dateKst(a.publishedAt):'발행일 미확인'}</small><strong>${link(a.url,a.title)}</strong><div class="result-label">${escape(judgmentText(judgments[i]))}</div></article>`).join('')}</div>`;
-    if(rows.length)$('#download-list').onclick=e=>pdf(e.currentTarget,{title:isLink?rows[0].title:'보험 뉴스 수집 결과',meta:label,sections:[{title:'기사별 판단',lines:rows.map((a,i)=>`[${i+1}] ${a.title} — ${judgmentText(judgments[i])}`)}],sources:rows.map(a=>({...a,publishedAt:a.publishedAt?dateKst(a.publishedAt):'발행일 미확인'}))});
+    if(rows.length&&!summary)$('#make-summary').onclick=()=>generateSummary(mode);
+    if(rows.length)$('#download-list').onclick=e=>pdf(e.currentTarget,{title:isLink?rows[0].title:'보험 뉴스 수집 결과',meta:label,sections:[...(summary?[{title:'GPT 요약 · 기사 제목 기준',lines:summary.items.map(item=>item.text+' '+item.sources.map(n=>'['+n+']').join(' '))}]:[]),{title:'기사별 판단',lines:rows.map((a,i)=>`[${i+1}] ${a.title} — ${judgmentText(judgments[i])}`)}],sources:rows.map(a=>({...a,publishedAt:a.publishedAt?dateKst(a.publishedAt):'발행일 미확인'}))});
+  }
+  async function generateSummary(type){
+    const run=runs[type],snapshot=run.snapshot,session=sessions.gpt;
+    if(!snapshot?.articles.length||run.summaryBusy||run.summary)return;
+    if(!session){openKeyDialog('gpt');return;}
+    run.summaryBusy=true;run.summaryError='';renderRun();
+    try{
+      const result=await api('summary',{id:snapshot.id,version:snapshot.version},{provider:'gpt',session});
+      if(run.snapshot===snapshot&&sessions.gpt===session)run.summary=result;
+    }catch(e){
+      if(run.snapshot===snapshot&&sessions.gpt===session)run.summaryError=e.message;
+    }finally{
+      if(run.snapshot===snapshot){run.summaryBusy=false;if(mode===type)renderRun();}
+    }
   }
   async function checkNews(type,payload){
     const run=runs[type];if(run.busy)return;
@@ -299,16 +320,17 @@
     try{
       update(type==='link'?'입력 기사와 관련 보도를 확인하고 있습니다.':'기간에 해당하는 실제 기사를 수집하고 있습니다.');
       await initialized;
-      const criteria=roles?.map(r=>({...r})),runSession=tabSession;
+      const criteria=roles?.map(r=>({...r})),runSession=sessions.jev;
       const snap=await api(type==='link'?'link':'collect',payload);
       run.snapshot=snap;
       if(!snap.articles.length){update('검색 조건에 맞는 기사가 없습니다.');return;}
-      if(runSession!==tabSession){update('Jev 연결이 변경되었습니다. 다시 실행해 주세요.');return;}
-      showConnection(snap.jevConfigured);
-      if(!connected){update('기사 확인 완료 · 상단의 ‘Jev 키 입력’에서 연결하면 기사 판단도 실행할 수 있습니다.');return;}
+      if(runSession!==sessions.jev){update('Jev 연결이 변경되었습니다. 다시 실행해 주세요.');return;}
+      if(!snap.jevConfigured)setTabSession('jev','');
+      showConnection('jev');
+      if(!sessions.jev){update('기사 확인 완료 · 부서 판단은 상단 API 키 입력에서 Jev를 연결한 뒤 실행할 수 있습니다.');return;}
       if(!criteria)throw Error('부서 역할을 불러올 수 없습니다. 화면을 새로고침해 주세요.');
       for(let offset=0;offset<snap.articles.length;offset+=snap.batchSize){
-        if(runSession!==tabSession){update('Jev 연결이 변경되어 추가 판단을 중단했습니다.');return;}
+        if(runSession!==sessions.jev){update('Jev 연결이 변경되어 추가 판단을 중단했습니다.');return;}
         update(`Jev 판단 중 · ${offset}/${snap.articles.length}건`);
         const result=await api('judge',{id:snap.id,version:snap.version,roles:criteria,offset});
         run.judgments.push(...result.answers);
