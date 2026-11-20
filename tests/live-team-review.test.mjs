@@ -8,7 +8,7 @@ const published=runInNewContext(read('published-news.js')+'; PUBLISHED_NEWS');
 const issue=published.find(story=>story.reviews.some(team=>team.department && team.reason && team.checks?.length));
 const review=issue.reviews.find(team=>team.department);
 const roster=JSON.parse(read('department-profiles.json'));
-const edited=roster.find(r=>r.name!==review.department);
+const edited=roster.find(r=>r.id==='tm');
 const override={name:edited.name,role:'전자 청약의 본인 확인 절차를 점검합니다.',keywords:'인증, 신청, 접수'};
 
 for(const mode of ['link','period']){
@@ -25,7 +25,7 @@ for(const mode of ['link','period']){
       document:{querySelector:element,querySelectorAll:()=>[]},window:{addEventListener(){},downloadIssuePdf:async data=>{report=data;}},
       location:{hash:mode==='link'?'#link':'#collect'},PUBLISHED_NEWS:published,NEWS_RESEARCH:{outlets:{},reports:[]},
       performance:{getEntriesByType:()=>[{type:'reload'}]},sessionStorage:{getItem:key=>key.includes('.jev.')?'test-ticket':null},
-      localStorage:{getItem:key=>key.endsWith('v2')?JSON.stringify([override]):null},
+      localStorage:{getItem:key=>key.endsWith('v2')?JSON.stringify([{...override,name:'다이렉트(TM영업)'}]):null},
       fetch:async(path,options)=>{
         if(path.endsWith('department-profiles.json'))return Response.json(roster);
         if(path.endsWith('settings'))return Response.json({jevConfigured:true});

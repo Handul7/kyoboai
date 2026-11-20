@@ -23,7 +23,8 @@ export function pressRoles(input){
   const overrides=new Map();
   for(const item of input){
     const bounds=(k,min,max)=>{const s=item?.[k];if(typeof s!=="string"||s.trim().length<min||s.length>max)throw new PressError(400,"부서 이름과 역할, 키워드의 길이를 확인해 주세요.");return s.trim();};
-    const name=bounds("name",1,30),role=bounds("role",1,300),keywords=bounds("keywords",0,180);
+    const submitted=bounds("name",1,30),role=bounds("role",1,300),keywords=bounds("keywords",0,180);
+    const name=pressDefaultRoles.find(profile=>profile.aliases?.includes(submitted))?.name??submitted;
     if(overrides.has(name))throw new PressError(400,"같은 부서 이름이 두 번 입력됐습니다.");
     overrides.set(name,{name,role,keywords});
   }

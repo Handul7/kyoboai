@@ -23,33 +23,42 @@ test('exact Korean calendar dates, allowed publishers, normalized duplicates and
 test('validates provider answers, uses saved roles and server-captured articles, reuses a completed judgment',async()=>{
   const env={DB:createDatabase(),TYPESAFE_API_KEY:'test-only'};
   const run=await searchPress({from:'2026-11-16',to:'2026-11-16'},env,async()=>new Response(rss));
-  const roles=pressRoles([{name:'보험계리팀',role:'보장 개정에 따른 준비금 점검',keywords:'준비금'}]);
-  const input={id:run.id,version:run.version,offset:0,roles};
+  const savedRoles=[{name:'보험계리팀',role:'보장 개정에 따른 준비금 점검',keywords:'준비금'}];
+  const roles=pressRoles(savedRoles);
+  const input={id:run.id,version:run.version,offset:0,roles:savedRoles};
   const provider=(url,init)=>{
     assert.equal(new URL(url).hostname,'api.typesafe.ai');
     const p=JSON.parse(init.body);assert.deepEqual(p.state.roles,roles);assert.equal(p.state.articles[0].title,'실손 보장 개정');
-    return Response.json({model:'test-model',answers:{insurance0:{type:'noul',noul:.95},value0:{type:'score',confidence:.8,score:2,probabilities:{0:0,1:0,2:1,3:0}},...Object.fromEntries(roles.map((r,i)=>['role0_'+i,{type:'noul',noul:r.name==='보험계리팀'?.9:.1}]))}});
+    assert.ok(!p.state.roles.some(r=>r.name==='보험계리팀'));
+    return Response.json({model:'test-model',answers:{insurance0:{type:'noul',noul:.95},value0:{type:'score',confidence:.8,score:2,probabilities:{0:0,1:0,2:1,3:0}},...Object.fromEntries(roles.map((r,i)=>['role0_'+i,{type:'noul',noul:r.name==='계리팀'?.9:.1}]))}});
   };
   await assert.rejects(judgePress(input,env,async()=>Response.json({model:'test-model',answers:{}})),e=>e.status===502);
   const result=await judgePress(input,env,provider);
-  assert.equal(result.answers[0].basis,'제목');assert.equal(result.answers[0].status,'주요 후보');assert.deepEqual(result.answers[0].matches,[{name:'보험계리팀',probability:.9}]);
+  assert.equal(result.answers[0].basis,'제목');assert.equal(result.answers[0].status,'주요 후보');assert.deepEqual(result.answers[0].matches,[{name:'계리팀',probability:.9}]);
   assert.equal((await judgePress(input,env,()=>assert.fail('unexpected provider call'))).cached,true);
   await assert.rejects(judgePress({...input,version:'changed'},env,provider),e=>e.status===409);
   env.DB.sqlite.close();
 });
-test('legacy criteria merge by exact team name and only the four current teams reach Jev',()=>{
-  const names=['정보보안팀','보험계리팀','다이렉트(TM영업)','e보험팀'];
-  const localEdit={name:'e보험팀',role:'전자청약 검토',keywords:'전자서명'};
-  const criteria=pressRoles([localEdit,{name:'상품개발',role:'상품 요율 점검',keywords:'상품'}]);
-  assert.deepEqual(criteria.map(r=>r.name),names);
-  assert.deepEqual(criteria[3],localEdit);
-  assert.deepEqual(criteria.slice(0,3),pressRoles([]).slice(0,3));
+test('old roster names preserve custom criteria under the four current Jev candidate names',()=>{
+  const names=['정보보안팀','계리팀','다이렉트사업부','디지털채널/e보험팀'];
+  const previous=['정보보안팀','보험계리팀','다이렉트(TM영업)','e보험팀'];
+  const edits=previous.map((name,i)=>({name,role:'개별 검토 '+i,keywords:'기준 '+i}));
+  const criteria=pressRoles([...edits,{name:'상품개발',role:'상품 요율 점검',keywords:'상품'}]);
+  assert.deepEqual(pressRoles([]).map(r=>r.name).sort(),[...names].sort());
+  for(const [i,name] of names.entries()){
+    assert.deepEqual(criteria.find(role=>role.name===name),{...edits[i],name});
+  }
+  assert.equal(criteria.length,4);
+  assert.throws(()=>pressRoles([edits[1],{...edits[1],name:'계리팀'}]),error=>error.status===400);
   assert.ok(criteria.every(r=>Object.keys(r).length===3));
   assert.ok(pressDefaultRoles.every(r=>r.sources.length>0 && r.keywords && r.role));
 });
 test('public settings expose only configuration state and regular cadence',async()=>{
   const response=await handleApi(new Request('https://example.com/api/press/settings'),{TYPESAFE_API_KEY:'test-only'});
   const state=await response.json();assert.equal(state.jevConfigured,false);assert.deepEqual(state.regularDays,[1,4]);assert.equal(state.regularTime,'07:00');assert.ok(!JSON.stringify(state).includes('test-only'));
+  assert.deepEqual(Object.fromEntries(state.roles.map(r=>[r.id,r.name])),{
+    security:'정보보안팀',actuarial:'계리팀',tm:'다이렉트사업부',einsurance:'디지털채널/e보험팀'
+  });
   const crossed=await handleApi(new Request('https://example.com/api/press/judge',{method:'POST',headers:{Origin:'https://other.example'}}),{});assert.equal(crossed.status,403);
 });
 

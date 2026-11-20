@@ -54,16 +54,27 @@
       if(Array.isArray(saved))break;
     }
     const overrides=Array.isArray(saved)?saved:[];
-    return defaults.map(({name,role,keywords})=>{
-      const entry=overrides.find(item=>item?.name===name);
-      if(typeof entry?.role==='string' && entry.role.trim() && entry.role.length<=300 &&
-         typeof entry.keywords==='string' && entry.keywords.length<=180)
-        return {name,role:entry.role.trim(),keywords:entry.keywords.trim()};
-      return {name,role,keywords};
+    return defaults.map(({id,name,aliases=[],role,keywords})=>{
+      const entry=overrides.find(item=>item?.id===id)
+        || overrides.find(item=>item?.name===name)
+        || overrides.find(item=>aliases.includes(item?.name));
+      return {
+        name,
+        role:typeof entry?.role==='string' && entry.role.trim() && entry.role.length<=300 ? entry.role.trim() : role,
+        keywords:typeof entry?.keywords==='string' && entry.keywords.length<=180 ? entry.keywords.trim() : keywords
+      };
     });
   }
   function persistRoles(values) {
-    const edits=values.filter((r,i)=>r.role!==profiles[i].role || r.keywords!==profiles[i].keywords);
+    const edits=[];
+    values.forEach(({role,keywords},i)=>{
+      const profile=profiles[i];
+      if(role===profile.role && keywords===profile.keywords)return;
+      const entry={id:profile.id,name:profile.name};
+      if(role!==profile.role)entry.role=role;
+      if(keywords!==profile.keywords)entry.keywords=keywords;
+      edits.push(entry);
+    });
     localStorage.setItem(roleKey,JSON.stringify(edits));
     localStorage.removeItem(previousRoleKey);
   }
@@ -75,8 +86,11 @@
         ? `<label>검토할 업무<textarea name="role" aria-label="${escape(r.name)} 검토할 업무" maxlength="300" rows="4" required>${escape(r.role)}</textarea></label>
            <label>주요 키워드<textarea name="keywords" aria-label="${escape(r.name)} 주요 키워드" maxlength="180" rows="2" placeholder="쉼표로 구분">${escape(r.keywords)}</textarea></label>`
         : `<p>${escape(r.role)}</p>${r.keywords?'<p class="role-terms"><b>주요 키워드</b> '+escape(r.keywords.split(',').map(k=>k.trim()).filter(Boolean).join(' · '))+'</p>':''}`;
-      return `<section class="role-card"><h2>${escape(r.name)}</h2>${fields}
-        <div class="role-sources">${profiles[i].sources.map(s=>link(s.url,s.label)).join(' · ')}</div></section>`;
+      const profile=profiles[i];
+      return `<section class="role-card"><h2>${escape(r.name)}</h2><p class="role-parent">소속 · ${escape(profile.parent)}</p>${fields}
+        <details class="role-sources"><summary>기준 자료</summary>
+        <p>직무기술서 목록 · ${escape(profile.jobReference)}</p>
+        <ul>${profile.sources.map(s=>`<li>${link(s.url,s.label)}</li>`).join('')}</ul></details></section>`;
     }).join('');
   }
   function roleCount(){ $('#role-count').textContent=roles ? roles.length+'개 부서' : settingsError || '불러오는 중'; }
