@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDatabase } from './helpers/d1.mjs';
-import { searchPress, searchLinkedPress, judgePress, pressRange, pressRoles, pressDefaultRoles, parsePressFeed, summarizePress } from '../server/press.mjs';
+import { searchPress, searchLinkedPress, judgePress, pressRange, pressRoles, pressDefaultRoles, parsePressFeed, summarizePress, pressAnswers } from '../server/press.mjs';
 import { handleApi } from '../server/index.mjs';
 
 const when='Mon, 16 Nov 2026 14:59:59 GMT';
@@ -237,4 +237,16 @@ test('a tailored summary validates its organization and sends roles as context s
   assert.equal(result.scope,'선임계리사');assert.equal(calls,1);
   await assert.rejects(summarizePress({...input,parent:'임의의 조직'},env,'test-only',fetcher),e=>e.status===400);
   assert.equal(calls,1);
+});
+
+
+test('a title-only insurance cue conflicting with an irrelevant judgment goes to review without inventing a team',()=>{
+  const roles=pressRoles([]);
+  const result={model:'test-jev',answers:{insurance0:{type:'noul',noul:.05},value0:{type:'score',score:0,confidence:1,probabilities:{0:1,1:0,2:0,3:0}},...Object.fromEntries(roles.map((_,i)=>['role0_'+i,{type:'noul',noul:.99}]))}};
+  const title='AI 부정행위에 수능 감독관 긴장…보험 대비책은';
+  const [review]=pressAnswers(result,[{title}],roles);
+  assert.equal(review.status,'검토 필요');assert.equal(review.relevance,.05);assert.deepEqual(review.matches,[]);assert.ok(review.caution);
+  for(const article of [{title:'은행 그림대회 개최'},{title:'국민건강보험 제도 안내'},{title,body:'승인된 본문에 근거한 결과'}]){
+    const [excluded]=pressAnswers(result,[article],roles);assert.equal(excluded.status,'제외');assert.equal(excluded.caution,undefined);
+  }
 });

@@ -212,9 +212,12 @@ export function pressAnswers(result,articles,roles,reference=null){
     const relevant=probability("insurance"+i),score=answers["value"+i],probs=[0,1,2,3].map(k=>score?.probabilities?.[k]);
     if(score?.type!=="score"||!valid(score.confidence)||!Number.isFinite(score.score)||!probs.every(valid)||Math.abs(probs.reduce((n,v)=>n+v,0)-1)>.015||Math.abs(probs.reduce((n,v,j)=>n+j*v,0)-score.score)>.025||score.score<0||score.score>3)throw new PressError(502,"Jev 점수 응답이 올바르지 않습니다.");
     const matches=roles.map((r,j)=>({name:r.name,probability:probability("role"+i+"_"+j)})).filter(r=>relevant>.2&&r.probability>=.8);
-    const status=relevant<=.2?"제외":relevant<.8||score.confidence<.65?"검토 필요":score.score>=1.5?"주요 후보":"참고";
+    // A title-only result that conflicts with an explicit insurance cue needs evidence review,
+    // rather than silently discarding a potentially relevant story. This does not assign a team.
+    const titleConflict=!a.body&&relevant<=.2&&/(보험|손보)/.test(a.title)&&!/(국민건강보험|사회보험|고용보험|산재보험|4대보험)/.test(a.title);
+    const status=titleConflict?"검토 필요":relevant<=.2?"제외":relevant<.8||score.confidence<.65?"검토 필요":score.score>=1.5?"주요 후보":"참고";
     const sameEvent=reference&&a.url!==reference.url?probability("same"+i):null;
-    return {title:a.title,source:a.source,publishedAt:a.publishedAt,...(sameEvent!==null?{sameEvent}:{}),status,matches,importance:score.score,relevance:relevant,basis:a.body?"제목·승인 본문":"제목",model:result.model};
+    return {title:a.title,source:a.source,publishedAt:a.publishedAt,...(sameEvent!==null?{sameEvent}:{}),...(titleConflict?{caution:"제목에 보험 관련 단서가 있지만 Jev는 무관으로 판단했습니다. 원문을 확인해 주세요."}:{}),status,matches,importance:score.score,relevance:relevant,basis:a.body?"제목·승인 본문":"제목",model:result.model};
   });
 }
 export const PRESS_GPT_MODEL='gpt-4.1-mini';
@@ -286,7 +289,7 @@ async function judgePressPart(selected,roles,model,reference,env,fetcher,persona
       WHERE s.enabled=1 AND s.ai_allowed=1 AND s.body_allowed=1 AND a.source_id=? AND a.title=? AND a.published_at=? LIMIT 1`).bind(a.sourceId,a.title,a.publishedAt).first();
     return {title:a.title,source:a.source,publishedAt:a.publishedAt,...(reference?{url:a.url}:{}),...(hit?.body?{body:hit.body.slice(0,6000)}:{})};
   }));
-  const id=await pressHash(["press-judgment-v2",state,roles,model,...(reference?[reference]:[])]);
+  const id=await pressHash(["press-judgment-v3",state,roles,model,...(reference?[reference]:[])]);
   const old=await env.DB.prepare("SELECT result FROM press_checks WHERE id=?").bind(id).first();
   if(old?.result)return {answers:JSON.parse(old.result),cached:true};
   const started=new Date().toISOString(),lease=crypto.randomUUID(),since=new Date(Date.now()-120000).toISOString();

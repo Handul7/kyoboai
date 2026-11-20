@@ -407,7 +407,7 @@
   function judgmentText(j){
     if(!j)return 'Jev 미판단';
     const same=j.sameEvent===undefined?'':j.sameEvent>=.8?'같은 이슈 · ':j.sameEvent<=.2?'다른 이슈 · ':'동일 이슈 검토 필요 · ';
-    return `${same}${j.status} · 보고 가치 ${j.importance.toFixed(2)}/3 · 근거 ${j.basis}${j.matches.length?' · 관련 부서 '+j.matches.map(m=>m.name).join(', '):''}`;
+    return `${same}${j.status} · 보고 가치 ${j.importance.toFixed(2)}/3 · 근거 ${j.basis}${j.matches.length?' · 관련 부서 '+j.matches.map(m=>m.name).join(', '):''}${j.caution?' · '+j.caution:''}`;
   }
   function publishedForArticle(article){
     return PUBLISHED_NEWS.find(issue=>issue.sources.some(source=>source.url===article.url ||
