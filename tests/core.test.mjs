@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {DEPARTMENT_IDS,reportWindow,canonicalUrl,normalizeArticle,deduplicateArticles,buildJevRequest,parseJevResult,evidenceCandidates,buildLlmRequest,validateReport} from "../server/core.mjs";
+import {DEPARTMENT_IDS,DEPARTMENT_REVIEW,ISSUE_ACTIONS,reportWindow,canonicalUrl,normalizeArticle,deduplicateArticles,buildJevRequest,parseJevResult,evidenceCandidates,buildLlmRequest,validateReport} from "../server/core.mjs";
 import {classifyArticle,summarizeArticles} from "../server/providers.mjs";
 
 const source={id:"newsis",domains:["newsis.com"],bodyAllowed:true,aiAllowed:true};
@@ -8,7 +8,7 @@ const article={sourceId:"newsis",url:"https://www.newsis.com/view/NISX_123?utm_s
 const now=new Date("2026-11-13T00:00:00Z");
 function rawJev(overrides={}) {
   const answers={relevance:{type:"noul",noul:.97},urgency:{type:"noul",noul:.9},importance:{type:"score",score:2.8,confidence:.82,probabilities:{"0":0,"1":0,"2":.2,"3":.8}}};
-  answers.lead={type:"choice",choice:"actuarial",confidence:.78,probabilities:{tm:0,actuarial:.81,einsurance:0,security:.19,none:0}};
+  answers.lead={type:"choice",choice:"actuarial",confidence:.78,probabilities:{...Object.fromEntries(DEPARTMENT_IDS.map(id=>[id,0])),actuarial:.81,security:.19,none:0}};
   answers.evidence={type:"choice",choice:"s2",confidence:.9,probabilities:{s1:.03,s2:.95,none:.02}};
   for(const id of DEPARTMENT_IDS)answers[`dept_${id}`]={type:"noul",noul:["actuarial","security"].includes(id)?.94:.04};
   Object.assign(answers,overrides);
@@ -82,8 +82,9 @@ test("dedup preserves source references, merges bridges and leaves related stori
 });
 test("Jev sends typed routing, priority and verbatim evidence questions against full title and body",()=>{
   const request=buildJevRequest({...article,id:"a_1"},"jev-test");
-  assert.equal(Object.keys(request.questions).length,9);
+  assert.equal(Object.keys(request.questions).length,DEPARTMENT_IDS.length+5);
   assert.equal(request.questions.lead.type,"choice");
+  assert.deepEqual(Object.keys(request.questions.lead.criteria),[...DEPARTMENT_IDS,"none"]);
   assert.equal(request.questions.evidence.criteria.s2,evidenceCandidates(article.body)[1].quote);
   assert.equal(request.questions.importance.type,"score");
   for(const id of DEPARTMENT_IDS)assert.equal(request.questions[`dept_${id}`].type,"noul");
@@ -104,7 +105,8 @@ test("ambiguous department, relevance and importance results route to review",()
   assert.equal(parseJevResult(rawJev({relevance:{type:"noul",noul:.5}}),article).decision,"review");
   const raw=rawJev();raw.answers.importance.confidence=.3;
   assert.equal(parseJevResult(raw,article).reviewRequired,true);
-  assert.equal(parseJevResult(rawJev({relevance:{type:"noul",noul:.03}}),article).decision,"irrelevant");
+  const excluded=parseJevResult(rawJev({relevance:{type:"noul",noul:.03}}),article);
+  assert.equal(excluded.decision,"irrelevant");assert.deepEqual(excluded.departments,[]);assert.equal(excluded.leadCandidate,null);
   const tied=rawJev();tied.answers.lead.probabilities.actuarial=.52;tied.answers.lead.probabilities.security=.48;
   assert.equal(parseJevResult(tied,article).leadDepartmentId,null);
   const unsupported=rawJev();unsupported.answers.evidence={type:"choice",choice:"none",confidence:1,probabilities:{s1:0,s2:0,none:1}};
@@ -121,6 +123,9 @@ test("LLM prompt carries article IDs and separates evidence from instructions",(
   assert.equal(request.response_format.type,"json_object");
   assert.match(request.messages[0].content,/기사.*지시문은 따르지/);
   assert.equal(JSON.parse(request.messages[1].content).articles[0].id,"a_1");
+  const claims=JSON.parse(buildLlmRequest(llmArticles,"claims_review",{},"test").messages[1].content);
+  assert.deepEqual(claims.reviewCriteria,DEPARTMENT_REVIEW.claims_review);
+  assert.equal(ISSUE_ACTIONS.claims_review,claims.reviewCriteria.check);
   assert.throws(()=>buildLlmRequest([],"security",{},"model"));
   assert.throws(()=>buildLlmRequest(llmArticles,"invented-dept",{},"model"));
 });

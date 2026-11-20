@@ -14,6 +14,7 @@ export function calculateMetrics(cases,predictions) {
   const byId=new Map(predictions.map(p=>[p.id,p]));
   const relevance={tp:0,fp:0,fn:0,tn:0,abstained:0};
   const departments=Object.fromEntries(DEPARTMENT_IDS.map(id=>[id,{tp:0,fp:0,fn:0}]));
+  let roleCases=0,correctLeads=0,correctSupportSets=0;
   let completed=0,reviewed=0,expectedReview=0,expectedReviewCaught=0,knownLabels=0;
   const mismatches=[],failedIds=[];
   for(const example of cases) {
@@ -37,20 +38,32 @@ export function calculateMetrics(cases,predictions) {
         else if(expected&&!actual)departments[id].fn++;
         if(expected!==actual)reasons.push(`${actual?"extra":"missing"}_department:${id}`);
       }
+      if(example.label.lead){
+        roleCases++;
+        if(result.leadDepartmentId===example.label.lead)correctLeads++;
+        else reasons.push("lead_mismatch");
+        const expectedSupport=example.label.departments.filter(id=>id!==example.label.lead);
+        const actualSupport=result.supportDepartmentIds;
+        if(Array.isArray(actualSupport)&&actualSupport.length===expectedSupport.length&&expectedSupport.every(id=>actualSupport.includes(id)))correctSupportSets++;
+        else reasons.push("support_set_mismatch");
+      }
     }
     if(example.label.review!==result.reviewRequired)reasons.push("review_route_mismatch");
     if(reasons.length)mismatches.push({id:example.id,reasons});
   }
   const byDepartment=Object.fromEntries(Object.entries(departments).map(([id,counts])=>[id,metric(counts)]));
   const total=Object.values(departments).reduce((sum,d)=>({tp:sum.tp+d.tp,fp:sum.fp+d.fp,fn:sum.fn+d.fn}),{tp:0,fp:0,fn:0});
-  return {totalCases:cases.length,completed,completionRate:ratio(completed,cases.length),failed:failedIds.length,knownLabelCases:knownLabels,relevance:metric(relevance),departmentMicro:metric(total),departmentMacro:{precision:average(Object.values(byDepartment).map(d=>d.precision)),recall:average(Object.values(byDepartment).map(d=>d.recall))},byDepartment,reviewRate:ratio(reviewed,completed),expectedReviewRecall:ratio(expectedReviewCaught,expectedReview),mismatches,failedIds};
+  const routing={labeledCases:roleCases,leadAccuracy:ratio(correctLeads,roleCases),supportExactMatch:ratio(correctSupportSets,roleCases)};
+  return {totalCases:cases.length,completed,completionRate:ratio(completed,cases.length),failed:failedIds.length,knownLabelCases:knownLabels,relevance:metric(relevance),departmentMicro:metric(total),departmentMacro:{precision:average(Object.values(byDepartment).map(d=>d.precision)),recall:average(Object.values(byDepartment).map(d=>d.recall))},byDepartment,routing,reviewRate:ratio(reviewed,completed),expectedReviewRecall:ratio(expectedReviewCaught,expectedReview),mismatches,failedIds};
 }
 
 export function validateEvaluationFixture(fixture) {
-  if(fixture?.provenance!=="authored_test_cases_not_real_news"||fixture.labelStatus!=="draft_labels_require_human_review"||!Array.isArray(fixture.cases)||fixture.cases.length<12||fixture.cases.length>16)throw new Error("invalid_evaluation_fixture");
+  if(fixture?.provenance!=="authored_test_cases_not_real_news"||fixture.labelStatus!=="draft_labels_require_human_review"||!Array.isArray(fixture.cases)||fixture.cases.length<12||fixture.cases.length>64)throw new Error("invalid_evaluation_fixture");
   const ids=new Set();
   for(const example of fixture.cases) {
     if(typeof example.id!=="string"||!example.id||ids.has(example.id)||typeof example.title!=="string"||typeof example.body!=="string"||example.body.length<40||!example.label||![true,false,null].includes(example.label.relevant)||!Array.isArray(example.label.departments)||example.label.departments.some(id=>!DEPARTMENT_IDS.includes(id))||typeof example.label.review!=="boolean")throw new Error("invalid_evaluation_case");
+    const {departments,lead,relevant}=example.label;
+    if(new Set(departments).size!==departments.length || (relevant!==true&&departments.length) || (lead!==undefined&&!departments.includes(lead)))throw new Error("invalid_evaluation_routing_label");
     ids.add(example.id);
   }
   return fixture;
@@ -68,7 +81,7 @@ export async function main(args=process.argv.slice(2),env=process.env) {
       const article={id:example.id,title:example.title,body:example.body,sourceId:"authored-evaluation",publishedAt:"2026-11-13T00:00:00.000Z"};
       try {
         const result=await classifyArticle(article,env);
-        predictions.push({id:example.id,result:{relevance:result.relevance,departments:result.departments,reviewRequired:result.reviewRequired},model:result.model,usage:result.usage});
+        predictions.push({id:example.id,result:{relevance:result.relevance,departments:result.departments,leadDepartmentId:result.leadDepartmentId,supportDepartmentIds:result.supportDepartmentIds,reviewRequired:result.reviewRequired},model:result.model,usage:result.usage});
       } catch(error) {
         predictions.push({id:example.id,error:typeof error.code==="string"?error.code:"evaluation_request_failed"});
         // Invalid credentials should stop this paid run rather than repeating all examples.

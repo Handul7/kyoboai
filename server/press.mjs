@@ -2,8 +2,11 @@ import { canonicalUrl } from './core.mjs';
 import { SOURCES } from './config.mjs';
 import { requestJson } from './providers.mjs';
 import departmentProfiles from '../department-profiles.json' with { type: 'json' };
-const PRESS_LIMIT=180, PRESS_BATCH=4, PRESS_DAY=86400000;
 export const pressDefaultRoles=departmentProfiles;
+const PRESS_LIMIT=180, PRESS_DAY=86400000;
+// Application budget. Allow one relevance, one priority, and optionally one same-event question per article.
+const PRESS_MAX_QUESTIONS=32, PRESS_LEGACY_BATCH=4;
+const PRESS_BATCH=Math.max(1,Math.min(PRESS_LEGACY_BATCH,Math.floor(PRESS_MAX_QUESTIONS/(pressDefaultRoles.length+3))));
 export class PressError extends Error {constructor(status,message){super(message);this.status=status;}}
 const pressDate=ms=>new Date(ms+9*3600000).toISOString().slice(0,10);
 function pressDay(value){
@@ -18,8 +21,7 @@ export function pressRange(from,to){
   return {start,stop};
 }
 export function pressRoles(input){
-  // Older clients may still submit their previous eight-slot roster.
-  if(!Array.isArray(input)||input.length>8)throw new PressError(400,"부서 기준 형식을 확인해 주세요.");
+  if(!Array.isArray(input)||input.length>Math.max(8,pressDefaultRoles.length))throw new PressError(400,"부서 기준 형식을 확인해 주세요.");
   const overrides=new Map();
   for(const item of input){
     const bounds=(k,min,max)=>{const s=item?.[k];if(typeof s!=="string"||s.trim().length<min||s.length>max)throw new PressError(400,"부서 이름과 역할, 키워드의 길이를 확인해 주세요.");return s.trim();};
@@ -107,7 +109,7 @@ export async function searchPress(input,env,fetcher=fetch){
     if(links.has(a.url)||titles.has(k))continue;links.add(a.url);titles.add(k);unique.push(a);
   }
   const articles=unique.slice(0,PRESS_LIMIT);
-  const result={id:runId,version:await pressHash(articles),from,to,topic,articles,total:unique.length,duplicates:found.length-unique.length,batchSize:PRESS_BATCH,limit:PRESS_LIMIT,fetchedAt:new Date().toISOString()};
+  const result={id:runId,version:await pressHash([PRESS_BATCH,articles]),from,to,topic,articles,total:unique.length,duplicates:found.length-unique.length,batchSize:PRESS_BATCH,limit:PRESS_LIMIT,fetchedAt:new Date().toISOString()};
   await putPressSnapshot(env,result);
   return {...result,cached:false,jevConfigured:!!env.TYPESAFE_API_KEY};
 }
@@ -181,7 +183,7 @@ export async function searchLinkedPress(input,env,fetcher=fetch){
     candidates=result.articles.filter(a=>a.url!==seed.url&&!(a.sourceId===seed.sourceId&&a.title.replace(/\s/g,'')===seed.title.replace(/\s/g,''))).slice(0,7);
   }catch(error){if(!(error instanceof PressError)||error.status<500)throw error;relatedUnavailable=true;}
   const articles=[seed,...candidates];
-  const result={id:await pressHash(['linked-v1',seed.url]),version:await pressHash(articles),kind:'link',from,to,topic:seed.title,articles,total:articles.length,duplicates:0,batchSize:PRESS_BATCH,relatedUnavailable,fetchedAt:new Date().toISOString()};
+  const result={id:await pressHash(['linked-v1',seed.url]),version:await pressHash([PRESS_BATCH,articles]),kind:'link',from,to,topic:seed.title,articles,total:articles.length,duplicates:0,batchSize:PRESS_BATCH,relatedUnavailable,fetchedAt:new Date().toISOString()};
   await putPressSnapshot(env,result);
   return {...result,jevConfigured:!!env.TYPESAFE_API_KEY};
 }
@@ -209,7 +211,7 @@ export function pressAnswers(result,articles,roles,reference=null){
   return articles.map((a,i)=>{
     const relevant=probability("insurance"+i),score=answers["value"+i],probs=[0,1,2,3].map(k=>score?.probabilities?.[k]);
     if(score?.type!=="score"||!valid(score.confidence)||!Number.isFinite(score.score)||!probs.every(valid)||Math.abs(probs.reduce((n,v)=>n+v,0)-1)>.015||Math.abs(probs.reduce((n,v,j)=>n+j*v,0)-score.score)>.025||score.score<0||score.score>3)throw new PressError(502,"Jev 점수 응답이 올바르지 않습니다.");
-    const matches=roles.map((r,j)=>({name:r.name,probability:probability("role"+i+"_"+j)})).filter(r=>r.probability>=.8);
+    const matches=roles.map((r,j)=>({name:r.name,probability:probability("role"+i+"_"+j)})).filter(r=>relevant>.2&&r.probability>=.8);
     const status=relevant<=.2?"제외":relevant<.8||score.confidence<.65?"검토 필요":score.score>=1.5?"주요 후보":"참고";
     const sameEvent=reference&&a.url!==reference.url?probability("same"+i):null;
     return {title:a.title,source:a.source,publishedAt:a.publishedAt,...(sameEvent!==null?{sameEvent}:{}),status,matches,importance:score.score,relevance:relevant,basis:a.body?"제목·승인 본문":"제목",model:result.model};
@@ -249,13 +251,27 @@ export async function summarizePress(input,env,key,fetcher=fetch){
 export async function judgePress(input,env,fetcher=fetch,personalKey=null){
   if(!personalKey&&!env.TYPESAFE_API_KEY)throw new PressError(503,"서버에 Jev 키가 연결되어야 실제 판단을 실행할 수 있습니다.");
   const roles=pressRoles(input.roles),offset=input.offset;
-  if(!Number.isInteger(offset)||offset<0||offset%PRESS_BATCH!==0)throw new PressError(400,"수집 결과와 실행 위치를 확인해 주세요.");
+  if(!Number.isInteger(offset)||offset<0)throw new PressError(400,"수집 결과와 실행 위치를 확인해 주세요.");
   const batch=await readPressSnapshot(input,env);
-  const selected=batch.articles.slice(offset,offset+PRESS_BATCH);
+  const batchSize=batch.batchSize||PRESS_LEGACY_BATCH;
+  if(offset%batchSize!==0)throw new PressError(400,"수집 결과와 실행 위치를 확인해 주세요.");
+  const selected=batch.articles.slice(offset,offset+batchSize);
   if(!selected.length)throw new PressError(400,"판단할 기사가 없습니다.");
   const firstArticle=batch.articles[0];
   const reference=batch.kind==='link'?{title:firstArticle.title,url:firstArticle.url}:null;
   const model=env.TYPESAFE_MODEL||"jev-latest";
+  const answers=[];
+  let cached=true;
+  // Previously saved snapshots may advertise a larger batch. Keep their offsets, but budget each provider request separately.
+  for(let start=0;start<selected.length;start+=PRESS_BATCH){
+    const part=await judgePressPart(selected.slice(start,start+PRESS_BATCH),roles,model,reference,env,fetcher,personalKey);
+    answers.push(...part.answers);
+    if(!part.cached)cached=false;
+  }
+  return {answers,cached};
+}
+
+async function judgePressPart(selected,roles,model,reference,env,fetcher,personalKey){
   if(personalKey){
     // A visitor's TypeSafe account receives only the public feed metadata. Personal runs never share cached judgments.
     const articles=selected.map(({title,source,publishedAt,url})=>({title,source,publishedAt,...(reference?{url}:{})}));
@@ -267,7 +283,7 @@ export async function judgePress(input,env,fetcher=fetch,personalKey=null){
       WHERE s.enabled=1 AND s.ai_allowed=1 AND s.body_allowed=1 AND a.source_id=? AND a.title=? AND a.published_at=? LIMIT 1`).bind(a.sourceId,a.title,a.publishedAt).first();
     return {title:a.title,source:a.source,publishedAt:a.publishedAt,...(reference?{url:a.url}:{}),...(hit?.body?{body:hit.body.slice(0,6000)}:{})};
   }));
-  const id=await pressHash(["press-judgment-v1",state,roles,model,...(reference?[reference]:[])]);
+  const id=await pressHash(["press-judgment-v2",state,roles,model,...(reference?[reference]:[])]);
   const old=await env.DB.prepare("SELECT result FROM press_checks WHERE id=?").bind(id).first();
   if(old?.result)return {answers:JSON.parse(old.result),cached:true};
   const started=new Date().toISOString(),lease=crypto.randomUUID(),since=new Date(Date.now()-120000).toISOString();

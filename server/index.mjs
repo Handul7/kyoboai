@@ -1,6 +1,6 @@
 import { browserConnection, sessionKey, expireLegacyConnection } from './browser-key.mjs';
 import { searchLinkedPress, searchPress, judgePress, summarizePress, pressDefaultRoles, PressError } from './press.mjs';
-import { DEPARTMENT_IDS, JEV_THRESHOLDS, ISSUE_ACTIONS, reportWindow, canonicalUrl, normalizeArticle, deduplicateArticles, validateReport } from './core.mjs';
+import { DEPARTMENT_IDS, JEV_THRESHOLDS, ISSUE_ACTIONS, routingRevision, reportWindow, canonicalUrl, normalizeArticle, deduplicateArticles, validateReport } from './core.mjs';
 import { scrapeArticle } from './scrape.mjs';
 import { classifyArticle, summarizeArticles, findSameEvent, writeIssueDossier, ProviderError } from './providers.mjs';
 import { LIMITS, SOURCES, PIPELINE_VERSION, validEndpoint, configuredLimits } from './config.mjs';
@@ -13,6 +13,7 @@ const csv = v => String(v || '').split(',').map(s=>s.trim()).filter(Boolean);
 const rows = async (db, sql, ...args) => (await db.prepare(sql).bind(...args).all()).results || [];
 const first = (db, sql, ...args) => db.prepare(sql).bind(...args).first();
 const run = (db, sql, ...args) => db.prepare(sql).bind(...args).run();
+const judgmentFingerprint=(article,env,revision)=>JSON.stringify([article.title,article.bodyHash,article.sourceId,article.publishedAt,env.TYPESAFE_MODEL||'jev-latest',revision]);
 const department = id => { if(!DEPARTMENT_IDS.includes(id)) fail(400,'올바른 부서를 선택해 주세요.'); return id; };
 
 async function body(request) {
@@ -136,7 +137,8 @@ async function generate(input,env,user) {
     const articles=deduplicateArticles(eligible);counts.duplicates=eligible.length-articles.length;
     if(!articles.length) return finish('empty','처리할 수 있는 기사가 없습니다. 기사 등록과 매체 이용 범위를 확인해 주세요.');
     const judged=[],pending=[];
-    const fingerprint=article=>JSON.stringify([article.title,article.bodyHash,article.sourceId,article.publishedAt,env.TYPESAFE_MODEL||'jev-latest']);
+    const revision=await routingRevision();
+    const fingerprint=article=>judgmentFingerprint(article,env,revision);
     for(const article of articles) {
       const saved=await first(env.DB,'SELECT * FROM judgments WHERE article_id=?',article.id);
       const judgment=saved?JSON.parse(saved.payload):null;
@@ -223,7 +225,7 @@ async function existingDossier(env,articleIds) {
 
 async function dossierJudgment(seed,env) {
   const saved=await first(env.DB,'SELECT * FROM judgments WHERE article_id=?',seed.id);
-  const fingerprint=JSON.stringify([seed.title,seed.bodyHash,seed.sourceId,seed.publishedAt,env.TYPESAFE_MODEL||'jev-latest']);
+  const fingerprint=judgmentFingerprint(seed,env,await routingRevision());
   const old=saved&&JSON.parse(saved.payload);
   if(saved?.pipeline_version===PIPELINE_VERSION&&old?.stateFingerprint===fingerprint)return old;
   const judgment={...await classifyArticle(seed,env),stateFingerprint:fingerprint};
@@ -482,13 +484,13 @@ export async function handleApi(request,env) {
     if(path.startsWith('/api/admin/review/')&&method==='PUT') {
       const id=decodeURIComponent(path.split('/').pop()),p=await body(request),a=await first(env.DB,'SELECT * FROM articles WHERE id=?',id);
       if(!a) fail(404,'기사가 없습니다.');
-      if(!['candidate','irrelevant'].includes(p.decision)||!Array.isArray(p.supportDepartmentIds)||p.supportDepartmentIds.length>5) fail(400,'처리 결과와 협조팀을 확인해 주세요.');
+      if(!['candidate','irrelevant'].includes(p.decision)||!Array.isArray(p.supportDepartmentIds)||p.supportDepartmentIds.length>=DEPARTMENT_IDS.length) fail(400,'처리 결과와 협조팀을 확인해 주세요.');
       const lead=p.decision==='candidate'?department(p.leadDepartmentId):null;
       const support=lead?[...new Set(p.supportDepartmentIds.map(department))]:[];
       if(support.includes(lead)) fail(400,'주관팀은 협조팀에서 제외해 주세요.');
       const old=await first(env.DB,'SELECT * FROM judgments WHERE article_id=? AND pipeline_version=? AND body_hash=?',id,PIPELINE_VERSION,a.body_hash);if(!old) fail(400,'현재 기사에 대한 Jev 판단 후 검토할 수 있습니다.');
       const previous=JSON.parse(old.payload);
-      if(previous.stateFingerprint!==JSON.stringify([a.title,a.body_hash,a.source_id,a.published_at,env.TYPESAFE_MODEL||'jev-latest'])) fail(409,'기사나 모델이 변경됐습니다. 다시 분류해 주세요.');
+      if(previous.stateFingerprint!==judgmentFingerprint(articleRecord(a),env,await routingRevision())) fail(409,'기사·모델·부서 기준이 변경됐습니다. 다시 분류해 주세요.');
       const evidence=typeof p.evidence==='string'?p.evidence.trim():previous.evidence;
       if(evidence&&(evidence.length>400||!a.body.includes(evidence))) fail(400,'근거는 원문과 일치하는 문장을 사용해 주세요.');
       const {feedback,...prior}=previous;

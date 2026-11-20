@@ -91,6 +91,8 @@ main:focus { outline: 0; }
 .brief-review+.brief-review { margin-top: 10px; }
 .review-team { display: inline-block; vertical-align: middle; font-size: .84rem; font-weight: 700; background: #eaf4e9; color: var(--green); border-radius: 6px; padding: 2px 8px; }
 .review-team.reference { color: #475875; background: #edf0f6; }
+.review-team.support { color: #285595; background: #edf3fc; }
+.also-reviews { color: var(--muted); font-size: .9rem; margin-top: 6px; }
 .review-item { font-weight: 600; font-size: 1rem; color: #344762; }
 .review-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 8px; }
 .story .review-item { flex-basis: 100%; }
@@ -140,12 +142,31 @@ select { appearance: none; padding-right: 35px; background-image: linear-gradien
 .press-summary li+li { margin-top: 6px; }
 .report-match { margin: 8px 0; }
 .headline { margin-bottom: 10px; }
-.role-card { min-width: 0; display: flex; flex-direction: column; }
-.role-card h2 { font-size: 1.22rem; margin: 0; }
+.role-filters { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; max-width: 47rem; }
+.role-filters :is(select,input) { display: block; width: 100%; margin: 5px 0 0; }
+.directory-meta { display: flex; justify-content: space-between; gap: 6px 12px; align-items: baseline; flex-wrap: wrap; margin: 16px 0 14px; color: var(--muted); }
+.directory-meta span { font-weight: 650; color: var(--ink); }
+.directory-groups { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; align-items: start; }
+.directory-group { min-width: 0; padding: 0 16px; background: white; border: 1px solid var(--line); border-radius: 16px; }
+.directory-group h2 { display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid var(--line); padding: 14px 0 11px; font-size: 1.13rem; color: var(--navy); }
+.group-count { font-size: .9rem; font-weight: 600; color: var(--muted); }
+.role-card { min-width: 0; padding: 0; border: 0; border-radius: 0; }
+.role-card + .role-card { border-top: 1px solid var(--line); }
+.role-card>summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; list-style: none; min-height: 56px; padding: 8px 1px; }
+.role-card>summary::-webkit-details-marker { display: none; }
+.role-card>summary::after { content: ''; flex: 0 0 7px; height: 7px; border: solid var(--muted); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); margin-right: 5px; }
+.role-card[open]>summary::after { transform: rotate(225deg); }
+.role-card>summary strong,.role-card>summary small { display: block; }
+.role-card>summary strong { font-weight: 650; color: var(--ink); }
+.role-body { padding: 5px 0 15px; }
 .role-card p { margin-bottom: 13px; }
-.role-card .role-parent { font-size: .925rem; color: var(--muted); margin: 2px 0 14px; }
 .role-terms { font-size: .96rem; color: var(--muted); }
-.role-terms b { color: var(--green); display: block; }
+.role-terms b,.role-check b { color: var(--green); display: block; }
+.job-ref { font-size: .9rem; color: var(--muted); }
+.directory-footnote { margin-top: 16px; }
+.role-editor .form-foot { flex-wrap: wrap; }
+.role-feedback:not(:empty) { margin: 8px 0 0; color: var(--green); }
+.role-feedback:empty { display: none; }
 .role-sources { border-top: 1px solid var(--line); margin-top: auto; font-size: .925rem; }
 .role-sources summary { cursor: pointer; color: var(--green); font-weight: 600; padding-block: 11px; }
 .role-sources p { margin: 0 0 5px; }
@@ -228,6 +249,8 @@ details p { margin: 8px 0 13px; }
   .briefing-hero .actions { width: 100%; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); margin-top: 17px; gap: 7px; }
   .actions a { padding-inline: 5px; }
   .stories, .role-grid { grid-template-columns: 1fr; gap: 11px; }
+  .directory-groups { grid-template-columns: 1fr; gap: 12px; }
+  .role-filters { grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); gap: 8px; }
   .list-head { margin: 23px 0 12px; gap: 5px 10px; }
   .list-head label { gap: 5px; }
   .story-summary { padding-bottom: 12px; }
@@ -250,6 +273,7 @@ details p { margin: 8px 0 13px; }
   .actions .icon { display: none; }
   .list-head label { flex-basis: 100%; }
   .two { grid-template-columns: 1fr; }
+  .role-filters { grid-template-columns: 1fr; }
 }
 @media (forced-colors: active) {
   .nav a[aria-current=page], .tabs a[aria-current=page] { border-bottom: 3px solid Highlight; }

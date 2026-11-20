@@ -78,28 +78,61 @@
     localStorage.setItem(roleKey,JSON.stringify(edits));
     localStorage.removeItem(previousRoleKey);
   }
-  function roleFields(editing=false) {
-    $('#edit-roles').hidden=editing;
-    $('#role-actions').hidden=!editing;
-    $('#role-fields').innerHTML=roles.map((r,i)=>{
-      const fields=editing
-        ? `<label>검토할 업무<textarea name="role" aria-label="${escape(r.name)} 검토할 업무" maxlength="300" rows="4" required>${escape(r.role)}</textarea></label>
-           <label>주요 키워드<textarea name="keywords" aria-label="${escape(r.name)} 주요 키워드" maxlength="180" rows="2" placeholder="쉼표로 구분">${escape(r.keywords)}</textarea></label>`
-        : `<p>${escape(r.role)}</p>${r.keywords?'<p class="role-terms"><b>주요 키워드</b> '+escape(r.keywords.split(',').map(k=>k.trim()).filter(Boolean).join(' · '))+'</p>':''}`;
-      const profile=profiles[i];
-      return `<section class="role-card"><h2>${escape(r.name)}</h2><p class="role-parent">소속 · ${escape(profile.parent)}</p>${fields}
-        <details class="role-sources"><summary>기준 자료</summary>
-        <p>직무기술서 목록 · ${escape(profile.jobReference)}</p>
-        <ul>${profile.sources.map(s=>`<li>${link(s.url,s.label)}</li>`).join('')}</ul></details></section>`;
-    }).join('');
+  function roleCardContent(profile,criteria) {
+    const terms=criteria.keywords.split(',').map(value=>value.trim()).filter(Boolean);
+    const references=(profile.sources || []).map(s=>`<li>${link(s.url,s.label)}</li>`).join('');
+    return `<div class="role-read"><p>${escape(criteria.role)}</p>
+      ${profile.check && criteria.role===profile.role?`<p class="role-check"><b>먼저 확인할 일</b>${escape(profile.check)}</p>`:''}
+      ${terms.length?`<p class="role-terms"><b>주요 키워드</b> ${escape(terms.join(' · '))}</p>`:''}
+      ${profile.jobReference?`<p class="job-ref">직무기술서 목록 · ${escape(profile.jobReference)}</p>`:''}
+      ${references?`<details class="role-sources"><summary>관련 공개 자료</summary><ul>${references}</ul></details>`:''}
+      <button type="button" class="secondary edit-role">이 부서 기준 편집</button></div>
+      <form class="role-editor" hidden>
+        <label>검토할 업무<textarea name="role" maxlength="300" rows="4" required>${escape(criteria.role)}</textarea></label>
+        <label>주요 키워드<textarea name="keywords" maxlength="180" rows="2" placeholder="쉼표로 구분">${escape(criteria.keywords)}</textarea></label>
+        <div class="form-foot"><button type="submit" class="primary">이 브라우저에 저장</button><button type="button" class="secondary cancel-role">취소</button></div>
+      </form><p class="role-feedback" role="status"></p>`;
   }
+  function filterDirectory() {
+    const query=$('#role-search').value.trim().toLocaleLowerCase('ko').split(/\s+/).filter(Boolean);
+    const group=$('#role-group').value;
+    const shown=new Set();
+    const groupCounts=new Map();
+    profiles.forEach((profile,i)=>{
+      if(group && profile.group!==group)return;
+      const words=[profile.name,profile.parent,profile.group,...(profile.aliases || []),roles[i].role,roles[i].keywords].join(' ').toLocaleLowerCase('ko');
+      if(!query.every(term=>words.includes(term)))return;
+      shown.add(i);
+      groupCounts.set(profile.group,(groupCounts.get(profile.group) || 0)+1);
+    });
+    for(const card of all('#role-fields .role-card'))card.hidden=!shown.has(Number(card.dataset.index));
+    for(const block of all('#role-fields .directory-group')){
+      const count=groupCounts.get(block.dataset.group) || 0;
+      block.hidden=count===0;
+      block.querySelector('.group-count').textContent=count;
+    }
+    $('#directory-count').textContent=shown.size===profiles.length?`전체 ${shown.size}개 부서`:`전체 ${profiles.length}개 중 ${shown.size}개 부서`;
+    $('#role-empty').hidden=shown.size>0;
+  }
+  function roleFields() {
+    const groups=[...new Set(profiles.map(p=>p.group))];
+    $('#role-group').innerHTML='<option value="">전체 분야</option>'+groups.map(g=>`<option>${escape(g)}</option>`).join('');
+    $('#role-fields').innerHTML=groups.map(group=>`<section class="directory-group" data-group="${escape(group)}">
+      <h2>${escape(group)} <span class="group-count"></span></h2>
+      ${profiles.map((p,i)=>p.group===group?`<details class="role-card" data-index="${i}">
+        <summary><span><strong>${escape(p.name)}</strong><small>${escape(p.parent)}</small></span></summary>
+        <div class="role-body">${roleCardContent(p,roles[i])}</div></details>`:'').join('')}</section>`).join('');
+    filterDirectory();
+  }
+  $('#role-search').oninput=filterDirectory;
+  $('#role-group').onchange=filterDirectory;
   function roleCount(){ $('#role-count').textContent=roles ? roles.length+'개 부서' : settingsError || '불러오는 중'; }
   const rosterReady=fetch('./department-profiles.json',{cache:'no-cache'}).then(async response=>{
     if(!response.ok)throw Error();
     profiles=await response.json();
     roles=loadRoles(profiles);
     try {if(localStorage.getItem(previousRoleKey)!==null)persistRoles(roles);} catch {}
-    roleFields();roleCount();$('#edit-roles').disabled=false;
+    roleFields();roleCount();
   }).catch(()=>{
     settingsError='부서 기준을 불러오지 못했습니다. 새로고침해 주세요.';
     $('#roles-message').textContent=settingsError;roleCount();
@@ -112,25 +145,41 @@
     }catch{$('#'+provider+'-message').textContent='연결 상태를 확인할 수 없습니다.';}
   }
   const initialized=Promise.all([rosterReady,refreshKey('jev'),sessions.gpt?refreshKey('gpt'):Promise.resolve()]);
-  $('#edit-roles').onclick=()=>{
-    roleFields(true);$('#roles-message').textContent='';
-    $('#role-fields textarea').focus();
+  $('#role-fields').onclick=event=>{
+    const button=event.target.closest('.edit-role,.cancel-role');
+    if(!button)return;
+    const card=button.closest('.role-card'), form=card.querySelector('form');
+    const editing=button.classList.contains('edit-role');
+    if(!editing)form.reset();
+    form.hidden=!editing;
+    card.querySelector('.role-read').hidden=editing;
+    card.querySelector('.role-feedback').textContent='';
+    card.querySelector(editing?'textarea':'.edit-role').focus();
   };
-  $('#cancel-roles').onclick=()=>{roleFields();$('#edit-roles').focus();};
-  $('#roles-form').onsubmit=e=>{
-    e.preventDefault();
-    const values=all('#role-fields .role-card').map((card,i)=>({
-      name:roles[i].name,role:card.querySelector('[name="role"]').value.trim(),keywords:card.querySelector('[name="keywords"]').value.trim()
-    }));
-    if(values.some(r=>!r.role)){$('#roles-message').textContent='각 부서가 검토할 업무를 입력해 주세요.';return;}
-    try {persistRoles(values);} catch {$('#roles-message').textContent='브라우저 저장 공간에 접근할 수 없습니다.';return;}
-    roles=values;roleFields();roleCount();$('#edit-roles').focus();
-    $('#roles-message').textContent='이 브라우저에 저장했습니다. 다음 뉴스 확인부터 적용됩니다.';
+  $('#role-fields').onsubmit=event=>{
+    event.preventDefault();
+    const form=event.target, card=form.closest('.role-card'), index=Number(card.dataset.index);
+    const role=form.elements.role.value.trim(), keywords=form.elements.keywords.value.trim();
+    if(!role){form.elements.role.focus();card.querySelector('.role-feedback').textContent='검토할 업무를 입력해 주세요.';return;}
+    const values=roles.slice();
+    values[index]={name:profiles[index].name,role,keywords};
+    try {persistRoles(values);} catch {card.querySelector('.role-feedback').textContent='브라우저 저장 공간에 접근할 수 없습니다.';return;}
+    roles=values;
+    card.querySelector('.role-body').innerHTML=roleCardContent(profiles[index],values[index]);
+    filterDirectory();
+    (card.hidden?$('#role-search'):card.querySelector('.edit-role')).focus();
+    const feedback=card.hidden?$('#roles-message'):card.querySelector('.role-feedback');
+    feedback.textContent=values[index].name+' 기준을 이 브라우저에 저장했습니다. 다음 뉴스 확인부터 적용됩니다.';
   };
   const shortDate = v => v.slice(0,10);
   function sources(rows) {return `<ol class="sources">${rows.map(s=>`<li>${link(s.url,s.title)} <small>${escape(s.source)} · ${escape(shortDate(s.publishedAt))}</small></li>`).join('')}</ol>`;}
   $('#edition').innerHTML=editions.map(d=>`<option value="${d}">${dateLabel(d)}</option>`).join('')+months.map(m=>`<option value="${m}">${m.replace('-','년 ')}월 전체</option>`).join('');
-  const reviewer = review => review.department ? review.department+(review.referenceOnly?' · 참고':'') : '공통 참고';
+  function reviewer(review){
+    if(!review.department)return '공통 참고';
+    const assignments={lead:'주관',support:'협조',reference:'참고'};
+    const assignment=assignments[review.assignment] || (review.referenceOnly?'참고':'');
+    return assignment ? assignment+' · '+review.department : review.department;
+  }
   function reviewNotes(review) {
     const notes=[];
     if(review.reason)notes.push({label:review.department?'검토 이유':'공통으로 보는 이유',lines:[review.reason]});
@@ -140,7 +189,7 @@
   }
   function reviewRows(reviews, detailed=false) {
     return reviews.map(review=>`<div class="brief-review">
-      <div class="review-line"><b class="review-team${!review.department||review.referenceOnly?' reference':''}">${escape(reviewer(review))}</b>
+      <div class="review-line"><b class="review-team${!review.department||review.referenceOnly||review.assignment==='reference'?' reference':review.assignment==='support'?' support':''}">${escape(reviewer(review))}</b>
       <span class="review-item">${escape(review.item)}</span></div>
       ${detailed?`<dl class="review-notes">${reviewNotes(review).map(({label,lines})=>
         `<dt>${escape(label)}</dt><dd>${lines.length===1?escape(lines[0]):`<ul>${lines.map(line=>`<li>${escape(line)}</li>`).join('')}</ul>`}</dd>`).join('')}</dl>`:''}</div>`).join('');
@@ -154,7 +203,8 @@
       <h3>${escape(s.title)}</h3>
       <p class="story-summary">${escape(s.summary.split(/(?<=다\.) /)[0])}</p>
       <div class="story-reviews">
-      ${reviewRows(s.reviews)}
+      ${reviewRows(s.reviews.slice(0,1))}
+      ${s.reviews.length>1?`<p class="also-reviews">${escape(s.reviews.slice(1).map(reviewer).join('　'))}</p>`:''}
       </div></a>`).join('')}</div>`;
   }
   $('#edition').onchange=stories;stories();
@@ -325,12 +375,12 @@
         fields.push(['검토 이유 · 발행 보고서',review.reason],...review.checks.map(check=>['확인할 일',check]));
       }else{
         fields.push(['이번 판단에 적용한 부서 업무',applied.role]);
-        const check=mentioned.length
+        const check=original?.role===applied.role && original.check ? original.check : mentioned.length
           ? '원문에서 '+mentioned.map(word=>'「'+word+'」').join('·')+'에 관한 변경이 있는지 확인하세요. 해당하면 적용 대상과 시점을 기록하세요.'
           : '기사 원문에서 이 업무에 영향을 주는 조치가 있는지, 있다면 어떤 절차를 바꿔야 하는지 확인하세요.';
         fields.push(['확인할 일',check]);
       }
-      return [{team:review?.referenceOnly?name+' · 참고':name,fields}];
+      return [{team:review?reviewer(review):name,fields}];
     });
   }
   function noteDetails(notes,expanded){

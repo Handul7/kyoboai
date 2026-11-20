@@ -39,27 +39,60 @@ test('validates provider answers, uses saved roles and server-captured articles,
   await assert.rejects(judgePress({...input,version:'changed'},env,provider),e=>e.status===409);
   env.DB.sqlite.close();
 });
-test('old roster names preserve custom criteria under the four current Jev candidate names',()=>{
+test('old roster names preserve custom criteria under current Jev candidate names and fill in new teams',()=>{
   const names=['정보보안팀','계리팀','다이렉트사업부','디지털채널/e보험팀'];
   const previous=['정보보안팀','보험계리팀','다이렉트(TM영업)','e보험팀'];
   const edits=previous.map((name,i)=>({name,role:'개별 검토 '+i,keywords:'기준 '+i}));
   const criteria=pressRoles([...edits,{name:'상품개발',role:'상품 요율 점검',keywords:'상품'}]);
-  assert.deepEqual(pressRoles([]).map(r=>r.name).sort(),[...names].sort());
+  assert.deepEqual(pressRoles([]).map(r=>r.name),pressDefaultRoles.map(r=>r.name));
   for(const [i,name] of names.entries()){
     assert.deepEqual(criteria.find(role=>role.name===name),{...edits[i],name});
   }
-  assert.equal(criteria.length,4);
+  assert.equal(criteria.length,pressDefaultRoles.length);
+  assert.deepEqual(pressRoles(criteria),criteria);
+  assert.ok(criteria.some(role=>role.name==="지급심사팀"));
   assert.throws(()=>pressRoles([edits[1],{...edits[1],name:'계리팀'}]),error=>error.status===400);
   assert.ok(criteria.every(r=>Object.keys(r).length===3));
-  assert.ok(pressDefaultRoles.every(r=>r.sources.length>0 && r.keywords && r.role));
+  assert.ok(pressDefaultRoles.every(r=>r.parent && r.keywords && r.role && r.check));
 });
 test('public settings expose only configuration state and regular cadence',async()=>{
   const response=await handleApi(new Request('https://example.com/api/press/settings'),{TYPESAFE_API_KEY:'test-only'});
   const state=await response.json();assert.equal(state.jevConfigured,false);assert.deepEqual(state.regularDays,[1,4]);assert.equal(state.regularTime,'07:00');assert.ok(!JSON.stringify(state).includes('test-only'));
-  assert.deepEqual(Object.fromEntries(state.roles.map(r=>[r.id,r.name])),{
-    security:'정보보안팀',actuarial:'계리팀',tm:'다이렉트사업부',einsurance:'디지털채널/e보험팀'
-  });
+  assert.deepEqual(state.roles.map(r=>[r.id,r.name]),pressDefaultRoles.map(r=>[r.id,r.name]));
+  assert.ok(state.roles.some(r=>r.name==='지급심사팀'));
   const crossed=await handleApi(new Request('https://example.com/api/press/judge',{method:'POST',headers:{Origin:'https://other.example'}}),{});assert.equal(crossed.status,403);
+});
+
+test('complete roster is checked for every article, exclusions have no teams, and retry resumes a legacy snapshot',async t=>{
+  const env={DB:createDatabase(),TYPESAFE_API_KEY:'test-organization'};
+  t.after(()=>env.DB.sqlite.close());
+  const titles=['보험금 심사 개편','은행 그림대회','보험금 청구 변경'];
+  const xml='<rss><channel>'+titles.map((title,i)=>item(title).replace('articles/abc','articles/'+i)).join('')+'</channel></rss>';
+  const snap=await searchPress({from:'2026-11-16',to:'2026-11-16'},env,async()=>new Response(xml));
+  assert.equal(snap.batchSize,1);
+  const input={id:snap.id,version:snap.version,offset:0,roles:pressRoles([])};
+  const calls=[];
+  let interrupted=false;
+  const fetcher=async(url,init)=>{
+    const {state,questions}=JSON.parse(init.body),title=state.articles[0].title;
+    calls.push(title);
+    assert.equal(state.articles.length,1);
+    assert.deepEqual(state.roles.map(r=>r.name),input.roles.map(r=>r.name));
+    assert.equal(Object.keys(questions).filter(key=>key.startsWith('role')).length,input.roles.length);
+    assert.ok(Object.keys(questions).length<=32);
+    if(!interrupted&&title===titles[1]){interrupted=true;return Response.json({model:'test',answers:{}});}
+    const answers={insurance0:{type:'noul',noul:title===titles[1]?0:.99},value0:{type:'score',confidence:1,score:2,probabilities:{0:0,1:0,2:1,3:0}}};
+    state.roles.forEach((r,i)=>answers['role0_'+i]={type:'noul',noul:title===titles[1]||r.name==='지급심사팀'?.98:.01});
+    return Response.json({model:'test',answers});
+  };
+  const stored=JSON.parse(env.DB.sqlite.prepare('SELECT payload FROM press_searches WHERE id=?').get(snap.id).payload);
+  env.DB.sqlite.prepare('UPDATE press_searches SET payload=? WHERE id=?').run(JSON.stringify({...stored,batchSize:4}),snap.id);
+  await assert.rejects(judgePress(input,env,fetcher),e=>e.status===502);
+  const result=await judgePress(input,env,fetcher);
+  assert.deepEqual(calls,[titles[0],titles[1],titles[1],titles[2]]);
+  assert.deepEqual(result.answers.map(a=>a.title),titles);
+  assert.deepEqual(result.answers.map(a=>a.matches.map(team=>team.name)),[['지급심사팀'],[],['지급심사팀']]);
+  assert.ok((await judgePress(input,env,()=>assert.fail('complete cache expected'))).cached);
 });
 
 test('tab sessions require both credentials, isolate tabs in one browser and ignore the old persistent cookie',async t=>{
@@ -109,11 +142,14 @@ test('tab sessions require both credentials, isolate tabs in one browser and ign
     const snap=await (await api(op,payload,opts)).json();assert.equal(snap.jevConfigured,true);
     const args={id:snap.id,version:snap.version,roles:[],offset:0};
     assert.equal((await api('judge',args,{cookie:jar})).status,401);
-    const judgment=await api('judge',args,opts);assert.equal(judgment.status,200);
-    const {answers}=await judgment.json();
+    const answers=[];
+    for(let offset=0;offset<snap.articles.length;offset+=snap.batchSize){
+      const judgment=await api('judge',{...args,offset},opts);assert.equal(judgment.status,200);
+      answers.push(...(await judgment.json()).answers);
+    }
     if(op==='link'){assert.equal(snap.articles[0].url,src);assert.equal(snap.kind,'link');assert.equal(answers[1].sameEvent,.9);}
   }
-  assert.deepEqual(used,['Bearer '+key,'Bearer '+key,'Bearer '+other]);
+  assert.deepEqual(used,['Bearer '+key,'Bearer '+key,'Bearer '+key,'Bearer '+other]);
   const forgotten=await api('connection',{action:'disconnect'},{cookie:jar,session:a.session});
   assert.ok(forgotten.headers.get('set-cookie').startsWith(a.cookie.split('=')[0]+'=; Max-Age=0;'));
   assert.equal(await configured(b),true);

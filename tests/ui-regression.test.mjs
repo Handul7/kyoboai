@@ -36,8 +36,15 @@ test('every published issue has an individual permalink, report sections, dated 
     for(const field of ['title','summary','background','impact','check'])assert.ok(r[field]?.trim());
     assert.ok(Array.isArray(r.reviews) && r.reviews.length>0, r.id+' needs a review item for the briefing');
     assert.equal(new Set(r.reviews.map(v=>v.department)).size,r.reviews.length);
+    const leads=r.reviews.filter(v=>v.assignment==='lead');
+    assert.ok(leads.length<=1,r.id+' has competing lead departments');
+    if(r.reviews.some(v=>v.assignment==='support'))assert.equal(leads.length,1,r.id+' has support without a lead');
+    if(leads.length)assert.equal(r.reviews[0],leads[0],r.id+' must present the lead first');
     for(const review of r.reviews){
       assert.ok(departments.has(review.department) || (review.department===null && r.reviews.length===1));
+      if(review.department)assert.ok(['lead','support','reference'].includes(review.assignment),r.id+' has an invalid team assignment');
+      else assert.ok(review.assignment===undefined||review.assignment==='reference',r.id+' cannot assign work to an unnamed team');
+      if(review.referenceOnly)assert.equal(review.assignment,'reference',r.id+' has incompatible reference labels');
       assert.ok(review.item.trim() && review.detail.trim());
       assert.ok(review.reason?.trim(),r.id+' needs a reason for the assigned review');
       assert.ok(Array.isArray(review.checks) && review.checks.length && review.checks.every(s=>s.trim()),r.id+' needs concrete checks');

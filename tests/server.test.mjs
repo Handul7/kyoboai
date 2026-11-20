@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDatabase } from './helpers/d1.mjs';
 import { handleApi } from '../server/index.mjs';
-import { reportWindow, DEPARTMENT_IDS } from '../server/core.mjs';
+import { reportWindow, DEPARTMENT_IDS, DEPARTMENT_REVIEW } from '../server/core.mjs';
 import { PIPELINE_VERSION } from '../server/config.mjs';
 
 const ORIGIN = 'https://brief.example.test';
@@ -68,6 +68,32 @@ function providers(t, { citation = 'valid', uncertain = false, beforeJev } = {})
   return calls;
 }
 const runRequest = env => request(env, '/api/admin/run', { method: 'POST', data: { reportDate: DATE, departmentId: 'security', kind: 'brief' } });
+
+test('a legacy judgment is refreshed against the expanded roster and routed to new lead and support teams',async t=>{
+  const env=fixture(t);
+  const article=await addArticle(env,'claims',{title:'보험금 지급 거절 사유 안내 개선',body:'가상 보험사는 치료비 지급을 거절할 때 적용한 약관 조항을 적도록 지급 심사 기준을 개편한다. 같은 민원이 반복되는지 함께 확인한다.'});
+  const legacy=JSON.stringify([article.title,article.body_hash,article.source_id,article.published_at,'jev-latest']);
+  env.DB.sqlite.prepare('INSERT INTO judgments(article_id,body_hash,pipeline_version,payload,updated_at) VALUES(?,?,?,?,?)').run(article.id,article.body_hash,PIPELINE_VERSION,JSON.stringify({stateFingerprint:legacy,decision:'irrelevant'}),TIMESTAMP);
+  let calls=0;
+  t.mock.method(globalThis,'fetch',async(url,init)=>{
+    calls++;
+    const {questions}=JSON.parse(init.body);
+    assert.deepEqual(Object.keys(questions.lead.criteria),[...DEPARTMENT_IDS,'none']);
+    const result=wireJev({questions});
+    for(const id of ['security','claims_review','consumer_protection']){
+      result.answers.lead.probabilities[id]=+(id==='claims_review');
+      result.answers['dept_'+id].noul=id==='security'?.01:.97;
+    }
+    result.answers.lead.choice='claims_review';
+    return Response.json(result);
+  });
+  const classify=()=>request(env,'/api/admin/run',{method:'POST',data:{reportDate:DATE,classifyOnly:true}});
+  assert.equal((await classify()).data.status,'classified');
+  const [issue]=(await request(env,'/api/issues')).data.issues;
+  assert.equal(issue.lead,'claims_review');assert.deepEqual(issue.support,['consumer_protection']);
+  for(const id of [issue.lead,...issue.support])assert.equal(issue.actions[id],DEPARTMENT_REVIEW[id].check);
+  assert.equal((await classify()).data.status,'classified');assert.equal(calls,1);
+});
 
 test('approved HTML article scraping feeds Jev-only routing and scoped correction review', async t => {
   const env=fixture(t);
@@ -361,6 +387,7 @@ test('direct input, related coverage and a periodic briefing share one access-co
     if(p.questions){const response=wireJev({questions:p.questions});response.answers.dept_actuarial.noul=.94;return Response.json(response);}
     summaries++;
     const supplied=JSON.parse(p.messages[1].content);
+    assert.deepEqual(supplied.teamCriteria,[DEPARTMENT_REVIEW.security,DEPARTMENT_REVIEW.actuarial]);
     assert.equal(supplied.articles.length,2);
     const content={title:'이슈 보고서',summary:'변화 [1]',background:'관련 배경 [2]',impact:'예상 영향 [1]',uncertainty:'미확인 사항 [2]',teams:['security','actuarial'].map(id=>({id,why:'담당 사유 [1]',check:'확인할 사항 [2]'}))};
     return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(content)}}]});

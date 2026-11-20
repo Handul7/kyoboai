@@ -1,120 +1,454 @@
 {
-  "version": "insurance-eval-four-teams-v2",
+  "version": "insurance-eval-org-20261023-v3",
   "provenance": "authored_test_cases_not_real_news",
   "labelStatus": "draft_labels_require_human_review",
-  "description": "실제 보도가 아닌 작성 예시입니다. 기준 라벨은 보험 업무 담당자가 검토해야 하며, 이 소규모 표본만으로 운영 정확도를 보증하지 않습니다.",
+  "description": "작성한 가상 기사입니다. 보험 업무 담당자가 부서별 정답 초안을 확인해야 합니다. 주관은 첫 대응 부서이고 협조는 기사에서 구체적인 업무가 확인되는 부서입니다.",
   "cases": [
     {
       "id": "life_annuity_mobile_tm",
       "sector": "life",
       "title": "연금보험 청약철회 안내를 앱과 전화에서 개편",
-      "body": "가상의 생명보험사는 모바일 연금보험 가입 화면에 청약철회 기한을 표시한다. 전화로 가입을 권유할 때도 같은 내용을 설명하도록 상담 스크립트를 변경한다.",
-      "label": {"relevant": true, "departments": ["einsurance", "tm"], "review": false}
+      "body": "가상의 생명보험사가 모바일 청약철회 안내 화면을 개편하는 프로젝트를 시작한다. 핵심 변경은 앱의 철회 기한 표시이며 전화 상담원은 앱 화면과 설명이 어긋나지 않도록 같은 기한을 스크립트에 반영한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "einsurance",
+          "tm"
+        ],
+        "review": false,
+        "lead": "einsurance"
+      }
     },
     {
       "id": "nonlife_auto_assumptions",
       "sector": "nonlife",
       "title": "침수 보험금 증가로 자동차보험 위험률 가정 재검증",
       "body": "가상의 손해보험사는 지역별 보험금 지급 통계로 기존 위험률 가정을 다시 검증한다. 계리 결산에서는 가정 변경 전후의 책임준비금을 비교하기로 했다.",
-      "label": {"relevant": true, "departments": ["actuarial"], "review": false}
+      "label": {
+        "relevant": true,
+        "departments": [
+          "assumption_mgmt",
+          "actuarial"
+        ],
+        "review": false,
+        "lead": "assumption_mgmt"
+      }
     },
     {
       "id": "common_ga_commissions",
       "sector": "common",
-      "title": "GA의 대면 설계사 수수료 공시 기준 개편",
-      "body": "가상의 감독당국은 대면 영업을 하는 독립보험대리점 설계사의 판매수수료 공시 기준을 바꾼다. 공시 대상과 시행일이 명시됐으며 대리점 경영진이 공시를 준비한다.",
-      "label": {"relevant": true, "departments": [], "review": true}
+      "title": "대면 모집 수수료 공시 개정, 보험사 준수 점검 및 지점 서류 교체",
+      "body": "가상의 감독당국이 보험사의 대면 설계사 수수료 공시 기준을 바꾼다. 보험사는 공시 대상 행위와 내부 점검 절차를 먼저 정하고 지점에는 새 안내서와 교육 자료를 배포한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "compliance_support",
+          "channel_sales_support"
+        ],
+        "review": false,
+        "lead": "compliance_support"
+      }
     },
     {
       "id": "common_capital_alm",
       "sector": "common",
       "title": "해지율 가정 변경에 따른 보험부채 재산출",
       "body": "가상의 보험사는 계약 해지율이 바뀌면서 장기 보험계약의 현금흐름을 재추정했다. 계리 결산에 적용할 최적가정과 지급여력비율 변화를 검토한다.",
-      "label": {"relevant": true, "departments": ["actuarial"], "review": false}
+      "label": {
+        "relevant": true,
+        "departments": [
+          "actuarial",
+          "risk_management",
+          "assumption_mgmt"
+        ],
+        "review": false,
+        "lead": "actuarial"
+      }
     },
     {
       "id": "nonlife_ai_claims",
       "sector": "nonlife",
       "title": "AI 심사 도입 전 고객 의료정보 보관 기간 점검",
       "body": "가상의 손해보험사는 보험금 청구 서류를 분류하는 AI를 도입한다. 도입 전 의료정보의 보관 기간과 접근권한, 위탁업체의 파기 절차를 점검한다.",
-      "label": {"relevant": true, "departments": ["security"], "review": false}
+      "label": {
+        "relevant": true,
+        "departments": [
+          "security"
+        ],
+        "review": false,
+        "lead": "security"
+      }
     },
     {
       "id": "common_customer_data_leak",
       "sector": "common",
       "title": "보험계약자 연락처 유출 확인, 접근권한 조사",
       "body": "가상의 보험사에서 계약자 연락처가 외부로 유출된 사실이 확인됐다. 회사는 해당 자료 열람 권한과 보관 기록을 점검해 노출된 고객정보 범위를 확인 중이다.",
-      "label": {"relevant": true, "departments": ["security"], "review": false}
+      "label": {
+        "relevant": true,
+        "departments": [
+          "security"
+        ],
+        "review": false,
+        "lead": "security"
+      }
     },
     {
       "id": "life_mobile_auth",
       "sector": "life",
       "title": "생보사 모바일 청약에 새 본인인증 수단 적용",
       "body": "가상의 생명보험사는 앱에서 직접 가입하는 고객이 서류 없이 본인인증을 마치도록 가입 화면을 개편했다. 이번 변경으로 청약 단계와 소요 시간이 줄어든다.",
-      "label": {"relevant": true, "departments": ["einsurance"], "review": false}
+      "label": {
+        "relevant": true,
+        "departments": [
+          "einsurance"
+        ],
+        "review": false,
+        "lead": "einsurance"
+      }
     },
     {
       "id": "nonlife_tm_donotcall",
       "sector": "nonlife",
       "title": "손보사 두낫콜 요청 고객에 대한 상담전화 중지 점검",
       "body": "가상의 손해보험사는 연락중지 요청을 한 고객에게 보험 가입 권유 전화가 간 사례를 확인했다. 상담원들이 발신 전에 수신거부 목록을 확인하도록 상담 절차를 바꿨다.",
-      "label": {"relevant": true, "departments": ["tm"], "review": false}
+      "label": {
+        "relevant": true,
+        "departments": [
+          "tm"
+        ],
+        "review": false,
+        "lead": "tm"
+      }
     },
     {
       "id": "life_online_security",
       "sector": "life",
       "title": "모바일보험 전자서명 변경 시 고객정보 보관도 재설계",
       "body": "가상의 생명보험사는 온라인 전용상품의 전자서명 화면을 개편한다. 서명 단계에서 수집하는 식별정보의 보관 기간을 단축하고 담당자의 열람권한도 재조정한다.",
-      "label": {"relevant": true, "departments": ["einsurance", "security"], "review": false}
+      "label": {
+        "relevant": true,
+        "departments": [
+          "einsurance",
+          "security"
+        ],
+        "review": false,
+        "lead": "einsurance"
+      }
     },
     {
       "id": "common_bond_allocation",
       "sector": "common",
       "title": "보험사 운용부서 장기채 편입 비중 조정",
       "body": "가상의 보험사 투자위원회가 장기채의 만기별 편입 비중을 조정했다. 발표문은 운용수익과 매매 비용 변화만 설명하며 보험부채 평가 가정은 종전대로 유지된다고 명시했다.",
-      "label": {"relevant": true, "departments": [], "review": true}
+      "label": {
+        "relevant": true,
+        "departments": [
+          "portfolio_management"
+        ],
+        "review": false,
+        "lead": "portfolio_management"
+      }
     },
     {
       "id": "common_sales_cancellation",
       "sector": "common",
       "title": "전화모집 통화 녹취에서 청약철회 안내 누락 발견",
-      "body": "가상의 소비자보호 점검에서 보험 상담원이 전화모집 과정에 청약철회 안내를 빠뜨린 사례가 확인됐다. 회사는 녹취 점검 항목을 바꾸고 설명 문구를 보완하기로 했다.",
-      "label": {"relevant": true, "departments": ["tm"], "review": false}
+      "body": "가상의 소비자보호 점검에서 보험 상담원이 전화모집 과정에 청약철회 안내를 빠뜨린 사례가 확인됐다. 회사는 녹취 점검 항목을 바꾸고 설명 문구를 보완하기로 했다. 취약고객의 누락 건은 따로 모아 피해구제 안내도 제공한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "tm",
+          "consumer_protection"
+        ],
+        "review": false,
+        "lead": "tm"
+      }
     },
     {
       "id": "noninsurance_metaphor",
       "sector": "none",
       "title": "여행길의 보험 같은 휴대용 보조배터리 인기",
       "body": "가상의 전자기기 매장은 여행 중 스마트폰 전원이 꺼지는 상황에 대비하는 보조배터리를 '여행길의 보험'이라고 소개했다. 기사에서 보험은 대비책이라는 비유다. 실제 보험회사, 보험계약, 보험상품, 보험금, 금융시장이나 보험업 규제에 관한 내용은 없다.",
-      "label": {"relevant": false, "departments": [], "review": false}
+      "label": {
+        "relevant": false,
+        "departments": [],
+        "review": false
+      }
     },
     {
       "id": "noninsurance_bank_event",
       "sector": "none",
       "title": "은행 지점 어린이 그림 대회 개최",
       "body": "가상의 지역 은행 지점이 어린이 그림 대회를 열고 참가자에게 색연필을 지급했다. 대회는 주말 하루 동안 진행되며 참가작은 지점 로비에 전시된다. 보험상품이나 금융시장, 보험 판매, 금융회사 경영 변화와 관련된 소식은 포함되지 않았다.",
-      "label": {"relevant": false, "departments": [], "review": false}
+      "label": {
+        "relevant": false,
+        "departments": [],
+        "review": false
+      }
     },
     {
       "id": "insurance_name_only_csr",
       "sector": "none",
       "title": "보험사 봉사동아리 동네 화단 정리",
       "body": "가상의 보험회사 직원 봉사동아리가 주말에 동네 화단을 정리했다. 기사는 동아리 참석 인원과 화단에 심은 꽃을 소개한다. 보험사업, 상품, 고객, 판매, 재무, 규제나 기술과 관련된 새로운 정보는 없다. 회사 이름은 봉사동아리를 소개하기 위해 등장했다.",
-      "label": {"relevant": false, "departments": [], "review": false}
+      "label": {
+        "relevant": false,
+        "departments": [],
+        "review": false
+      }
     },
     {
       "id": "ambiguous_social_insurance",
       "sector": "ambiguous",
       "title": "건강보험 급여 기준 조정 논의, 민영보험 영향은 미확인",
       "body": "가상의 공청회에서 공적 건강보험의 급여 기준을 조정하는 방안이 언급됐다. 다만 적용 대상 치료와 조정 폭, 시점은 공개되지 않았다. 민영 생명보험이나 손해보험 계약에 영향을 주는지 설명이 없어, 제목과 현재 본문만으로 보험회사 업무에 실질적인 영향이 있는지 확정하기 어렵다.",
-      "label": {"relevant": null, "departments": [], "review": true}
+      "label": {
+        "relevant": null,
+        "departments": [],
+        "review": true
+      }
     },
     {
       "id": "ambiguous_incomplete_article",
       "sector": "ambiguous",
       "title": "금융사 새 제도 검토, 세부 내용 추후 공개",
       "body": "가상의 업계 관계자는 일부 금융사가 새 제도를 검토하고 있다고 전했다. 적용 업종이 은행인지 보험회사인지, 제도 내용이 상품인지 인사 규정인지 현재 자료에는 나타나지 않는다. 보험회사 업무에 관한 내용인지 판단할 구체적인 근거가 부족해 추가 자료 확인이 필요하다.",
-      "label": {"relevant": null, "departments": [], "review": true}
+      "label": {
+        "relevant": null,
+        "departments": [],
+        "review": true
+      }
+    },
+    {
+      "id": "campaign_conditions",
+      "sector": "life",
+      "title": "제휴 광고와 상품 화면의 보장 금액 표시 차이 수정",
+      "body": "가상의 보험사는 제휴 플랫폼 배너가 최대 보장액만 표시한다는 사실을 확인했다. 배너 제작팀은 광고 문구를 교체하고 자사 온라인몰도 연결된 청약 화면의 지급 조건을 바로잡는다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "digital_marketing",
+          "einsurance"
+        ],
+        "lead": "digital_marketing",
+        "review": false
+      }
+    },
+    {
+      "id": "branch_forms",
+      "sector": "common",
+      "title": "대면 설계사용 모집 서류 교체와 교육 일정 공지",
+      "body": "가상의 보험사가 지점의 대면 모집 서류를 한 종류로 통일한다. 전국 지점에서 옛 서류를 회수하고 대면 설계사에게 새 양식 작성법을 교육한다. 전화 상담 절차는 그대로다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "channel_sales_support"
+        ],
+        "lead": "channel_sales_support",
+        "review": false
+      }
+    },
+    {
+      "id": "diagnosis_rider",
+      "sector": "life",
+      "title": "암 진단비 특약의 보장 범위와 최초 진단 기준 개정",
+      "body": "가상의 생명보험사가 암 특약을 개정한다. 신상품의 진단비 지급 요건과 면책기간을 약관에 반영하고 지급 심사에는 개정 계약에 적용할 진단서 증빙 기준을 전달한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "health_product",
+          "claims_review"
+        ],
+        "lead": "health_product",
+        "review": false
+      }
+    },
+    {
+      "id": "annuity_guarantee",
+      "sector": "life",
+      "title": "즉시연금 새 보증지급 기간 선택지 도입",
+      "body": "가상의 생명보험사가 은퇴 고객을 위한 즉시연금에 새로운 보증지급 기간을 제시한다. 가입 연령별 연금액과 상속인에게 남는 급부를 설계하고 기존 계약은 종전 조건을 적용한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "family_retirement_product"
+        ],
+        "lead": "family_retirement_product",
+        "review": false
+      }
+    },
+    {
+      "id": "underwriting_questions",
+      "sector": "life",
+      "title": "유병자보험 입원 이력 고지 질문과 추가 심사 조건 조정",
+      "body": "가상의 생명보험사가 입원 이력이 있는 신규 가입자를 인수할 조건을 바꾼다. 심사자가 재진단 자료를 요구할 기준을 정하고 기존 가입 질문지의 입원 기간 표현을 대조한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "underwriting"
+        ],
+        "lead": "underwriting",
+        "review": false
+      }
+    },
+    {
+      "id": "claims_notice",
+      "sector": "nonlife",
+      "title": "단체보험 사고 통보기간 연장, 접수일 기준 마련",
+      "body": "가상의 손해보험사가 단체 배상책임보험에서 사고를 알릴 수 있는 기간을 늘렸다. 지급 심사자는 사고일, 최초 통보일, 갱신일을 대조하고 예전 계약에 새 기한을 잘못 적용한 건을 찾아낸다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "claims_review"
+        ],
+        "lead": "claims_review",
+        "review": false
+      }
+    },
+    {
+      "id": "claims_window",
+      "sector": "nonlife",
+      "title": "보험금 우편 접수 창구 통합, 서류 도착 알림 개편",
+      "body": "가상의 보험사가 지점별로 흩어진 서류 접수를 하나의 창구로 합친다. 각 지점 안내문과 접수 상태 알림의 발송 시점을 바꾸며 보험금 지급 요건은 동일하다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "insurance_service_planning"
+        ],
+        "lead": "insurance_service_planning",
+        "review": false
+      }
+    },
+    {
+      "id": "lapse_relief",
+      "sector": "life",
+      "title": "보험료 납입 중단 계약에 부활·감액 선택 안내 확대",
+      "body": "가상의 생명보험사가 실효 직전인 계약에 부활과 감액 조건을 안내한다. 계약별 납입 유예 종료일과 보장 효력이 다시 생기는 날짜를 확인해 안내서를 보낸다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "policy_maintenance"
+        ],
+        "lead": "policy_maintenance",
+        "review": false
+      }
+    },
+    {
+      "id": "capital_sensitivity",
+      "sector": "common",
+      "title": "보험사 외화 충격에 따른 지급여력비율 민감도 재점검",
+      "body": "가상의 보험사가 환율 충격에서 가용자본과 시장위험액이 변하는 정도를 비교한다. 위험관리 조직은 자본 적정성 보고를 맡고 헤지 실무자는 해외채권의 환헤지 잔액과 차환 일정을 제출한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "risk_management",
+          "hedge_management"
+        ],
+        "lead": "risk_management",
+        "review": false
+      }
+    },
+    {
+      "id": "profit_note",
+      "sector": "life",
+      "title": "생보사 결산 공시에 일회성 투자손익 분리 표기",
+      "body": "가상의 생명보험사가 분기 결산표에서 채권 매각에 따른 일회성 손익을 분리한다. 공시 담당자는 연결·별도 수치를 대조하고 결산 자료에 들어갈 보험계약마진 설명은 계리 결산 담당자가 검증한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "finance",
+          "actuarial"
+        ],
+        "lead": "finance",
+        "review": false
+      }
+    },
+    {
+      "id": "swap_rollover",
+      "sector": "common",
+      "title": "보험사 달러 채권 환헤지 만기 분산",
+      "body": "가상의 보험사가 해외채권을 그대로 보유하면서 특정 달에 집중된 선물환 만기를 나눈다. 통화별 스와프 견적과 만기별 차환 비용을 대조해 거래 일정을 확정한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "hedge_management"
+        ],
+        "lead": "hedge_management",
+        "review": false
+      }
+    },
+    {
+      "id": "pf_collateral",
+      "sector": "common",
+      "title": "보험사 PF 투자 심사에서 상환 순위와 담보 가치 재점검",
+      "body": "가상의 보험사가 보유 PF 대출의 차주 신용등급 하락을 확인했다. 투자 심사 실무자는 담보 평가액과 선순위 채권의 만기를 대조하고 차주의 현금으로 원리금을 갚을 수 있는지 재심사한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "investment_review"
+        ],
+        "lead": "investment_review",
+        "review": false
+      }
+    },
+    {
+      "id": "complaint_relief",
+      "sector": "nonlife",
+      "title": "손보사 시각장애 고객 민원 피해구제 절차 개편",
+      "body": "가상의 손해보험사가 민원 처리 과정에서 시각장애 고객에게 지급한 안내문을 확인했다. 보상을 요청하지 못한 고객을 찾아 대체 안내와 피해구제 접수 절차를 제공한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "consumer_protection"
+        ],
+        "lead": "consumer_protection",
+        "review": false
+      }
+    },
+    {
+      "id": "court_wording",
+      "sector": "life",
+      "title": "보험사 약관 문구 판결, 유사 계약 적용 범위 검토",
+      "body": "가상의 보험사가 약관 문구에 관한 판결문을 받았다. 법률 검토에서는 판결의 심급과 사실관계를 구분하며 보험금 심사자는 같은 문구를 적용한 부지급 사례를 제공한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "legal_support",
+          "claims_review"
+        ],
+        "lead": "legal_support",
+        "review": false
+      }
+    },
+    {
+      "id": "public_correction",
+      "sector": "common",
+      "title": "보험사 실적 인용 오류에 대외 정정 설명 준비",
+      "body": "가상의 보험사가 언론 보도의 연간 실적 수치를 확인하고 정정 자료를 작성한다. 대외 설명을 작성하며 결산 담당자는 기사 속 수치가 누적인지 분기인지 공시를 대조해 확인한다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "brand_pr",
+          "finance"
+        ],
+        "lead": "brand_pr",
+        "review": false
+      }
+    },
+    {
+      "id": "sale_negotiation",
+      "sector": "life",
+      "title": "경쟁 생보사 매각 협상 종료, 시장 재편 전망 수정",
+      "body": "가상의 생명보험사가 경쟁사 매각 협상 종료 소식을 확인했다. 인수가 이미 완료된 것으로 가정한 내부 중장기 경쟁 전략을 고치며 새 인수자나 후속 일정은 공식 발표까지 열어 둔다.",
+      "label": {
+        "relevant": true,
+        "departments": [
+          "corporate_planning"
+        ],
+        "lead": "corporate_planning",
+        "review": false
+      }
     }
   ]
 }
