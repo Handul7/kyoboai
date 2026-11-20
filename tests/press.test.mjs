@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDatabase } from './helpers/d1.mjs';
-import { searchPress, searchLinkedPress, judgePress, pressRange, pressRoles, pressDefaultRoles, parsePressFeed } from '../server/press.mjs';
+import { searchPress, searchLinkedPress, judgePress, pressRange, pressRoles, pressDefaultRoles, parsePressFeed, summarizePress } from '../server/press.mjs';
 import { handleApi } from '../server/index.mjs';
 
 const when='Mon, 16 Nov 2026 14:59:59 GMT';
@@ -218,4 +218,23 @@ test('GPT and Jev connect independently and GPT summarizes only the articles in 
   const off=await api('connection',{action:'disconnect',provider:'gpt'},gpt.auth,jar);
   assert.ok(off.headers.get('set-cookie').startsWith(gpt.cookie.split('=')[0]+'=; Max-Age=0'));
   assert.equal((await (await api('settings',null,jev.auth,jev.cookie)).json()).jevConfigured,true);
+});
+
+
+test('a tailored summary validates its organization and sends roles as context separately from captured source facts',async t=>{
+  const env={DB:createDatabase()};t.after(()=>env.DB.sqlite.close());
+  const snapshot=await searchPress({from:'2026-11-16',to:'2026-11-16'},env,async()=>new Response(rss));
+  const input={id:snapshot.id,version:snapshot.version,parent:'선임계리사'};
+  let calls=0;
+  const fetcher=async(url,options)=>{
+    calls++;const request=JSON.parse(options.body),state=JSON.parse(request.messages[1].content);
+    assert.deepEqual(state.organization.departments.map(d=>d.name),['계리팀','가정관리팀']);
+    assert.equal(state.articles[0].title,snapshot.articles[0].title);
+    assert.deepEqual(Object.keys(state.articles[0]).sort(),['number','publishedAt','source','title']);
+    return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({items:[{text:'제목에서 확인한 보장 개정 검토',sources:[1]}]})}}]});
+  };
+  const result=await summarizePress(input,env,'test-only',fetcher);
+  assert.equal(result.scope,'선임계리사');assert.equal(calls,1);
+  await assert.rejects(summarizePress({...input,parent:'임의의 조직'},env,'test-only',fetcher),e=>e.status===400);
+  assert.equal(calls,1);
 });

@@ -132,3 +132,11 @@ npm run run:cycle -- 2026-11-16 --live
 `npm test`는 SQLite 로컬 D1 어댑터와 모의 API 응답으로 날짜·중복·권한·입력·재실행·인용·오류 경로를 검사합니다. `npm run verify`는 기존 샘플 데이터 일관성을 확인합니다. 모델의 실제 분류 품질, 공급자별 본문 이용 허락, 실제 모델 과금·응답 속도는 이 테스트로 증명하지 않습니다.
 
 참고 문서: [TypeSafe System One API](https://docs.typesafe.ai/api/system-one), [Noul](https://docs.typesafe.ai/primitives/noul), [Score](https://docs.typesafe.ai/primitives/score), [선별 후 요약 구성](https://docs.typesafe.ai/cookbooks/classifying_rag_passages), [Chat Completions 응답 계약](https://developers.openai.com/api/reference/resources/chat).
+
+## 담당 산하별 공개 화면
+
+공개 화면의 조직 그룹은 `department-profiles.json`의 `parent`를 사용합니다. 뉴스의 부서 판단은 부서별 독립 Noul을 유지하고 상위 조직은 화면에서 묶는 기준으로만 사용합니다. 같은 이슈의 조직별 건수는 중복 계산하지 않습니다.
+
+`POST /api/press/summary`는 선택적인 `parent`를 공식 프로필의 상위 조직으로 검증합니다. 해당 조직의 부서 역할은 요약 관점으로만 전달하며 기사 사실로 취급하지 않습니다. 실제 기사 입력과 출처 번호는 서버 스냅샷으로 제한합니다.
+
+Jev의 429·시간 초과·연결 장애는 구분해서 안내합니다. 클라이언트는 수집 결과를 유지하며 완료된 배치 뒤에서 이어갑니다. 세션 인증 실패 시 해당 제공자만 다시 연결하고 다른 제공자의 연결을 지우지 않습니다. 본 배포는 정기 수집 스케줄이나 서버 운영 자격증명을 변경하지 않습니다.

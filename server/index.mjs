@@ -367,6 +367,9 @@ export async function handleApi(request,env) {
         const result=path.endsWith('/link')?await searchLinkedPress(input,env):await searchPress(input,env);
         return json({...result,jevConfigured:!!key});
       }catch(e){
+        if(path.endsWith('/judge')&&e instanceof ProviderError&&e.code==='provider_rate_limited')fail(429,'Jev 호출 한도에 도달했습니다. 잠시 후 부서 판단을 이어서 실행해 주세요.');
+        if(e instanceof ProviderError&&e.code==='provider_timeout')fail(504,'분석 서비스의 응답이 늦어졌습니다. 수집된 기사는 유지되며 잠시 후 다시 실행할 수 있습니다.');
+        if(e instanceof ProviderError&&e.code==='provider_unreachable')fail(502,'분석 서비스에 연결하지 못했습니다. 네트워크 상태를 확인한 뒤 다시 실행해 주세요.');
         if(path.endsWith('/summary')&&e instanceof ProviderError&&e.code==='provider_rate_limited')fail(429,'OpenAI 호출 한도에 도달했습니다. 사용량과 잔액을 확인한 뒤 다시 시도해 주세요.');
         if(e instanceof ProviderError && e.code==='provider_authentication_failed')fail(401,path.endsWith('/summary')?'OpenAI에서 GPT 키를 인증하지 못했습니다. API 키 입력에서 다시 연결해 주세요.':'TypeSafe에서 Jev 키를 인증하지 못했습니다. API 키 입력에서 다시 연결해 주세요.');
         if(e instanceof PressError)fail(e.status,e.message);

@@ -1,6 +1,8 @@
 const PUBLISHED_NEWS = [
   {
     id: "kyobo-life-2026-q3",
+    facts: [{value:"7,082억원",label:"1~9월 순이익",basis:"연결 지배주주 기준 · 전년 동기 대비 19.9% 감소"},{value:"7조587억원",label:"9월 말 보유계약 CSM",basis:"별도 기준 · 누적 순이익과 구분"}],
+    uncertainty: ["상품별 건강보험 판매가 신계약 CSM 증가분에 기여한 금액은 상품군별 결산표로 확인해야 합니다.","투자손익 감소의 세부 요인과 일회성 여부는 공시·결산 자료를 대조해야 합니다."],
     reviews: [{
       department: "계리팀",
       assignment: "lead",
@@ -35,6 +37,8 @@ const PUBLISHED_NEWS = [
   },
   {
     id: "kdb-life-sale-talks-202611",
+    facts: [{value:"11월 18일",label:"협상 종료 발표",basis:"산업은행·한국투자금융지주"},{value:"후속 발표 확인",label:"다음 매각 일정",basis:"확정 일정이나 새 인수 후보를 추정하지 않음"}],
+    uncertainty: ["재매각 일정과 다음 인수 후보는 이번 보도만으로 확정할 수 없습니다.","경영 정상화 방안은 산업은행의 새 공시와 발표를 확인해야 합니다."],
     reviews: [{
       department: "경영기획팀",
       assignment: "reference",
@@ -60,6 +64,8 @@ const PUBLISHED_NEWS = [
   },
   {
     id: "csat-supervisor-liability-2027",
+    facts: [{value:"3년",label:"사고 통보 가능 기간",basis:"종전 2년에서 확대 · 보장 기간과 구분"},{value:"2억원",label:"청구당 보상 한도",basis:"계약 전체 한도 40억원과 구분"},{value:"하나손해보험",label:"해당 단체계약 보험사",basis:"타사 사례 · 당사 계약에 바로 적용하지 않음"}],
+    uncertainty: ["통보 기한의 기산일과 실제 지급 요건은 해당 계약 안내와 약관을 확인해야 합니다.","당사에 유사 담보가 있는지 먼저 확인한 뒤 접수 시차와 준비금 검토의 관련성을 판단해야 합니다."],
     reviews: [{
       department: "지급심사팀",
       assignment: "lead",
@@ -95,6 +101,8 @@ const PUBLISHED_NEWS = [
   },
   {
     id: "samsung-life-2026-q3",
+    facts: [{value:"2조6,859억원",label:"1~9월 순이익",basis:"연결 지배주주 기준 · 전년 동기 대비 26.9% 증가"},{value:"14조3,000억원",label:"9월 말 보유계약 CSM",basis:"연초 대비 1조1,000억원 증가"}],
+    uncertainty: ["배당 수익과 자회사 실적의 개별 기여액은 공시에서 분리되는 범위만 확인해야 합니다.","경쟁사 비교에서 연결·별도와 누적 손익·시점 잔액의 기준을 맞춰야 합니다."],
     reviews: [{
       department: "재무팀",
       assignment: "lead",
