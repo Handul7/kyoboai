@@ -285,7 +285,13 @@
     const {snapshot,judgments,summary,summaryBusy,summaryError,busy,message,attention}=runs[mode];
     const progress=$('#progress');progress.className=message?'notice'+(attention?' alert':''):'';progress.textContent=message;
     $(mode==='link'?'#check-link':'#run').disabled=busy;
-    if(!snapshot){$('#results').replaceChildren();return;}
+    if(!snapshot){
+      const results=$('#results');
+      if(attention&&mode==='period'){
+        results.innerHTML='<nav class="search-recovery" aria-label="다른 방법으로 뉴스 확인"><a class="secondary" href="#link">기사 링크로 확인</a><a class="secondary" href="#news">발행 브리핑 보기</a></nav>';
+      }else results.replaceChildren();
+      return;
+    }
     const isLink=snapshot.kind==='link',rows=snapshot.articles;
     const heading=isLink?'기사 확인 결과':`수집 기사 ${rows.length}건`;
     const label=isLink?`입력 기사 1건 · 관련 보도 후보 ${rows.length-1}건`:`${snapshot.from} ~ ${snapshot.to} · 중복 ${snapshot.duplicates}건 정리${snapshot.total>rows.length?' · 전체 '+snapshot.total+'건 중 최신 '+rows.length+'건':''}`;

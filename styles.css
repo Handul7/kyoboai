@@ -121,6 +121,7 @@ select { appearance: none; padding-right: 35px; background-image: linear-gradien
 .criteria-panel b { color: var(--blue); }
 .criteria-panel p { margin-top: 12px; font-size: .9rem; color: var(--muted); }
 .notice { padding: 12px 15px; margin: 16px 0; border-radius: 10px; background: #eaf2ff; border-inline-start: 3px solid var(--blue); }
+.search-recovery { display: flex; flex-wrap: wrap; gap: 8px; }
 .notice.alert { color: #784817; border-color: #a66224; background: #fff3e3; }
 #results .meta { margin: 5px 0 12px; }
 .results-list { display: grid; gap: 8px; }
