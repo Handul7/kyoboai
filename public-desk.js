@@ -28,7 +28,7 @@
       else sessionStorage.removeItem(slot(provider));
     }catch{}
   }
-  const emptyRun=()=>({snapshot:null,judgments:[],summary:null,summaryBusy:false,summaryError:'',busy:false,message:'',attention:false});
+  const emptyRun=()=>({snapshot:null,judgments:[],criteria:[],summary:null,summaryBusy:false,summaryError:'',busy:false,message:'',attention:false});
   const runs={period:emptyRun(),link:emptyRun()};
   async function api(path,payload,{provider='jev',apiKey,session=sessions[provider],signal}={}) {
     const options = {cache:'no-store', mode:'same-origin', redirect:'error',signal};
@@ -117,11 +117,19 @@
   function sources(rows) {return `<ol class="sources">${rows.map(s=>`<li>${link(s.url,s.title)} <small>${escape(s.source)} · ${escape(shortDate(s.publishedAt))}</small></li>`).join('')}</ol>`;}
   $('#edition').innerHTML=editions.map(d=>`<option value="${d}">${dateLabel(d)}</option>`).join('')+months.map(m=>`<option value="${m}">${m.replace('-','년 ')}월 전체</option>`).join('');
   const reviewer = review => review.department ? review.department+(review.referenceOnly?' · 참고':'') : '공통 참고';
+  function reviewNotes(review) {
+    const notes=[];
+    if(review.reason)notes.push({label:review.department?'검토 이유':'공통으로 보는 이유',lines:[review.reason]});
+    const checks=review.checks?.length?review.checks:[review.detail].filter(Boolean);
+    if(checks.length)notes.push({label:'확인할 점',lines:checks});
+    return notes;
+  }
   function reviewRows(reviews, detailed=false) {
     return reviews.map(review=>`<div class="brief-review">
       <div class="review-line"><b class="review-team${!review.department||review.referenceOnly?' reference':''}">${escape(reviewer(review))}</b>
       <span class="review-item">${escape(review.item)}</span></div>
-      ${detailed?`<p class="review-detail">${escape(review.detail)}</p>`:''}</div>`).join('');
+      ${detailed?`<dl class="review-notes">${reviewNotes(review).map(({label,lines})=>
+        `<dt>${escape(label)}</dt><dd>${lines.length===1?escape(lines[0]):`<ul>${lines.map(line=>`<li>${escape(line)}</li>`).join('')}</ul>`}</dd>`).join('')}</dl>`:''}</div>`).join('');
   }
   function stories(){
     const selected=$('#edition').value;
@@ -142,7 +150,8 @@
     $('#detail').innerHTML=`<a class="back-link" href="#news">브리핑 목록으로</a><article class="report"><div class="meta">${dateLabel(s.date)} 발행 · 근거 뉴스 ${s.sources.length}건</div><h1>${escape(s.title)}</h1>
       <section class="report-reviews"><h2>${heading}</h2>${reviewRows(s.reviews,true)}</section>
       ${sections(s).map(([title,p])=>`<h2>${title}</h2><p>${escape(p)}</p>`).join('')}<h2>뉴스 출처</h2>${sources(s.sources)}<button class="secondary pdf" id="download-detail">보고서 PDF 다운로드</button></article>`;
-    const reviewSection={title:heading,lines:s.reviews.flatMap(r=>[reviewer(r)+' — '+r.item,r.detail])};
+    const reviewSection={title:heading,lines:s.reviews.flatMap(r=>[reviewer(r)+' — '+r.item,
+      ...reviewNotes(r).flatMap(({label,lines})=>[label,...lines.map(line=>lines.length>1?'• '+line:line)])])};
     $('#download-detail').onclick=e=>pdf(e.currentTarget,{title:s.title,meta:`교보 뉴스브리핑 · ${s.date}`,sections:[reviewSection,...sections(s).map(([title,p])=>({title,lines:[p]}))],sources:s.sources});
   }
   async function pdf(button,data){button.disabled=true;try{await window.downloadIssuePdf(data);}catch{window.alert('PDF를 생성하지 못했습니다. 다시 시도해 주세요.');}finally{button.disabled=false;}}
@@ -281,8 +290,42 @@
     const same=j.sameEvent===undefined?'':j.sameEvent>=.8?'같은 이슈 · ':j.sameEvent<=.2?'다른 이슈 · ':'동일 이슈 검토 필요 · ';
     return `${same}${j.status} · 보고 가치 ${j.importance.toFixed(2)}/3 · 근거 ${j.basis}${j.matches.length?' · 관련 부서 '+j.matches.map(m=>m.name).join(', '):''}`;
   }
+  function publishedForArticle(article){
+    return PUBLISHED_NEWS.find(issue=>issue.sources.some(source=>source.url===article.url ||
+      (source.title===article.title && source.source===article.source)));
+  }
+  function departmentNotes(article,judgment,criteria){
+    if(!judgment?.matches.length)return [];
+    const issue=publishedForArticle(article);
+    return judgment.matches.flatMap(({name})=>{
+      const applied=criteria.find(r=>r.name===name);
+      if(!applied)return [];
+      const keywords=[...new Set(applied.keywords.split(',').map(v=>v.trim()).filter(Boolean))];
+      const mentioned=keywords.filter(word=>article.title.includes(word));
+      const original=profiles.find(r=>r.name===name);
+      const usesDefault=original?.role===applied.role && original?.keywords===applied.keywords;
+      const review=usesDefault && issue?.reviews.find(r=>r.department===name && r.reason && r.checks?.length);
+      const fields=[];
+      if(mentioned.length)fields.push(['제목에서 확인한 키워드',mentioned.join(' · ')]);
+      if(review){
+        fields.push(['검토 이유 · 발행 보고서',review.reason],...review.checks.map(check=>['확인할 일',check]));
+      }else{
+        fields.push(['이번 판단에 적용한 부서 업무',applied.role]);
+        const check=mentioned.length
+          ? '원문에서 '+mentioned.map(word=>'「'+word+'」').join('·')+'에 관한 변경이 있는지 확인하세요. 해당하면 적용 대상과 시점을 기록하세요.'
+          : '기사 원문에서 이 업무에 영향을 주는 조치가 있는지, 있다면 어떤 절차를 바꿔야 하는지 확인하세요.';
+        fields.push(['확인할 일',check]);
+      }
+      return [{team:review?.referenceOnly?name+' · 참고':name,fields}];
+    });
+  }
+  function noteDetails(notes,expanded){
+    if(!notes.length)return '';
+    return `<details class="live-review"${expanded?' open':''}><summary>부서별 검토 기준</summary>${notes.map(note=>
+      `<section><h4>${escape(note.team)}</h4>${note.fields.map(([label,value])=>`<p><b>${escape(label)}</b> ${escape(value)}</p>`).join('')}</section>`).join('')}</details>`;
+  }
   function renderRun(){
-    const {snapshot,judgments,summary,summaryBusy,summaryError,busy,message,attention}=runs[mode];
+    const {snapshot,judgments,criteria,summary,summaryBusy,summaryError,busy,message,attention}=runs[mode];
     const progress=$('#progress');progress.className=message?'notice'+(attention?' alert':''):'';progress.textContent=message;
     $(mode==='link'?'#check-link':'#run').disabled=busy;
     if(!snapshot){
@@ -295,7 +338,9 @@
     const isLink=snapshot.kind==='link',rows=snapshot.articles;
     const heading=isLink?'기사 확인 결과':`수집 기사 ${rows.length}건`;
     const label=isLink?`입력 기사 1건 · 관련 보도 후보 ${rows.length-1}건`:`${snapshot.from} ~ ${snapshot.to} · 중복 ${snapshot.duplicates}건 정리${snapshot.total>rows.length?' · 전체 '+snapshot.total+'건 중 최신 '+rows.length+'건':''}`;
-    const story=isLink&&PUBLISHED_NEWS.find(s=>s.sources.some(a=>a.url===rows[0].url||a.title===rows[0].title));
+    const story=isLink&&rows.length&&publishedForArticle(rows[0]);
+    const notes=rows.map((article,i)=>departmentNotes(article,judgments[i],criteria));
+    const expanded=new Set(all('#results .live-review[open]').map(el=>el.closest('article').querySelector('a').getAttribute('href')));
     $('#results').innerHTML=`<div class="list-head"><h2>${heading}</h2>${rows.length?'<button class="secondary" id="download-list">결과 PDF</button>':''}</div>
       <p class="meta">${escape(label)}${isLink?` · 관련 보도 검색 ${escape(snapshot.from)} ~ ${escape(snapshot.to)}`:''}</p>
       ${snapshot.relatedUnavailable?'<p class="hint">관련 보도 검색 공급처의 응답을 받지 못했습니다.</p>':''}
@@ -304,9 +349,23 @@
         ${summary?`<ul>${summary.items.map(item=>`<li>${escape(item.text)} ${item.sources.map(n=>link(rows[n-1].url,'['+n+']')).join(' ')}</li>`).join('')}</ul>`:
           `<button type="button" class="secondary" id="make-summary" ${summaryBusy?'disabled':''}>${summaryBusy?'요약 중…':sessions.gpt?'GPT 요약 생성':'GPT 키 연결'}</button>`}
         ${summaryError?`<p class="hint" role="status">${escape(summaryError)}</p>`:''}</section>`:''}
-      <div class="results-list">${rows.map((a,i)=>`<article class="news-row"><small>${isLink?(i===0?'입력 기사':'관련 후보')+' · ':''}${escape(a.source)} · ${a.publishedAt?dateKst(a.publishedAt):'발행일 미확인'}</small><strong>${link(a.url,a.title)}</strong><div class="result-label">${escape(judgmentText(judgments[i]))}</div></article>`).join('')}</div>`;
+      <div class="results-list">${rows.map((a,i)=>`<article class="news-row"><small>${isLink?(i===0?'입력 기사':'관련 후보')+' · ':''}${escape(a.source)} · ${a.publishedAt?dateKst(a.publishedAt):'발행일 미확인'}</small><strong>${link(a.url,a.title)}</strong><div class="result-label">${escape(judgmentText(judgments[i]))}</div>${noteDetails(notes[i],expanded.has(a.url))}</article>`).join('')}</div>`;
     if(rows.length&&!summary)$('#make-summary').onclick=()=>generateSummary(mode);
-    if(rows.length)$('#download-list').onclick=e=>pdf(e.currentTarget,{title:isLink?rows[0].title:'보험 뉴스 수집 결과',meta:label,sections:[...(summary?[{title:'GPT 요약 · 기사 제목 기준',lines:summary.items.map(item=>item.text+' '+item.sources.map(n=>'['+n+']').join(' '))}]:[]),{title:'기사별 판단',lines:rows.map((a,i)=>`[${i+1}] ${a.title} — ${judgmentText(judgments[i])}`)}],sources:rows.map(a=>({...a,publishedAt:a.publishedAt?dateKst(a.publishedAt):'발행일 미확인'}))});
+    if(rows.length)$('#download-list').onclick=e=>{
+      const sections=[];
+      if(summary)sections.push({title:'GPT 요약 · 기사 제목 기준',lines:summary.items.map(item=>item.text+' '+item.sources.map(n=>'['+n+']').join(' '))});
+      sections.push({title:'기사별 판단',lines:rows.map((article,i)=>`[${i+1}] ${article.title} — ${judgmentText(judgments[i])}`)});
+      const groups=new Map();
+      notes.forEach((articleNotes,i)=>articleNotes.forEach(note=>{
+        const key=JSON.stringify(note);
+        if(!groups.has(key))groups.set(key,{note,sources:[]});
+        groups.get(key).sources.push('['+(i+1)+']');
+      }));
+      if(groups.size)sections.push({title:'부서별 검토 기준',lines:[...groups.values()].flatMap(({note,sources})=>[
+        note.team+' · '+sources.join(' '),...note.fields.map(([label,value])=>label+' — '+value)
+      ])});
+      pdf(e.currentTarget,{title:isLink?rows[0].title:'보험 뉴스 수집 결과',meta:label,sections,sources:rows.map(a=>({...a,publishedAt:a.publishedAt?dateKst(a.publishedAt):'발행일 미확인'}))});
+    };
   }
   async function generateSummary(type){
     const run=runs[type],snapshot=run.snapshot,session=sessions.gpt;
@@ -340,6 +399,7 @@
       showConnection('jev');
       if(!sessions.jev){update('기사 확인 완료 · 부서 판단은 상단 API 키 입력에서 Jev를 연결한 뒤 실행할 수 있습니다.');return;}
       if(!criteria)throw Error('부서 역할을 불러올 수 없습니다. 화면을 새로고침해 주세요.');
+      run.criteria=criteria;
       for(let offset=0;offset<snap.articles.length;offset+=snap.batchSize){
         if(runSession!==sessions.jev){update('Jev 연결이 변경되어 추가 판단을 중단했습니다.');return;}
         update(`Jev 판단 중 · ${offset}/${snap.articles.length}건`);

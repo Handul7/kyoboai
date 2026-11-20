@@ -39,6 +39,8 @@ test('every published issue has an individual permalink, report sections, dated 
     for(const review of r.reviews){
       assert.ok(departments.has(review.department) || (review.department===null && r.reviews.length===1));
       assert.ok(review.item.trim() && review.detail.trim());
+      assert.ok(review.reason?.trim(),r.id+' needs a reason for the assigned review');
+      assert.ok(Array.isArray(review.checks) && review.checks.length && review.checks.every(s=>s.trim()),r.id+' needs concrete checks');
     }
     assert.ok(r.sources.length>0);
     for(const s of r.sources){assert.match(s.url,/^https:\/\//);assert.ok(s.title && s.source && s.publishedAt<=r.date);}

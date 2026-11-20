@@ -128,6 +128,10 @@ select { appearance: none; padding-right: 35px; background-image: linear-gradien
 .news-row, .press-summary { padding: 14px 18px; overflow-wrap: anywhere; }
 .news-row strong { display: block; }
 .news-row a { color: var(--ink); }
+.live-review { margin-top: 6px; border-top: 1px solid var(--line); }
+.live-review summary { font-size: .94rem; }
+.live-review h4 { margin: 2px 0; color: var(--ink); font-size: 1rem; }
+.live-review p { margin: 4px 0 8px; }
 .result-label { font-size: .9rem; color: var(--green); margin-top: 5px; }
 .press-summary { background: var(--blue-light); margin: 12px 0; }
 .press-summary h3 { margin-bottom: 8px; }
@@ -153,7 +157,12 @@ select { appearance: none; padding-right: 35px; background-image: linear-gradien
 .report p { line-height: 1.76; }
 .report-reviews { border-radius: 12px; background: var(--blue-light); border-left: 3px solid var(--blue); padding: 14px 17px; }
 .report-reviews h2 { margin: 0 0 9px; font-size: 1.02rem; }
-.review-detail { margin-top: 5px; color: #40516b; }
+.review-notes { margin: 9px 0 0; }
+.review-notes dt { margin-top: 8px; font-weight: 700; color: var(--ink); font-size: .94rem; }
+.review-notes dd { margin: 2px 0 0; line-height: 1.62; overflow-wrap: anywhere; }
+.review-notes ul { padding-inline-start: 1.25em; margin: 0; }
+.review-notes li + li { margin-top: 3px; }
+.review-notes li::marker { color: var(--blue); }
 .sources { padding-left: 1.5em; margin: 5px 0 16px; font-size: .94rem; }
 .sources li { overflow-wrap: anywhere; margin-block: 5px; }
 .sources small { white-space: normal; }
