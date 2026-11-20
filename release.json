@@ -1,6 +1,6 @@
 {
-  "version": "2026.11.19.10",
-  "updatedAt": "2026-11-19",
+  "version": "2026.11.20.1",
+  "updatedAt": "2026-11-20",
   "canonicalUrl": "https://kyoboai.handul.dev/",
   "sourceRepository": "https://github.com/Handul7/kyoboai",
   "runtime": "Cloudflare Worker via Sites",

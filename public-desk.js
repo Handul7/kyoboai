@@ -79,7 +79,7 @@
         <div class="role-sources">${profiles[i].sources.map(s=>link(s.url,s.label)).join(' · ')}</div></section>`;
     }).join('');
   }
-  function roleCount(){ $('#role-count').textContent=roles ? `적용할 부서 기준 ${roles.length}개` : settingsError || '부서 기준을 불러오는 중입니다.'; }
+  function roleCount(){ $('#role-count').textContent=roles ? roles.length+'개 부서' : settingsError || '불러오는 중'; }
   const rosterReady=fetch('./department-profiles.json',{cache:'no-cache'}).then(async response=>{
     if(!response.ok)throw Error();
     profiles=await response.json();
@@ -126,17 +126,20 @@
   function stories(){
     const selected=$('#edition').value;
     const issues=PUBLISHED_NEWS.filter(s=>s.date.startsWith(selected));
+    $('#issue-count').textContent=issues.length+'건';
     $('#stories').innerHTML=`<div class="stories">${issues.map(s=>`<a class="story" href="#issue/${escape(s.id)}">
-      <strong>${escape(s.title)}</strong>
+      <div class="story-meta"><time datetime="${escape(s.date)}">${dateLabel(s.date)} 발행</time><span>근거 ${s.sources.length}건</span></div>
+      <h3>${escape(s.title)}</h3>
+      <p class="story-summary">${escape(s.summary.split(/(?<=다\.) /)[0])}</p>
+      <div class="story-reviews">
       ${reviewRows(s.reviews)}
-      <p>${escape(s.summary.split(/(?<=다\.) /)[0])}</p>
-      <small>${dateLabel(s.date)} 발행 · 근거 뉴스 ${s.sources.length}건</small></a>`).join('')}</div>`;
+      </div></a>`).join('')}</div>`;
   }
   $('#edition').onchange=stories;stories();
   const sections=s=>[['핵심 요약',s.summary],['주요 인사이트',s.impact],['분석과 확인할 일',s.background+' '+s.check]];
   function detail(s){
     const heading='부서별 검토 항목';
-    $('#detail').innerHTML=`<a href="#news">← 브리핑 목록</a><article class="report"><div class="meta">${dateLabel(s.date)} 발행 · 근거 뉴스 ${s.sources.length}건</div><h1>${escape(s.title)}</h1>
+    $('#detail').innerHTML=`<a class="back-link" href="#news">브리핑 목록으로</a><article class="report"><div class="meta">${dateLabel(s.date)} 발행 · 근거 뉴스 ${s.sources.length}건</div><h1>${escape(s.title)}</h1>
       <section class="report-reviews"><h2>${heading}</h2>${reviewRows(s.reviews,true)}</section>
       ${sections(s).map(([title,p])=>`<h2>${title}</h2><p>${escape(p)}</p>`).join('')}<h2>뉴스 출처</h2>${sources(s.sources)}<button class="secondary pdf" id="download-detail">보고서 PDF 다운로드</button></article>`;
     const reviewSection={title:heading,lines:s.reviews.flatMap(r=>[reviewer(r)+' — '+r.item,r.detail])};
@@ -145,6 +148,7 @@
   async function pdf(button,data){button.disabled=true;try{await window.downloadIssuePdf(data);}catch{window.alert('PDF를 생성하지 못했습니다. 다시 시도해 주세요.');}finally{button.disabled=false;}}
   function research(){
     const outlets=Object.values(NEWS_RESEARCH.outlets);
+    $('#outlet-count').textContent=outlets.length+'곳';
     $('#research').innerHTML=`<h2>참고 매체 ${outlets.length}곳</h2><p>보험 전문지 2곳을 포함해 생명보험과 손해보험을 함께 살펴봅니다. 기간 수집에는 검색 RSS에 노출된 제목·매체·발행일·기사 링크가 들어옵니다.</p><table class="research-table"><thead><tr><th>매체</th><th>유형</th><th>범위</th></tr></thead><tbody>${outlets.map(o=>`<tr><td>${link(o.homepage,o.name)}</td><td>${escape(o.type)}</td><td>${o.baseline?'기본 5곳':'확장 5곳'}</td></tr>`).join('')}</tbody></table><h2>회차별 매체 비교</h2><p>기록된 기사 표본에서 같은 이슈를 한 건으로 묶었습니다. 회차를 누르면 비교 근거를 볼 수 있습니다.</p>${NEWS_RESEARCH.reports.map(report=>{
       const base=report.issues.filter(i=>i.sources.some(s=>NEWS_RESEARCH.outlets[s.outlet]?.baseline));
       return `<details class="panel"><summary>${escape(report.date)} · 기본 ${base.length}건 / 확장 포함 ${report.issues.length}건</summary>${report.issues.map(i=>`<p><strong>${escape(i.title)}</strong><br>${escape(NEWS_RESEARCH.coverageLabels[i.coverage])} · ${escape(i.relevance)}<br>${i.sources.map(s=>link(s.url,NEWS_RESEARCH.outlets[s.outlet].name)).join(' · ')}</p>`).join('')}</details>`;
@@ -152,9 +156,10 @@
   }
   research();
   const keyDialog=$('#api-dialog'),keyOperations=new Map();
-  function openKeyDialog(provider='gpt'){
+  function openKeyDialog(provider){
     if(!keyDialog.open)keyDialog.showModal();
-    $('#'+provider+(sessions[provider]?'-forget':'-key')).focus();
+    const target=provider?'#'+provider+(sessions[provider]?'-forget':'-key'):'#api-title';
+    $(target).focus();
   }
   $('#open-api-keys').onclick=()=>openKeyDialog();
   $('#close-api-keys').onclick=()=>keyDialog.close();
